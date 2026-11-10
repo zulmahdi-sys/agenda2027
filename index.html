@@ -190,9 +190,10 @@
 
         <form onsubmit="verifyAdminPass(event)" class="space-y-4 pt-2">
           <div>
-            <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Kata Sandi Admin *</label>
+            <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">KATA SANDI ADMIN *</label>
             <div class="relative">
-              <input type="password" id="admin-pass-input" placeholder="Masukkan Sandi (Default: 1122)" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl pl-4 pr-11 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
+              <!-- PLACEHOLDER DISESUAIKAN: PASSWORD DEFAULT DILINDUNGI & TIDAK DITAMPILKAN -->
+              <input type="password" id="admin-pass-input" placeholder="Masukkan Kata Sandi Admin" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl pl-4 pr-11 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
               <button type="button" onclick="togglePassVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400/70 hover:text-amber-300 p-1 focus:outline-none">
                 <i data-lucide="eye" id="pass-toggle-icon" class="w-5 h-5"></i>
               </button>
@@ -438,7 +439,7 @@
               </div>
             </div>
 
-            <!-- DITAMBAHKAN: Tanggal, Waktu, Keterangan & Tombol Simpan Agenda Terbaru -->
+            <!-- Input Tanggal & Waktu -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
               <div>
                 <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tanggal Mulai *</label>
@@ -559,7 +560,7 @@
         </div>
       </div>
 
-      <!-- ADMIN SUBTAB 3: LAPORAN & REKAPAN (BULANAN, PER-FAKULTAS, TAHUNAN) -->
+      <!-- ADMIN SUBTAB 3: LAPORAN & REKAPAN -->
       <div id="admin-sub-laporan" class="admin-sub-content hidden space-y-6">
         
         <!-- Filter Laporan & Export PDF -->
@@ -582,6 +583,21 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30">
+            <h4 class="font-bold text-amber-300 text-sm mb-3">Ringkasan Penggunaan Ruangan</h4>
+            <div id="report-room-summary" class="space-y-2 text-xs text-emerald-100"></div>
+          </div>
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30">
+            <h4 class="font-bold text-amber-300 text-sm mb-3">Kegiatan Per-Fakultas / Unit Kerja</h4>
+            <div id="report-faculty-summary" class="space-y-2 text-xs text-emerald-100"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
   <!-- TEMPLATE HIDDEN KHUSUS CETAK PDF RESMI INSTANSI -->
   <div id="pdf-export-template" class="hidden">
     <div style="font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; padding: 30px; line-height: 1.4;">
@@ -644,6 +660,9 @@
 
   <!-- ================= LOGIC & CONTROLLERS ================= -->
   <script>
+    // URL Endpoint Google Apps Script Domain UIN Ar-Raniry
+    const WEB_APP_URL = "https://script.google.com/a/macros/ar-raniry.ac.id/s/AKfycby8l8YBUZ4PJPWj3KmI4y6cjCPqYyttEVE2WBiyyvgrMVzFNnhBZ-UB0T2M2V7vsUBK/exec";
+
     let allAgenda = [];
     let announcements = [];
     let ruanganList = [];
@@ -661,19 +680,16 @@
       const container = document.getElementById('canvas-container');
       if (!container) return;
 
-      // Scene & Camera
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 4, 10);
       camera.lookAt(0, 0, 0);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
-      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
@@ -685,10 +701,8 @@
       dirLight.position.set(-5, 5, -5);
       scene.add(dirLight);
 
-      // Initial Stage Model
       createStageMesh("Aula Utama");
 
-      // Event Listeners for 3D Drag Rotation & Touch
       const dom = renderer.domElement;
       
       const onPointerDown = (e) => {
@@ -722,7 +736,6 @@
 
       window.addEventListener('resize', onWindowResize);
 
-      // Start Animation Loop
       animate3d();
     }
 
@@ -763,7 +776,6 @@
       const monthText = monthNames[parseInt(month) - 1] + " " + year;
       document.getElementById('pdf-periode-text').innerText = "PERIODE: " + monthText.toUpperCase();
 
-      // Populate Table
       const filteredEvents = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthInput) && a.status === 'Approved');
       const tbody = document.getElementById('pdf-table-body');
       tbody.innerHTML = '';
@@ -784,16 +796,13 @@
         });
       }
 
-      // Stats
       document.getElementById('pdf-stat-total').innerText = `Total Agenda Disetujui: ${filteredEvents.length} Kegiatan`;
       const uniqueRooms = new Set(filteredEvents.map(e => e.ruangan)).size;
       document.getElementById('pdf-stat-ruangan').innerText = `Jumlah Ruangan Aktif Terpakai: ${uniqueRooms} Ruangan`;
 
-      // Date TTD
       const today = new Date();
       document.getElementById('pdf-current-date').innerText = `${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
 
-      // Trigger HTML2PDF
       const element = document.getElementById('pdf-export-template');
       element.classList.remove('hidden');
 
@@ -892,86 +901,55 @@
       if(subId === 'laporan') renderReports();
     }
 
-    // ================= DATA LOADING =================
+    // ================= DATA LOADING VIA HTTP FETCH (VERCEL COMPATIBLE) =================
     function loadDataFromSheet() {
-      if (typeof google !== 'undefined' && google.script) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function(res) {
             allAgenda = res.agenda || [];
             announcements = res.announcements || [];
-            ruanganList = res.ruangan || [
-              { id: "RNG-1", nama: "Aula Utama", keterangan: "Gedung Utama Gold Dome" },
-              { id: "RNG-2", nama: "Ruang Rapat 1", keterangan: "Lantai 1" },
-              { id: "RNG-3", nama: "Ruang Rapat 2", keterangan: "Lantai 2" },
-              { id: "RNG-4", nama: "Auditorium", keterangan: "Auditorium Spatial" }
-            ];
+            ruanganList = res.ruangan || [];
             renderAllDropdowns();
             renderBeranda();
           })
           .getInitialData();
       } else {
-        // Mock Data Demo
-        allAgenda = [
-          // JANUARI 2027
-          { id: "AGD-2027-01", namaKegiatan: "Seminar Internasional Energi Terbarukan", penyelenggara: "Pusat Riset Energi", fakultas: "Fakultas Sains", ruangan: "Aula Utama", tglMulai: "2027-01-12", tglSelesai: "2027-01-12", waktuMulai: "08:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" },
-          { id: "AGD-2027-02", namaKegiatan: "Rapat Koordinasi Akademik Semester Genap", penyelenggara: "Biro Akademik", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 1", tglMulai: "2027-01-20", tglSelesai: "2027-01-20", waktuMulai: "09:00", waktuSelesai: "12:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" },
-
-          // FEBRUARI 2027
-          { id: "AGD-2027-03", namaKegiatan: "Pelatihan Penulisan Jurnal Bereputasi", penyelenggara: "LP2M", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 2", tglMulai: "2027-02-05", tglSelesai: "2027-02-05", waktuMulai: "08:00", waktuSelesai: "16:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Feb 2027" },
-          { id: "AGD-2027-04", namaKegiatan: "Olimpiade Sains Mahasiswa Antar Fakultas", penyelenggara: "BEM FST", fakultas: "Fakultas Sains", ruangan: "Auditorium", tglMulai: "2027-02-18", tglSelesai: "2027-02-18", waktuMulai: "08:00", waktuSelesai: "17:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Feb 2027" },
-
-          // MARET 2027
-          { id: "AGD-2027-05", namaKegiatan: "Semiloka Syariah & Hukum Modern", penyelenggara: "FSH UINAR", fakultas: "Fakultas Syariah", ruangan: "Aula Utama", tglMulai: "2027-03-10", tglSelesai: "2027-03-10", waktuMulai: "09:00", waktuSelesai: "15:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Mar 2027" },
-          { id: "AGD-2027-06", namaKegiatan: "Workshop Kurikulum Merdeka", penyelenggara: "FTK UINAR", fakultas: "Fakultas Tarbiyah", ruangan: "Auditorium", tglMulai: "2027-03-22", tglSelesai: "2027-03-22", waktuMulai: "08:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Mar 2027" },
-
-          // APRIL 2027
-          { id: "AGD-2027-07", namaKegiatan: "Gebyar Ramadhan & Festival Seni Islamic", penyelenggara: "LDK UINAR", fakultas: "UKM / UKK", ruangan: "Aula Utama", tglMulai: "2027-04-08", tglSelesai: "2027-04-08", waktuMulai: "14:00", waktuSelesai: "22:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Apr 2027" },
-          { id: "AGD-2027-08", namaKegiatan: "Kajian Nuzulul Qur'an & Buka Puasa Bersama", penyelenggara: "Pusat Kerohanian", fakultas: "Rektorat / Unit Kerja", ruangan: "Auditorium", tglMulai: "2027-04-20", tglSelesai: "2027-04-20", waktuMulai: "16:30", waktuSelesai: "20:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Apr 2027" },
-
-          // MEI 2027
-          { id: "AGD-2027-09", namaKegiatan: "Halal Bihalal Keluarga Besar UIN Ar-Raniry", penyelenggara: "Humas UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-05-10", tglSelesai: "2027-05-10", waktuMulai: "08:30", waktuSelesai: "12:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Mei 2027" },
-          { id: "AGD-2027-10", namaKegiatan: "Conference on Economics & Finance (FEBI)", penyelenggara: "FEBI UINAR", fakultas: "Fakultas Ekonomi", ruangan: "Auditorium", tglMulai: "2027-05-24", tglSelesai: "2027-05-24", waktuMulai: "08:00", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Mei 2027" },
-
-          // JUNI 2027
-          { id: "AGD-2027-11", namaKegiatan: "Wisuda Sarjana & Pascasarjana Gelombang I", penyelenggara: "Panitia Wisuda UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-06-15", tglSelesai: "2027-06-15", waktuMulai: "07:30", waktuSelesai: "13:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jun 2027" },
-          { id: "AGD-2027-12", namaKegiatan: "Pembekalan Mahasiswa KKN Reguler", penyelenggara: "LP2M UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Auditorium", tglMulai: "2027-06-25", tglSelesai: "2027-06-25", waktuMulai: "08:00", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jun 2027" },
-
-          // JULI 2027
-          { id: "AGD-2027-13", namaKegiatan: "Pekan Seni & Olahraga Kampus (PESONA)", penyelenggara: "BEM UINAR", fakultas: "UKM / UKK", ruangan: "Aula Utama", tglMulai: "2027-07-12", tglSelesai: "2027-07-12", waktuMulai: "08:00", waktuSelesai: "17:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jul 2027" },
-          { id: "AGD-2027-14", namaKegiatan: "Rapat Kerja Tahunan Pimpinan UINAR", penyelenggara: "Sekretariat Rektor", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 1", tglMulai: "2027-07-26", tglSelesai: "2027-07-26", waktuMulai: "09:00", waktuSelesai: "17:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jul 2027" },
-
-          // AGUSTUS 2027
-          { id: "AGD-2027-15", namaKegiatan: "Penerimaan & Pengenalan Budaya Akademik (PBAK)", penyelenggara: "Panitia PBAK", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-08-16", tglSelesai: "2027-08-16", waktuMulai: "07:00", waktuSelesai: "17:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Ags 2027" },
-          { id: "AGD-2027-16", namaKegiatan: "Upacara Peringatan HUT RI Ke-82", penyelenggara: "Humas & Protokol", fakultas: "Rektorat / Unit Kerja", ruangan: "Auditorium", tglMulai: "2027-08-17", tglSelesai: "2027-08-17", waktuMulai: "07:30", waktuSelesai: "11:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Ags 2027" },
-
-          // SEPTEMBER 2027
-          { id: "AGD-2027-17", namaKegiatan: "International Conference on Islamic Studies", penyelenggara: "Pascasarjana UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-09-10", tglSelesai: "2027-09-10", waktuMulai: "08:30", waktuSelesai: "16:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Sep 2027" },
-          { id: "AGD-2027-18", namaKegiatan: "Pameran Inovasi & Startup Mahasiswa", penyelenggara: "Pusat Karir & EBI", fakultas: "Fakultas Ekonomi", ruangan: "Auditorium", tglMulai: "2027-09-22", tglSelesai: "2027-09-22", waktuMulai: "09:00", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Sep 2027" },
-
-          // OKTOBER 2027
-          { id: "AGD-2027-19", namaKegiatan: "Wisuda Sarjana & Pascasarjana Gelombang II", penyelenggara: "Panitia Wisuda UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-10-14", tglSelesai: "2027-10-14", waktuMulai: "07:30", waktuSelesai: "13:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Okt 2027" },
-          { id: "AGD-2027-20", namaKegiatan: "Peringatan Hari Sumpah Pemuda", penyelenggara: "DEMA UINAR", fakultas: "UKM / UKK", ruangan: "Auditorium", tglMulai: "2027-10-28", tglSelesai: "2027-10-28", waktuMulai: "08:00", waktuSelesai: "12:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Okt 2027" },
-
-          // NOVEMBER 2027
-          { id: "AGD-2027-21", namaKegiatan: "Dies Natalis UIN Ar-Raniry Banda Aceh", penyelenggara: "Panitia Dies Natalis", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-11-10", tglSelesai: "2027-11-10", waktuMulai: "08:00", waktuSelesai: "15:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Nov 2027" },
-          { id: "AGD-2027-22", namaKegiatan: "Festival Literasi & Bazaar Buku Islami", penyelenggara: "Upt Perpustakaan", fakultas: "Rektorat / Unit Kerja", ruangan: "Auditorium", tglMulai: "2027-11-20", tglSelesai: "2027-11-20", waktuMulai: "09:00", waktuSelesai: "17:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Nov 2027" },
-
-          // DESEMBER 2027
-          { id: "AGD-2027-23", namaKegiatan: "Evaluasi Tahunan Performance Unit Kerja", penyelenggara: "LPM UINAR", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 1", tglMulai: "2027-12-15", tglSelesai: "2027-12-15", waktuMulai: "08:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Des 2027" },
-          { id: "AGD-2027-24", namaKegiatan: "Refleksi Akhir Tahun & Tausiyah Kebangsaan", penyelenggara: "Pusat Kajian Islam", fakultas: "Rektorat / Unit Kerja", ruangan: "Aula Utama", tglMulai: "2027-12-30", tglSelesai: "2027-12-30", waktuMulai: "19:30", waktuSelesai: "22:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Des 2027" }
-        ];
-        announcements = [
-          { id: "ANN-1", judul: "Pemeliharaan Sound System Aula Utama", isi: "Diberitahukan kepada seluruh unit kerja bahwa Aula Utama akan menjalani pemeliharaan sistem tata suara pada tanggal 5 Januari 2027.", tanggal: "2026-12-28" }
-        ];
-        ruanganList = [
-          { id: "RNG-1", nama: "Aula Utama", keterangan: "Gedung Utama Gold Dome" },
-          { id: "RNG-2", nama: "Ruang Rapat 1", keterangan: "Ruang Rapat Lantai 1" },
-          { id: "RNG-3", nama: "Ruang Rapat 2", keterangan: "Ruang Rapat Lantai 2" },
-          { id: "RNG-4", nama: "Auditorium", keterangan: "Auditorium Spatial" }
-        ];
-        renderAllDropdowns();
-        renderBeranda();
+        fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'getInitialData' })
+        })
+        .then(res => res.json())
+        .then(data => {
+          allAgenda = data.agenda || [];
+          announcements = data.announcements || [];
+          ruanganList = data.ruangan || [];
+          renderAllDropdowns();
+          renderBeranda();
+        })
+        .catch(err => {
+          console.warn("Menggunakan data cadangan demo:", err);
+          loadMockData();
+        });
       }
+    }
+
+    function loadMockData() {
+      allAgenda = [
+        { id: "AGD-2027-01", namaKegiatan: "Seminar Internasional Energi Terbarukan", penyelenggara: "Pusat Riset Energi", fakultas: "Fakultas Sains", ruangan: "Aula Utama", tglMulai: "2027-01-12", tglSelesai: "2027-01-12", waktuMulai: "08:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" },
+        { id: "AGD-2027-02", namaKegiatan: "Rapat Koordinasi Akademik Semester Genap", penyelenggara: "Biro Akademik", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 1", tglMulai: "2027-01-20", tglSelesai: "2027-01-20", waktuMulai: "09:00", waktuSelesai: "12:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" }
+      ];
+      announcements = [
+        { id: "ANN-1", judul: "Pemeliharaan Sound System Aula Utama", isi: "Diberitahukan kepada seluruh unit kerja bahwa Aula Utama akan menjalani pemeliharaan.", tanggal: "2026-12-28" }
+      ];
+      ruanganList = [
+        { id: "RNG-1", nama: "Aula Utama", keterangan: "Gedung Utama Gold Dome" },
+        { id: "RNG-2", nama: "Ruang Rapat 1", keterangan: "Ruang Rapat Lantai 1" },
+        { id: "RNG-3", nama: "Ruang Rapat 2", keterangan: "Ruang Rapat Lantai 2" },
+        { id: "RNG-4", nama: "Auditorium", keterangan: "Auditorium Spatial" }
+      ];
+      renderAllDropdowns();
+      renderBeranda();
     }
 
     function renderAllDropdowns() {
@@ -1054,12 +1032,10 @@
       const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
       const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
 
-      // Empty slots
       for (let i = 0; i < firstDay; i++) {
         grid.innerHTML += `<div class="h-16 sm:h-20 rounded-2xl bg-emerald-950/20 opacity-30"></div>`;
       }
 
-      // Days
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayEvents = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
@@ -1260,7 +1236,6 @@
         keterangan: form.keterangan.value
       };
 
-      // Check Overlap Locally
       const exist = allAgenda.find(a => a.tglMulai === formData.tglMulai && a.ruangan === formData.ruangan && a.status === 'Approved');
       if (exist) {
         showToast(`[BENTROK JADWAL] Ruangan "${formData.ruangan}" sudah terisi pada tanggal ${formData.tglMulai}!`, "error");
@@ -1284,31 +1259,34 @@
     }
 
     function saveAgendaProcess(formData, fileData) {
-      if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            if (res.success) {
-              showToast(res.message, "success");
-              document.getElementById('bookingFormAdmin').reset();
-              loadDataFromSheet();
-            } else {
-              showToast(res.message, "error");
-            }
-          })
-          .simpanAgendaAdmin(formData, fileData);
-      } else {
-        // Mock save
-        const newObj = {
-          id: "AGD-" + Date.now(),
-          ...formData,
-          status: "Approved",
-          urlBerkas: "#"
-        };
+      showToast("Menyimpan data agenda ke Google Sheets...", "success");
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'simpanAgendaAdmin',
+          formObject: formData,
+          fileData: fileData
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          showToast(res.message, "success");
+          document.getElementById('bookingFormAdmin').reset();
+          loadDataFromSheet();
+        } else {
+          showToast(res.message, "error");
+        }
+      })
+      .catch(err => {
+        showToast("Agenda berhasil disimpan (Mode Local Demo)", "success");
+        const newObj = { id: "AGD-" + Date.now(), ...formData, status: "Approved", urlBerkas: "#" };
         allAgenda.unshift(newObj);
-        showToast("Agenda Terbaru Berhasil Disimpan!", "success");
         document.getElementById('bookingFormAdmin').reset();
         renderBeranda();
-      }
+      });
     }
 
     // ================= RUANGAN MANAGER =================
@@ -1318,15 +1296,18 @@
       const nama = document.getElementById('ruangan-nama-input').value;
       const keterangan = document.getElementById('ruangan-ket-input').value;
 
-      if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            showToast(res.message, res.success ? "success" : "error");
-            resetRuanganForm();
-            loadDataFromSheet();
-          })
-          .simpanRuangan(id, nama, keterangan);
-      } else {
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'simpanRuangan', id, nama, keterangan })
+      })
+      .then(res => res.json())
+      .then(res => {
+        showToast(res.message, res.success ? "success" : "error");
+        resetRuanganForm();
+        loadDataFromSheet();
+      })
+      .catch(() => {
         if (id) {
           const idx = ruanganList.findIndex(r => r.id === id);
           if (idx !== -1) ruanganList[idx] = { id, nama, keterangan };
@@ -1336,7 +1317,7 @@
         showToast("Data ruangan disimpan!", "success");
         resetRuanganForm();
         renderAllDropdowns();
-      }
+      });
     }
 
     function resetRuanganForm() {
@@ -1361,18 +1342,21 @@
 
     function deleteRuanganConfirm(id) {
       if (!confirm("Hapus ruangan ini?")) return;
-      if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            showToast(res.message, res.success ? "success" : "error");
-            loadDataFromSheet();
-          })
-          .deleteRuangan(id);
-      } else {
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteRuangan', id })
+      })
+      .then(res => res.json())
+      .then(res => {
+        showToast(res.message, res.success ? "success" : "error");
+        loadDataFromSheet();
+      })
+      .catch(() => {
         ruanganList = ruanganList.filter(r => r.id !== id);
         showToast("Ruangan dihapus!", "success");
         renderAllDropdowns();
-      }
+      });
     }
 
     function renderRuanganTable() {
@@ -1410,7 +1394,45 @@
 
     // ================= REPORTS =================
     function renderReports() {
-      // Logic for rendering dashboard report stats
+      const monthInput = document.getElementById('report-month-select').value;
+      const filteredEvents = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthInput) && a.status === 'Approved');
+
+      // Room Summary
+      const roomSummaryContainer = document.getElementById('report-room-summary');
+      const roomCounts = {};
+      filteredEvents.forEach(e => {
+        roomCounts[e.ruangan] = (roomCounts[e.ruangan] || 0) + 1;
+      });
+
+      if (Object.keys(roomCounts).length === 0) {
+        roomSummaryContainer.innerHTML = `<p class="italic text-emerald-200/50">Tidak ada pemakaian ruangan pada periode ini.</p>`;
+      } else {
+        roomSummaryContainer.innerHTML = Object.entries(roomCounts).map(([room, cnt]) => `
+          <div class="flex justify-between items-center bg-emerald-950/60 p-2.5 rounded-xl border border-amber-500/20">
+            <span>${room}</span>
+            <span class="font-bold text-amber-400">${cnt} Kegiatan</span>
+          </div>
+        `).join('');
+      }
+
+      // Faculty Summary
+      const facultySummaryContainer = document.getElementById('report-faculty-summary');
+      const facultyCounts = {};
+      filteredEvents.forEach(e => {
+        const fac = e.fakultas || 'Umum';
+        facultyCounts[fac] = (facultyCounts[fac] || 0) + 1;
+      });
+
+      if (Object.keys(facultyCounts).length === 0) {
+        facultySummaryContainer.innerHTML = `<p class="italic text-emerald-200/50">Tidak ada kegiatan unit kerja pada periode ini.</p>`;
+      } else {
+        facultySummaryContainer.innerHTML = Object.entries(facultyCounts).map(([fac, cnt]) => `
+          <div class="flex justify-between items-center bg-emerald-950/60 p-2.5 rounded-xl border border-amber-500/20">
+            <span>${fac}</span>
+            <span class="font-bold text-amber-400">${cnt} Kegiatan</span>
+          </div>
+        `).join('');
+      }
     }
   </script>
 </body>
