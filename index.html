@@ -1,1525 +1,988 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-slate-950">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Spatial Agenda & Booking Aula - UIN Ar-Raniry Banda Aceh</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Booking Aula & Agenda - UIN Ar-Raniry Banda Aceh</title>
   
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js (3D Library) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- html2pdf.js for PDF Exporting -->
+  <!-- Three.js untuk 3D Virtual Stage -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- SheetJS untuk Parsing Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- html2pdf untuk Cetak Laporan PDF Resmi -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <!-- SheetJS (xlsx) for Importing Excel Files -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      overflow-x: hidden;
-      background-color: #022c22; /* Emerald 950 base */
-    }
-
-    .font-arabic {
-      font-family: 'Amiri', serif;
-    }
-
-    /* Geometric Islamic SVG Pattern Overlay */
     .bg-islamic-pattern {
-      background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f59e0b' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40zm0-40h40v40H40V0zM0 40h40v40H0V40z'/%3E%3Cpath d='M20 0l20 20-20 20L0 20zM60 0l20 20-20 20-20-20zM20 40l20 20-20 20-20-20zM60 40l20 20-20 20-20-20z'/%3E%3Cpath d='M20 10l10 10-10 10-10-10zM60 10l10 10-10 10-10-10zM20 50l10 10-10 10-10-10zM60 50l10 10-10 10-10-10z'/%3E%3C/g%3E%3C/svg%3E");
+      background-color: #064e3b;
+      background-image: radial-gradient(#d97706 0.75px, transparent 0.75px), radial-gradient(#d97706 0.75px, #064e3b 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+      opacity: 0.97;
     }
-
-    /* Glassmorphic Islamic Card */
-    .glass-panel {
-      background: rgba(4, 47, 38, 0.78);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(245, 158, 11, 0.25);
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    
-    .glass-card {
-      background: rgba(6, 78, 59, 0.55);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(245, 158, 11, 0.18);
+    .gold-border {
+      border: 1px solid rgba(245, 158, 11, 0.4);
     }
-
-    /* Islamic Golden Arch / Frame Accent */
-    .islamic-border {
-      position: relative;
+    .gold-btn {
+      background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #78350f 100%);
+      color: #ffffff;
+      transition: all 0.3s ease;
     }
-    .islamic-border::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 50%; transform: translateX(-50%);
-      width: 60px; height: 3px;
-      background: linear-gradient(90deg, transparent, #f59e0b, transparent);
-    }
-
-    /* Glowing Effects */
-    .glow-gold {
-      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
-    }
-    .glow-emerald {
-      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
-    }
-    
-    /* Modern Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(2, 44, 34, 0.8);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(245, 158, 11, 0.5);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(245, 158, 11, 0.8);
-    }
-
-    canvas {
-      touch-action: none;
+    .gold-btn:hover {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #b45309 100%);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
     }
   </style>
 </head>
-<body class="h-full text-amber-50 antialiased selection:bg-amber-500 selection:text-slate-950 flex flex-col bg-islamic-pattern">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
 
-  <!-- ================= BACKGROUND 3D CANVAS ================= -->
-  <div id="canvas-container" class="fixed inset-0 z-0 pointer-events-auto"></div>
-
-  <!-- ================= NAVBAR RESPONSIF UIN AR-RANIRY ================= -->
-  <header class="relative z-40 w-full px-4 sm:px-8 py-3">
-    <nav class="max-w-7xl mx-auto glass-panel rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xl transition-all duration-300 islamic-border">
-      <!-- Logo & Brand UIN Ar-Raniry -->
-      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchTab('beranda')">
-        <div class="p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl group-hover:scale-105 transition duration-300 shadow-lg glow-gold">
-          <!-- Geometric Islamic Octagram Symbol -->
-          <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.4 3.6 4.3-1.3-1.3 4.3 3.6 2.4-3.6 2.4 1.3 4.3-4.3-1.3L12 22l-2.4-3.6-4.3 1.3 1.3-4.3-3.6-2.4 3.6-2.4-1.3-4.3 4.3 1.3L12 2z"/>
-          </svg>
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
-              UIN <span class="text-emerald-400">AR-RANIRY</span>
-            </span>
-            <span class="font-arabic text-amber-400 text-sm hidden sm:inline">جامعة أر الرانيري</span>
+  <!-- NAVBAR RESPONSIF -->
+  <nav class="bg-emerald-950 border-b border-amber-500/30 sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('beranda')">
+          <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
+            <i data-lucide="building-2" class="w-6 h-6 text-amber-400"></i>
           </div>
-          <span class="block text-[10px] text-emerald-300/70 font-medium tracking-widest uppercase">Agenda & Booking Aula / Gedung Acara</span>
-        </div>
-      </div>
-
-      <!-- Desktop Navigation Menu -->
-      <div class="hidden md:flex items-center space-x-2 bg-emerald-950/80 p-1.5 rounded-xl border border-amber-500/20">
-        <button onclick="switchTab('beranda')" id="nav-beranda" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2 text-amber-400 bg-amber-500/10 border border-amber-500/30">
-          <i data-lucide="compass" class="w-4 h-4"></i><span>Beranda & Virtual Stage</span>
-        </button>
-        <button onclick="switchTab('kalender-tahun')" id="nav-kalender-tahun" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-emerald-200/80 hover:text-amber-300 hover:bg-emerald-900/60 transition-all flex items-center space-x-2">
-          <i data-lucide="calendar-range" class="w-4 h-4"></i><span>Kalender Setahun</span>
-        </button>
-        <button onclick="switchTab('arsip')" id="nav-arsip" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-emerald-200/80 hover:text-amber-300 hover:bg-emerald-900/60 transition-all flex items-center space-x-2">
-          <i data-lucide="archive" class="w-4 h-4"></i><span>Arsip Kegiatan</span>
-        </button>
-      </div>
-
-      <!-- Admin Login / Portal Button -->
-      <div class="flex items-center space-x-3">
-        <button onclick="handleAdminTabClick()" id="nav-admin" class="flex items-center space-x-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-sm transition shadow-lg glow-gold active:scale-95">
-          <i data-lucide="shield-check" class="w-4 h-4"></i><span id="admin-btn-text">Dashboard Admin</span>
-        </button>
-
-        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-emerald-900/80 border border-amber-500/30 text-amber-400 hover:text-white focus:outline-none active:scale-95">
-          <i data-lucide="menu" class="w-6 h-6"></i>
-        </button>
-      </div>
-    </nav>
-
-    <!-- Mobile Menu Dropdown -->
-    <div id="mobile-menu" class="hidden md:hidden max-w-7xl mx-auto mt-2 glass-panel rounded-2xl p-4 space-y-2 shadow-2xl animate-fade-in border border-amber-500/30">
-      <button onclick="switchTab('beranda'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center space-x-3">
-        <i data-lucide="compass" class="w-5 h-5"></i><span>Beranda & Stage 3D</span>
-      </button>
-      <button onclick="switchTab('kalender-tahun'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-emerald-100 hover:bg-emerald-900/60 flex items-center space-x-3">
-        <i data-lucide="calendar-range" class="w-5 h-5"></i><span>Kalender Setahun</span>
-      </button>
-      <button onclick="switchTab('arsip'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-emerald-100 hover:bg-emerald-900/60 flex items-center space-x-3">
-        <i data-lucide="archive" class="w-5 h-5"></i><span>Arsip Kegiatan</span>
-      </button>
-      <button onclick="handleAdminTabClick(); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 flex items-center space-x-3 mt-2 shadow-md">
-        <i data-lucide="shield-check" class="w-5 h-5"></i><span>Dashboard Admin</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- ================= MAIN CONTENT WRAPPER ================= -->
-  <main class="relative z-30 max-w-7xl mx-auto px-4 sm:px-8 py-4 flex-grow w-full flex flex-col justify-between pointer-events-none">
-
-    <!-- Toast Notification -->
-    <div id="toast" class="pointer-events-auto hidden mb-6 p-4 rounded-xl text-white shadow-2xl glass-panel flex items-center justify-between border border-amber-500/40 animate-bounce">
-      <div class="flex items-center space-x-3">
-        <div id="toast-icon" class="p-2 bg-amber-500/20 rounded-lg text-amber-400">
-          <i data-lucide="check-circle" class="w-5 h-5"></i>
-        </div>
-        <span id="toast-message" class="text-sm font-medium"></span>
-      </div>
-      <button onclick="hideToast()" class="p-1 text-emerald-300 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
-    </div>
-
-    <!-- ================= MODAL LOGIN ADMIN ================= -->
-    <div id="modal-login-admin" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-emerald-950/85 backdrop-blur-md pointer-events-auto">
-      <div class="glass-panel w-full max-w-md rounded-3xl p-6 border border-amber-500/40 shadow-2xl space-y-4 relative animate-fade-in islamic-border">
-        <div class="flex items-center justify-between pb-3 border-b border-amber-500/20">
-          <div class="flex items-center space-x-3">
-            <div class="p-2.5 bg-amber-500/20 rounded-xl border border-amber-500/40 text-amber-400 glow-gold">
-              <i data-lucide="lock" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h3 class="text-lg font-extrabold text-white">Login Autentikasi Admin</h3>
-              <p class="text-xs text-amber-300/80">Masukkan password admin untuk mengelola booking & pengumuman</p>
-            </div>
-          </div>
-          <button onclick="closeModalLogin()" class="p-2 rounded-xl bg-emerald-900/80 text-amber-300 hover:text-white border border-amber-500/30 active:scale-95 transition">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <form onsubmit="verifyAdminPass(event)" class="space-y-4 pt-2">
           <div>
-            <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">KATA SANDI ADMIN *</label>
-            <div class="relative">
-              <!-- PLACEHOLDER DISESUAIKAN: PASSWORD DEFAULT DILINDUNGI & TIDAK DITAMPILKAN -->
-              <input type="password" id="admin-pass-input" placeholder="Masukkan Kata Sandi Admin" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl pl-4 pr-11 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
-              <button type="button" onclick="togglePassVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400/70 hover:text-amber-300 p-1 focus:outline-none">
-                <i data-lucide="eye" id="pass-toggle-icon" class="w-5 h-5"></i>
-              </button>
-            </div>
+            <h1 class="font-bold text-lg text-amber-300 tracking-wide">UIN AR-RANIRY</h1>
+            <p class="text-xs text-emerald-200">Agenda & Booking Aula / Gedung Acara</p>
           </div>
-          <button type="submit" class="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg glow-gold flex justify-center items-center space-x-2 border border-amber-300/40 active:scale-95">
-            <i data-lucide="key" class="w-4 h-4"></i>
-            <span>Masuk Dashboard Admin</span>
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
 
-    <!-- ================= MODAL DETAIL AGENDA TANGGAL ================= -->
-    <div id="modal-detail-tanggal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-emerald-950/85 backdrop-blur-md pointer-events-auto">
-      <div class="glass-panel w-full max-w-lg rounded-3xl p-6 border border-amber-500/40 shadow-2xl space-y-4 relative animate-fade-in islamic-border">
-        <div class="flex items-center justify-between pb-3 border-b border-amber-500/20">
-          <div class="flex items-center space-x-3">
-            <div class="p-2.5 bg-amber-500/20 rounded-xl border border-amber-500/40 text-amber-400 glow-gold">
-              <i data-lucide="calendar-check" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <div class="flex items-center space-x-2">
-                <h3 class="text-lg font-extrabold text-white">Detail Booking Agenda</h3>
-                <span class="font-arabic text-amber-400 text-sm">جدول</span>
-              </div>
-              <p id="modal-date-title" class="text-xs font-semibold text-amber-300/80"></p>
-            </div>
-          </div>
-          <button onclick="closeModalDetail()" class="p-2 rounded-xl bg-emerald-900/80 text-amber-300 hover:text-white border border-amber-500/30 active:scale-95 transition">
-            <i data-lucide="x" class="w-5 h-5"></i>
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center space-x-2">
+          <button onclick="switchTab('beranda')" id="nav-beranda" class="px-4 py-2 rounded-lg text-sm font-medium transition text-amber-400 bg-emerald-900/60 border border-amber-500/30">Beranda</button>
+          <button onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition">Kalender Setahun</button>
+          <button onclick="switchTab('arsip')" id="nav-arsip" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition">Arsip Kegiatan</button>
+          <button onclick="bukaModalLoginAdmin()" id="nav-admin" class="px-4 py-2 rounded-lg text-sm font-medium gold-btn flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Dashboard Admin
           </button>
         </div>
-        <div id="modal-events-list" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
-        <div class="pt-3 border-t border-amber-500/20 flex justify-end">
-          <button onclick="closeModalDetail()" class="px-5 py-2 bg-emerald-900 hover:bg-emerald-800 text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 transition">
-            Tutup
+
+        <!-- Mobile Menu Button -->
+        <div class="md:hidden">
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-amber-400 hover:bg-emerald-900">
+            <i data-lucide="menu" class="w-6 h-6"></i>
           </button>
         </div>
       </div>
     </div>
+    
+    <!-- Mobile Dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden bg-emerald-950 border-t border-amber-500/30 px-4 pt-2 pb-4 space-y-2">
+      <button onclick="switchTab('beranda'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 text-amber-300">Beranda</button>
+      <button onclick="switchTab('tahunan'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 text-emerald-100">Kalender Setahun</button>
+      <button onclick="switchTab('arsip'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 text-emerald-100">Arsip Kegiatan</button>
+      <button onclick="bukaModalLoginAdmin(); toggleMobileMenu();" class="block w-full text-left px-3 py-2 text-amber-400 font-bold">Dashboard Admin</button>
+    </div>
+  </nav>
 
-    <!-- ================= SECTION 1: BERANDA UIN AR-RANIRY 3D STAGE ================= -->
-    <section id="tab-beranda" class="tab-content space-y-6 pointer-events-auto">
-      
-      <!-- PENGUMUMAN LIVE BANNER -->
-      <div id="announcement-banner-container" class="space-y-3">
-        <!-- Dynamic Announcements Rendered Here -->
-      </div>
+  <!-- NOTIFIKASI TOAST -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
-      <!-- Header Banner UIN Ar-Raniry & Controls -->
-      <div class="glass-panel p-6 rounded-3xl shadow-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border border-amber-500/30 islamic-border">
+  <!-- CONTAINER UTAMA -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- 1. TAB BERANDA -->
+    <section id="tab-beranda" class="space-y-6">
+      <!-- Announcement Banner -->
+      <div id="announcement-banner" class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3 shadow-md">
+        <i data-lucide="megaphone" class="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5"></i>
         <div>
-          <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-3">
-            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span>Spatial Virtual Stage 3D - UIN Ar-Raniry</span>
-          </div>
-          <div class="flex items-center space-x-3">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Agenda & Booking Aula / Gedung Acara</h1>
-            <span class="font-arabic text-2xl text-amber-400 hidden sm:inline">جامعة أر الرانيري</span>
-          </div>
-          <p class="text-sm text-emerald-200/70 mt-1">UIN Ar-Raniry Banda Aceh - Inspeksi ruangan 3D interaktif dan jadwal penggunaan gedung acara.</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div class="flex items-center space-x-2 bg-emerald-950/80 px-3 py-2 rounded-xl border border-amber-500/30">
-            <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
-            <select id="select-ruangan-3d" onchange="change3dRoom(this.value)" class="bg-transparent text-xs font-semibold text-emerald-100 focus:outline-none">
-              <option value="Aula Utama" class="bg-emerald-950 text-white">Aula Utama (Gold Dome)</option>
-              <option value="Ruang Rapat 1" class="bg-emerald-950 text-white">Ruang Rapat 1</option>
-              <option value="Ruang Rapat 2" class="bg-emerald-950 text-white">Ruang Rapat 2</option>
-              <option value="Auditorium" class="bg-emerald-950 text-white">Auditorium Spatial</option>
-            </select>
-          </div>
-
-          <div class="flex items-center space-x-2 bg-emerald-950/80 px-3 py-2 rounded-xl border border-amber-500/30">
-            <i data-lucide="calendar" class="w-4 h-4 text-amber-400"></i>
-            <input type="month" id="filter-bulan" class="bg-transparent text-xs font-semibold text-emerald-100 focus:outline-none" onchange="renderBeranda()">
-          </div>
+          <h4 class="font-bold text-amber-300 text-sm">PENGUMUMAN RESMI</h4>
+          <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Kalender Bulanan Interaktif -->
-        <div class="lg:col-span-2 glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-6 pb-3 border-b border-amber-500/20">
-            <div class="flex items-center space-x-3">
-              <div class="p-2 bg-amber-500/20 rounded-xl border border-amber-500/30 text-amber-400">
-                <i data-lucide="calendar-days" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <h2 id="month-year-header" class="text-lg font-extrabold text-white tracking-wide"></h2>
-                <span class="text-[11px] text-amber-400/80 font-arabic">التقويم الهجري والميلادي</span>
-              </div>
-            </div>
-            <div class="flex items-center space-x-2">
-              <button onclick="prevMonth()" class="p-2 hover:bg-emerald-900/80 rounded-xl border border-amber-500/30 text-amber-300 transition active:scale-95"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-              <button onclick="nextMonth()" class="p-2 hover:bg-emerald-900/80 rounded-xl border border-amber-500/30 text-amber-300 transition active:scale-95"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-7 gap-2 text-center font-bold text-xs text-amber-300 uppercase tracking-widest mb-3">
-            <div>Ahad</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
-          </div>
-          <div id="calendar-days-grid" class="grid grid-cols-7 gap-2"></div>
-        </div>
-
-        <!-- Agenda Harian Panel -->
-        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 flex flex-col">
-          <div class="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-4">
-            <h2 class="text-base font-bold text-white flex items-center space-x-2">
-              <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i>
-              <span>Agenda Terjadwal</span>
+      <!-- 3D Stage & Spatial Room Inspector -->
+      <div class="bg-emerald-950/70 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-xl font-bold gold-gradient-text flex items-center gap-2">
+              <i data-lucide="box" class="w-5 h-5 text-amber-400"></i> Panggung & Spatial Virtual Aula 3D
             </h2>
-            <span id="selected-date-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300"></span>
+            <p class="text-xs text-slate-300">Visualisasi 3D tata letak panggung dan ketersediaan gedung secara interaktif.</p>
           </div>
-
-          <div id="daily-agenda-list" class="space-y-3 overflow-y-auto max-h-[380px] flex-grow pr-1"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= SECTION 2: KALENDER SETAHUN ================= -->
-    <section id="tab-kalender-tahun" class="tab-content hidden space-y-6 pointer-events-auto">
-      <div class="glass-panel p-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-amber-500/30 islamic-border">
-        <div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">Kalender Tahunan Agenda</h1>
-          <p class="text-sm text-emerald-200/70">Matriks tinjauan jadwal 12 bulan sepanjang tahun.</p>
-        </div>
-        <div class="flex items-center space-x-3 bg-emerald-950/80 px-4 py-2 rounded-xl border border-amber-500/30">
-          <i data-lucide="filter" class="w-4 h-4 text-amber-400"></i>
-          <select id="select-year" class="bg-transparent text-sm font-bold text-amber-200 focus:outline-none cursor-pointer" onchange="renderYearlyCalendar()">
-            <option value="2026" class="bg-emerald-950">Tahun 2026 M / 1447 H</option>
-            <option value="2027" class="bg-emerald-950">Tahun 2027 M / 1448 H</option>
+          <select id="stage-room-select" onchange="render3DStage()" class="bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-2.5">
+            <!-- Populated dynamically -->
           </select>
         </div>
-      </div>
-      <div id="yearly-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-    </section>
-
-    <!-- ================= SECTION 3: ARSIP KEGIATAN ================= -->
-    <section id="tab-arsip" class="tab-content hidden space-y-6 pointer-events-auto">
-      <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 islamic-border">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-amber-500/20">
-          <div class="flex items-center space-x-3">
-            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400 glow-gold">
-              <i data-lucide="archive" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h1 class="text-xl font-bold text-white">Arsip Kegiatan & Dokumentasi Drive</h1>
-              <p class="text-xs text-emerald-200/70">Riwayat histori kegiatan aula UIN Ar-Raniry yang telah atau akan dilaksanakan</p>
-            </div>
+        <div id="canvas-3d-container" class="w-full h-64 sm:h-80 bg-slate-900/90 rounded-xl overflow-hidden border border-emerald-800 relative cursor-grab active:cursor-grabbing">
+          <div class="absolute top-3 left-3 bg-slate-950/80 px-3 py-1 rounded-full text-[10px] text-amber-400 border border-amber-500/30">
+            Gunakan mouse/sentuhan untuk memutar tampilan 3D
           </div>
-          
-          <input type="text" id="search-arsip" oninput="renderArsipTable()" placeholder="Cari nama kegiatan / unit kerja..." class="bg-emerald-950/90 border border-amber-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none w-full sm:w-64">
-        </div>
-
-        <div class="overflow-x-auto rounded-2xl border border-amber-500/20">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-emerald-950/90 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20">
-                <th class="p-4">Kegiatan</th>
-                <th class="p-4">Fakultas / Unit Kerja</th>
-                <th class="p-4">Ruangan</th>
-                <th class="p-4">Tanggal & Jam</th>
-                <th class="p-4">Berkas Drive</th>
-              </tr>
-            </thead>
-            <tbody id="arsip-table-body" class="divide-y divide-amber-500/10 text-sm bg-emerald-950/40"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= SECTION 4: DASHBOARD ADMIN & LAPORAN ================= -->
-    <section id="tab-admin" class="tab-content hidden space-y-6 pointer-events-auto">
-      
-      <!-- Sub-Tab Header Admin -->
-      <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 islamic-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 class="text-2xl font-extrabold text-white flex items-center space-x-3">
-            <i data-lucide="shield-check" class="w-7 h-7 text-amber-400"></i>
-            <span>Dashboard Admin UIN Ar-Raniry</span>
-          </h1>
-          <p class="text-xs text-emerald-200/70 mt-1">Input agenda, kelola ruangan/aula, pengumuman beranda, & unduh rekapan laporan bulanan/per-fakultas.</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 bg-emerald-950/90 p-1.5 rounded-2xl border border-amber-500/30">
-          <button onclick="switchAdminSubTab('input')" id="subnav-input" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40">Input Booking</button>
-          <button onclick="switchAdminSubTab('excel')" id="subnav-excel" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Import Excel</button>
-          <button onclick="switchAdminSubTab('ruangan')" id="subnav-ruangan" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Kelola Ruangan</button>
-          <button onclick="switchAdminSubTab('pengumuman')" id="subnav-pengumuman" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Pengumuman</button>
-          <button onclick="switchAdminSubTab('laporan')" id="subnav-laporan" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Laporan & Rekapan</button>
         </div>
       </div>
 
-      <!-- ADMIN SUBTAB 1: INPUT AGENDA / BOOKING -->
-      <div id="admin-sub-input" class="admin-sub-content space-y-6">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
-          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
-            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
-              <i data-lucide="plus-circle" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold text-white">Input & Booking Tempat Baru (Admin Only)</h2>
-              <p class="text-xs text-emerald-200/70">Data langsung otomatis Approved & tersimpan di Google Sheets & Drive</p>
-            </div>
-          </div>
-
-      <!-- ADMIN SUBTAB BARU: IMPORT EXCEL MANUAL ARSIP KEGIATAN -->
-      <div id="admin-sub-excel" class="admin-sub-content hidden space-y-6">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
-          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
-            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
-              <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold text-white">Import File Excel Agenda & Arsip Kegiatan</h2>
-              <p class="text-xs text-emerald-200/70">Unggah berkas spreadsheet Excel (.xlsx / .xls / .csv) untuk memasukkan daftar kegiatan secara massal. Data otomatis dipilah berdasarkan tanggal & bulan.</p>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <div class="p-4 rounded-2xl bg-emerald-950/60 border border-amber-500/20 text-xs text-emerald-200 space-y-2">
-              <p class="font-bold text-amber-300">Petunjuk Format Kolom File Excel:</p>
-              <p>Pastikan baris pertama (Header) file Excel Anda memiliki nama kolom sebagai berikut:</p>
-              <div class="flex flex-wrap gap-2 pt-1 font-mono text-[11px]">
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Nama Kegiatan</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Penyelenggara</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Fakultas</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Ruangan</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Tanggal (YYYY-MM-DD)</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Waktu Mulai</span>
-                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Waktu Selesai</span>
-              </div>
-            </div>
-
-            <div class="pt-2">
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">Pilih File Excel (.xlsx / .xls / .csv) *</label>
-              <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full text-xs text-emerald-200/70 bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-3 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950">
-            </div>
-
-            <div class="flex space-x-3 pt-3">
-              <button onclick="processExcelImport()" class="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95 cursor-pointer">
-                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                <span>Proses & Import Agenda</span>
+      <!-- Main Calendar & Daily Agenda Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Monthly Calendar View -->
+        <div class="lg:col-span-2 bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 id="current-month-year" class="text-lg font-bold text-amber-300">Mei 2027</h3>
+            <div class="flex items-center space-x-2">
+              <button onclick="changeMonth(-1)" class="p-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-amber-300">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+              </button>
+              <button onclick="changeMonth(1)" class="p-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-amber-300">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
               </button>
             </div>
           </div>
+          <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-amber-400 mb-2">
+            <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+          </div>
+          <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+        </div>
+
+        <!-- Daily Agenda Detail Sidebar -->
+        <div class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-6 flex flex-col">
+          <h3 id="selected-date-title" class="text-lg font-bold text-amber-300 mb-4 border-b border-amber-500/20 pb-2">
+            Agenda Terjadwal
+          </h3>
+          <div id="daily-agenda-list" class="flex-grow space-y-3 overflow-y-auto max-h-96 pr-1"></div>
         </div>
       </div>
+    </section>
 
-      <!-- ADMIN SUBTAB: KELOLA RUANGAN / AULA -->
-      <div id="admin-sub-ruangan" class="admin-sub-content hidden space-y-6">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
-          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
-            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
-              <i data-lucide="building-2" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 id="ruangan-form-title" class="text-lg font-bold text-white">Tambah Ruangan / Aula Baru</h2>
-              <p class="text-xs text-emerald-200/70">Kelola daftar gedung & aula yang tersinkronisasi 2 arah dengan Google Sheets.</p>
-            </div>
+    <!-- 2. TAB KALENDER SETAHUN -->
+    <section id="tab-tahunan" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold gold-gradient-text">Kalender Acara Setahun</h2>
+        <select id="year-filter" onchange="renderYearlyCalendar()" class="bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg p-2.5">
+          <option value="2027" selected>Tahun 2027</option>
+          <option value="2026">Tahun 2026</option>
+        </select>
+      </div>
+      <div id="yearly-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- 3. TAB ARSIP KEGIATAN -->
+    <section id="tab-arsip" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h2 class="text-2xl font-bold gold-gradient-text">Arsip Kegiatan & Dokumentasi</h2>
+        <input type="text" id="arsip-search" oninput="renderArsipTable()" placeholder="Cari nama kegiatan / penyelenggara..." class="bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg px-4 py-2.5 w-full sm:w-64">
+      </div>
+      <div class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-emerald-900/80 text-amber-300 font-bold uppercase border-b border-amber-500/30">
+            <tr>
+              <th class="p-3">Tanggal</th>
+              <th class="p-3">Nama Kegiatan</th>
+              <th class="p-3">Penyelenggara / Unit</th>
+              <th class="p-3">Ruangan</th>
+              <th class="p-3">Waktu</th>
+              <th class="p-3">Berkas Drive</th>
+            </tr>
+          </thead>
+          <tbody id="arsip-table-body" class="divide-y divide-emerald-900/50"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. DASHBOARD ADMIN (Protected Panel) -->
+    <section id="tab-admin" class="hidden space-y-6">
+      <div class="bg-emerald-950/80 border border-amber-500/40 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-amber-500/30 pb-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-bold gold-gradient-text flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i> Dashboard Admin UIN Ar-Raniry
+            </h2>
+            <p class="text-xs text-emerald-200">Input agenda, kelola ruangan/aula, pengumuman beranda, & unduh rekapan laporan.</p>
           </div>
+          <button onclick="logoutAdmin()" class="px-4 py-2 bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-500/40 rounded-lg text-xs font-bold transition">
+            Keluar Admin
+          </button>
+        </div>
 
-          <form onsubmit="handleRuanganSubmit(event)" class="space-y-4">
-            <input type="hidden" id="ruangan-id-input" value="">
+        <!-- Sub-Navigasi Dashboard Admin -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-amber-500/20 pb-3">
+          <button onclick="switchAdminTab('input-booking')" id="admin-sub-input-booking" class="px-4 py-2 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-400">Input Booking</button>
+          <button onclick="switchAdminTab('import-excel')" id="admin-sub-import-excel" class="px-4 py-2 rounded-lg text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 border border-transparent">Import Excel</button>
+          <button onclick="switchAdminTab('kelola-ruangan')" id="admin-sub-kelola-ruangan" class="px-4 py-2 rounded-lg text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 border border-transparent">Kelola Ruangan</button>
+          <button onclick="switchAdminTab('pengumuman')" id="admin-sub-pengumuman" class="px-4 py-2 rounded-lg text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 border border-transparent">Pengumuman</button>
+          <button onclick="switchAdminTab('laporan')" id="admin-sub-laporan" class="px-4 py-2 rounded-lg text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 border border-transparent">Laporan & Rekapan</button>
+        </div>
+
+        <!-- SUB-TAB 1: INPUT BOOKING -->
+        <div id="admin-panel-input-booking" class="space-y-4">
+          <h3 class="text-lg font-bold text-amber-300">Input & Booking Tempat Baru</h3>
+          <form id="form-booking-admin" onsubmit="handleAdminFormSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Nama Ruangan / Gedung / Aula *</label>
-              <input type="text" id="ruangan-nama-input" required placeholder="Contoh: Gedung ICT Center / Aula Fakultas Tarbiyah" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              <label class="block text-xs font-bold text-amber-300 mb-1">NAMA KEGIATAN *</label>
+              <input type="text" id="booking-nama" required placeholder="Contoh: Rapat Senat Terbuka" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
             </div>
             <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Keterangan / Fasilitas</label>
-              <input type="text" id="ruangan-ket-input" placeholder="Contoh: Kapasitas 500 Orang, AC Central, Sound System" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              <label class="block text-xs font-bold text-amber-300 mb-1">PENYELENGGARA / PENANGGUNG JAWAB *</label>
+              <input type="text" id="booking-penyelenggara" required placeholder="Contoh: BEM FST UINAR" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
             </div>
-            <div class="flex space-x-3">
-              <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95">
-                <i data-lucide="save" class="w-4 h-4"></i>
-                <span id="ruangan-submit-btn-text">Simpan ke Spreadsheet</span>
-              </button>
-              <button type="button" id="ruangan-cancel-btn" onclick="resetRuanganForm()" class="hidden bg-emerald-900/80 text-amber-200 hover:text-white border border-amber-500/30 px-4 py-3 rounded-xl text-xs font-bold transition">
-                Batal Edit
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">FAKULTAS / UNIT KERJA *</label>
+              <select id="booking-fakultas" required class="w-full bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-3">
+                <option value="Fakultas Sains & Teknologi">Fakultas Sains & Teknologi</option>
+                <option value="Fakultas Tarbiyah & Keguruan">Fakultas Tarbiyah & Keguruan</option>
+                <option value="Fakultas Syariah & Hukum">Fakultas Syariah & Hukum</option>
+                <option value="Fakultas Ekonomi & Bisnis Islam">Fakultas Ekonomi & Bisnis Islam</option>
+                <option value="Fakultas Dakwah & Komunikasi">Fakultas Dakwah & Komunikasi</option>
+                <option value="Fakultas Adab & Humaniora">Fakultas Adab & Humaniora</option>
+                <option value="Fakultas Psikologi">Fakultas Psikologi</option>
+                <option value="Fakultas Ilmu Sosial & Pemerintahan">Fakultas Ilmu Sosial & Pemerintahan</option>
+                <option value="Pascasarjana">Pascasarjana</option>
+                <option value="Rektorat / Unit Pusat">Rektorat / Unit Pusat</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">PILIHAN RUANGAN / AULA *</label>
+              <select id="booking-ruangan" required class="w-full bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-3">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">TANGGAL MULAI *</label>
+              <input type="date" id="booking-tgl-mulai" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">TANGGAL SELESAI *</label>
+              <input type="date" id="booking-tgl-selesai" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">WAKTU MULAI *</label>
+              <input type="time" id="booking-jam-mulai" value="08:00" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">WAKTU SELESAI *</label>
+              <input type="time" id="booking-jam-selesai" value="16:00" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-amber-300 mb-1">LAMPIRAN BERKAS PROPOSAL (PDF/DOCX - Tersimpan ke Google Drive)</label>
+              <input type="file" id="booking-file" accept=".pdf,.doc,.docx,.png,.jpg" class="w-full bg-slate-900 border border-amber-500/40 text-xs text-slate-300 rounded-lg p-2.5">
+            </div>
+            <div class="md:col-span-2 pt-2">
+              <button type="submit" id="btn-submit-booking" class="w-full py-3 rounded-xl font-bold gold-btn text-sm flex items-center justify-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru
               </button>
             </div>
           </form>
         </div>
 
-        <!-- Tabel Daftar Ruangan -->
-        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-white text-base flex items-center space-x-2">
-              <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
-              <span>Daftar Ruangan & Aula Terdaftar (Tersinkronisasi Spreadsheet)</span>
-            </h3>
-            <button onclick="loadDataFromSheet()" class="px-3 py-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 rounded-xl border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-              <span>Refresh Data Sheet</span>
+        <!-- SUB-TAB 2: IMPORT EXCEL -->
+        <div id="admin-panel-import-excel" class="hidden space-y-4">
+          <h3 class="text-lg font-bold text-amber-300">Import Massal Agenda dari File Excel</h3>
+          <p class="text-xs text-slate-300">Unggah berkas spreadsheet (.xlsx/.csv). Sistem akan secara otomatis memisahkan data berdasarkan tanggal dan bulan ke dalam Kalender & Arsip.</p>
+          <div class="border-2 border-dashed border-amber-500/40 rounded-xl p-6 text-center space-y-4">
+            <i data-lucide="file-spreadsheet" class="w-12 h-12 text-amber-400 mx-auto"></i>
+            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+            <button onclick="document.getElementById('excel-file-input').click()" class="px-6 py-3 rounded-xl gold-btn text-xs font-bold">
+              Pilih Berkas Excel / CSV
+            </button>
+            <p id="excel-status-text" class="text-xs text-amber-200"></p>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 3: KELOLA RUANGAN -->
+        <div id="admin-panel-kelola-ruangan" class="hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-amber-300">Daftar Ruangan & Aula Terdaftar</h3>
+            <button onclick="refreshDataSheet()" class="px-3 py-1.5 bg-emerald-900 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Google Sheets
             </button>
           </div>
-          <div class="overflow-x-auto rounded-2xl border border-amber-500/20">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-emerald-950/90 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20">
-                  <th class="p-3">ID Baris</th>
-                  <th class="p-3">Nama Ruangan / Aula</th>
+          <form id="form-ruangan" onsubmit="handleRuanganSubmit(event)" class="bg-emerald-900/40 p-4 rounded-xl border border-amber-500/30 space-y-3">
+            <input type="hidden" id="ruangan-edit-id" value="">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-amber-300 mb-1">NAMA RUANGAN / AULA *</label>
+                <input type="text" id="ruangan-nama" required placeholder="Contoh: Auditorium Utama" class="w-full bg-slate-900 border border-amber-500/40 text-xs rounded-lg p-2.5 text-slate-100">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 mb-1">KETERANGAN / FASILITAS</label>
+                <input type="text" id="ruangan-keterangan" placeholder="Kapasitas 500 orang, Sound System, AC" class="w-full bg-slate-900 border border-amber-500/40 text-xs rounded-lg p-2.5 text-slate-100">
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="px-4 py-2 gold-btn text-xs font-bold rounded-lg flex items-center gap-1">
+                <i data-lucide="plus" class="w-4 h-4"></i> Simpan Ruangan
+              </button>
+              <button type="button" onclick="resetRuanganForm()" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-lg">Batal</button>
+            </div>
+          </form>
+          <div class="bg-slate-900 rounded-xl overflow-hidden border border-emerald-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-emerald-900/80 text-amber-300 font-bold">
+                <tr>
+                  <th class="p-3">ID</th>
+                  <th class="p-3">Nama Ruangan</th>
                   <th class="p-3">Keterangan / Fasilitas</th>
-                  <th class="p-3 text-center">Aksi Kelola</th>
+                  <th class="p-3 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody id="admin-ruangan-body" class="divide-y divide-amber-500/10 text-xs bg-emerald-950/40"></tbody>
+              <tbody id="ruangan-table-body" class="divide-y divide-emerald-900/40"></tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      <!-- ADMIN SUBTAB 2: PENGUMUMAN BERANDA -->
-      <div id="admin-sub-pengumuman" class="admin-sub-content hidden space-y-6">
-        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
-          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
-            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
-              <i data-lucide="megaphone" class="w-6 h-6"></i>
-            </div>
+        <!-- SUB-TAB 4: PENGUMUMAN -->
+        <div id="admin-panel-pengumuman" class="hidden space-y-4">
+          <h3 class="text-lg font-bold text-amber-300">Pengumuman Running Banner Beranda</h3>
+          <form onsubmit="handlePengumumanSubmit(event)" class="space-y-3">
             <div>
-              <h2 class="text-lg font-bold text-white">Buat Pengumuman Beranda Baru</h2>
-              <p class="text-xs text-emerald-200/70">Pengumuman ini akan langsung muncul sebagai banner utama di halaman beranda.</p>
+              <label class="block text-xs font-bold text-amber-300 mb-1">TEKS PENGUMUMAN AKTIF</label>
+              <textarea id="input-pengumuman-text" rows="3" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3"></textarea>
             </div>
-          </div>
-
-          <form onsubmit="handlePengumumanSubmit(event)" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Judul Pengumuman *</label>
-              <input type="text" id="ann-judul" required placeholder="Contoh: Pemeliharaan Sound System Aula Utama UIN Ar-Raniry" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Isi Pesan Pengumuman *</label>
-              <textarea id="ann-isi" rows="3" required placeholder="Tuliskan pengumuman penting bagi pengguna aula..." class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
-            </div>
-            <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95">
-              <i data-lucide="send" class="w-4 h-4"></i>
-              <span>Terbitkan Pengumuman ke Beranda</span>
+            <button type="submit" class="px-6 py-2.5 gold-btn text-xs font-bold rounded-xl flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Terbitkan ke Beranda
             </button>
           </form>
         </div>
-      </div>
 
-      <!-- ADMIN SUBTAB 3: LAPORAN & REKAPAN -->
-      <div id="admin-sub-laporan" class="admin-sub-content hidden space-y-6">
-        
-        <!-- Filter Laporan & Export PDF -->
-        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 class="text-base font-bold text-white">Filter & Rekapan Laporan</h3>
-            <p class="text-xs text-emerald-200/70">Pilih periode laporan dan cetak dokumen resmi instansi</p>
+        <!-- SUB-TAB 5: LAPORAN & REKAPAN -->
+        <div id="admin-panel-laporan" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <h3 class="text-lg font-bold text-amber-300">Laporan Rekapan Kegiatan</h3>
+            <button onclick="exportLaporanPDF()" class="px-4 py-2 bg-red-900/80 hover:bg-red-800 text-red-100 border border-red-400 rounded-lg text-xs font-bold flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Export PDF Laporan Resmi
+            </button>
           </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <input type="month" id="report-month-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
-            <select id="report-year-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
-            <button onclick="exportLaporanPDF()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center space-x-2 shadow-md glow-gold active:scale-95 transition">
-              <i data-lucide="file-down" class="w-4 h-4"></i>
-              <span>Export PDF Resmi</span>
+
+          <!-- Print Preview Wrapper for PDF Export -->
+          <div id="pdf-report-container" class="bg-emerald-950 p-6 rounded-xl border border-amber-500/30 space-y-6">
+            <!-- Kop Surat Resmi Instansi (Hanya Tampil saat Cetak PDF) -->
+            <div class="text-center pb-4 border-b-4 border-double border-amber-500 text-slate-100">
+              <h2 class="font-bold text-lg uppercase tracking-wider text-amber-300">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
+              <h3 class="font-extrabold text-xl uppercase tracking-wide text-amber-400">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</h3>
+              <p class="text-xs text-emerald-200 mt-1">Jl. Lingkar Kampus, Kopelma Darussalam, Banda Aceh - Web: ar-raniry.ac.id</p>
+            </div>
+
+            <!-- Rekapan Per-Fakultas / Unit Kerja -->
+            <div>
+              <h4 class="font-bold text-amber-300 text-sm mb-3">Rekapan Kegiatan Per-Fakultas / Unit Kerja</h4>
+              <div id="laporan-fakultas-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- Rekapan Kegiatan Bulanan -->
+            <div>
+              <h4 class="font-bold text-amber-300 text-sm mb-3">Statistik Penggunaan Ruangan Bulanan</h4>
+              <div id="laporan-bulanan-list" class="space-y-2"></div>
+            </div>
+            
+            <!-- Tanda Tangan Penanggung Jawab -->
+            <div class="pt-8 grid grid-cols-2 text-center text-xs text-emerald-200">
+              <div></div>
+              <div>
+                <p>Banda Aceh, <span id="pdf-date-now"></span></p>
+                <p class="font-bold mt-1">Pengelola Aula & Gedung Acara</p>
+                <div class="h-16"></div>
+                <p class="font-bold text-amber-300 underline">UIN Ar-Raniry Banda Aceh</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL LOGIN ADMIN -->
+  <div id="modal-login-admin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-emerald-950 border border-amber-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
+      <button onclick="tutupModalLoginAdmin()" class="absolute top-4 right-4 text-slate-400 hover:text-amber-300">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-xl font-bold gold-gradient-text mb-1">Masuk Dashboard Admin</h3>
+      <p class="text-xs text-emerald-200 mb-4">Silahkan masukkan kata sandi otorisasi petugas.</p>
+      <form onsubmit="prosesLoginAdmin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-amber-300 mb-1">KATA SANDI ADMIN *</label>
+          <div class="relative">
+            <input type="password" id="admin-pass-input" required placeholder="Masukkan Kata Sandi Admin" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3 pr-10">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-amber-300">
+              <i data-lucide="eye" id="icon-eye" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30">
-            <h4 class="font-bold text-amber-300 text-sm mb-3">Ringkasan Penggunaan Ruangan</h4>
-            <div id="report-room-summary" class="space-y-2 text-xs text-emerald-100"></div>
-          </div>
-          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30">
-            <h4 class="font-bold text-amber-300 text-sm mb-3">Kegiatan Per-Fakultas / Unit Kerja</h4>
-            <div id="report-faculty-summary" class="space-y-2 text-xs text-emerald-100"></div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- TEMPLATE HIDDEN KHUSUS CETAK PDF RESMI INSTANSI -->
-  <div id="pdf-export-template" class="hidden">
-    <div style="font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; padding: 30px; line-height: 1.4;">
-      
-      <!-- KOP SURAT RESMI UIN AR-RANIRY -->
-      <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px;">
-        <h2 style="font-size: 16pt; font-weight: bold; margin: 0; text-transform: uppercase;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
-        <h3 style="font-size: 14pt; font-weight: bold; margin: 2px 0; text-transform: uppercase;">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</h3>
-        <p style="font-size: 10pt; margin: 0; font-style: italic;">Jl. Syeikh Abdur Rauf Kopelma Darussalam Banda Aceh, Telp: (0651) 7557442</p>
-        <p style="font-size: 9pt; margin: 0; font-weight: bold; color: #333;">Website: https://ar-raniry.ac.id | Email: info@ar-raniry.ac.id</p>
-      </div>
-
-      <!-- JUDUL LAPORAN -->
-      <div style="text-align: center; margin-bottom: 25px;">
-        <h3 style="font-size: 13pt; font-weight: bold; text-decoration: underline; text-transform: uppercase; margin: 0;">LAPORAN REKAPAN PENGGUNAAN AULA & GEDUNG ACARA</h3>
-        <p id="pdf-periode-text" style="font-size: 10pt; font-weight: bold; margin-top: 4px;"></p>
-      </div>
-
-      <!-- TABEL RESMI REKAPAN AGENDA -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 10pt;">
-        <thead>
-          <tr style="background-color: #f2f2f2; text-align: center; font-weight: bold;">
-            <th style="border: 1px solid #000; padding: 8px; width: 5%;">No</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 30%;">Nama Kegiatan</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 25%;">Penyelenggara / Unit</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 20%;">Ruangan / Aula</th>
-            <th style="border: 1px solid #000; padding: 8px; width: 20%;">Tanggal & Waktu</th>
-          </tr>
-        </thead>
-        <tbody id="pdf-table-body">
-          <!-- Populated dynamically via Javascript -->
-        </tbody>
-      </table>
-
-      <!-- STATISTIK & RINGKASAN -->
-      <div style="margin-bottom: 30px; font-size: 10pt; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
-        <strong>Ringkasan Laporan:</strong>
-        <ul style="margin: 5px 0 0 20px; padding: 0;">
-          <li id="pdf-stat-total">Total Agenda Disetujui: 0 Kegiatan</li>
-          <li id="pdf-stat-ruangan">Jumlah Ruangan Aktif Terpakai: 0 Ruangan</li>
-        </ul>
-      </div>
-
-      <!-- TANDA TANGAN / PENGESAHAN -->
-      <div style="display: flex; justify-content: space-between; margin-top: 40px; font-size: 10pt; page-break-inside: avoid;">
-        <div style="width: 40%; text-align: center;">
-          <p style="margin-bottom: 60px;">Mengetahui,<br><strong>Kepala Bagian Umum UIN Ar-Raniry</strong></p>
-          <p style="margin: 0; text-decoration: underline; font-weight: bold;">( Dr. H. Ahmad Zaki, M.Ag )</p>
-          <p style="margin: 0;">NIP. 19780312 200501 1 002</p>
-        </div>
-        <div style="width: 40%; text-align: center;">
-          <p style="margin-bottom: 60px;">Banda Aceh, <span id="pdf-current-date"></span><br><strong>Pengelola Gedung & Aula</strong></p>
-          <p style="margin: 0; text-decoration: underline; font-weight: bold;">( Admin Pengelola Aula )</p>
-          <p style="margin: 0;">NIP. 19850614 201012 1 004</p>
-        </div>
-      </div>
-
+        <button type="submit" class="w-full py-3 gold-btn rounded-xl text-xs font-bold">Masuk Admin</button>
+      </form>
     </div>
   </div>
 
-  <!-- ================= LOGIC & CONTROLLERS ================= -->
+  <!-- MODAL DETAIL BOOKING TANGGAL -->
+  <div id="modal-detail-tanggal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-emerald-950 border border-amber-500/50 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative">
+      <button onclick="tutupModalDetailTanggal()" class="absolute top-4 right-4 text-slate-400 hover:text-amber-300">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 id="modal-date-header" class="text-lg font-bold text-amber-300 mb-3 border-b border-amber-500/30 pb-2">Detail Agenda</h3>
+      <div id="modal-date-body" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
   <script>
-    // URL Endpoint Google Apps Script Domain UIN Ar-Raniry
+    // URL Web App Endpoint Google Apps Script
     const WEB_APP_URL = "https://script.google.com/a/macros/ar-raniry.ac.id/s/AKfycby8l8YBUZ4PJPWj3KmI4y6cjCPqYyttEVE2WBiyyvgrMVzFNnhBZ-UB0T2M2V7vsUBK/exec";
 
-    let allAgenda = [];
-    let announcements = [];
-    let ruanganList = [];
+    // Dynamic Application State
     let currentDate = new Date();
-    let selectedDateStr = new Date().toISOString().split('T')[0];
+    let currentSelectedDateStr = new Date().toISOString().split('T')[0];
     let isAdminLoggedIn = false;
-    let isPassVisible = false;
 
-    // Three.js Scene Variables
-    let scene, camera, renderer, roomMesh, stageLight;
-    let isDragging = false, previousMousePosition = { x: 0, y: 0 };
-
-    // INITIALIZE THREE.JS 3D VIRTUAL STAGE
-    function init3dScene() {
-      const container = document.getElementById('canvas-container');
-      if (!container) return;
-
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 4, 10);
-      camera.lookAt(0, 0, 0);
-
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer.domElement);
-
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-
-      stageLight = new THREE.PointLight(0xf59e0b, 1.5, 50);
-      stageLight.position.set(5, 8, 5);
-      scene.add(stageLight);
-
-      const dirLight = new THREE.DirectionalLight(0x10b981, 0.8);
-      dirLight.position.set(-5, 5, -5);
-      scene.add(dirLight);
-
-      createStageMesh("Aula Utama");
-
-      const dom = renderer.domElement;
-      
-      const onPointerDown = (e) => {
-        isDragging = true;
-        previousMousePosition = {
-          x: e.clientX || (e.touches && e.touches[0].clientX) || 0,
-          y: e.clientY || (e.touches && e.touches[0].clientY) || 0
-        };
-      };
-
-      const onPointerMove = (e) => {
-        if (!isDragging || !roomMesh) return;
-        const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-        const deltaX = currentX - previousMousePosition.x;
-        roomMesh.rotation.y += deltaX * 0.01;
-        previousMousePosition = {
-          x: currentX,
-          y: e.clientY || (e.touches && e.touches[0].clientY) || 0
-        };
-      };
-
-      const onPointerUp = () => { isDragging = false; };
-
-      dom.addEventListener('mousedown', onPointerDown);
-      dom.addEventListener('mousemove', onPointerMove);
-      window.addEventListener('mouseup', onPointerUp);
-
-      dom.addEventListener('touchstart', onPointerDown, { passive: true });
-      dom.addEventListener('touchmove', onPointerMove, { passive: true });
-      window.addEventListener('touchend', onPointerUp);
-
-      window.addEventListener('resize', onWindowResize);
-
-      animate3d();
-    }
-
-    window.onload = function() {
-      lucide.createIcons();
-      document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7);
-      document.getElementById('report-month-select').value = currentDate.toISOString().substring(0, 7);
-      init3dScene();
-      loadDataFromSheet();
+    let appState = {
+      ruangan: [
+        { id: 1, nama: "Auditorium (Auditorium Spatial)", keterangan: "Kapasitas 1000 Orang, Panggung Utama" },
+        { id: 2, nama: "Aula Utama Gedung Rektorat", keterangan: "Kapasitas 300 Orang, VIP Executive" },
+        { id: 3, nama: "Ruang Rapat Senat Kampus", keterangan: "Kapasitas 100 Orang, Oval Table" }
+      ],
+      pengumuman: "Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.",
+      agenda: [
+        {
+          id: "E-101",
+          nama: "Rapat Senat Terbuka Wisuda Gelombang I 2027",
+          penyelenggara: "Rektorat UINAR",
+          fakultas: "Rektorat / Unit Pusat",
+          ruangan: "Auditorium (Auditorium Spatial)",
+          tglMulai: "2027-05-15",
+          tglSelesai: "2027-05-15",
+          jamMulai: "08:00",
+          jamSelesai: "16:00",
+          driveLink: "#",
+          status: "Approved"
+        },
+        {
+          id: "E-102",
+          nama: "Kuliah Umum Kecerdasan Buatan & Syariah",
+          penyelenggara: "FST UINAR",
+          fakultas: "Fakultas Sains & Teknologi",
+          ruangan: "Aula Utama Gedung Rektorat",
+          tglMulai: "2027-05-20",
+          tglSelesai: "2027-05-20",
+          jamMulai: "09:00",
+          jamSelesai: "12:30",
+          driveLink: "#",
+          status: "Approved"
+        }
+      ]
     };
 
-    // TOGGLE VISIBILITY PASSWORD ADMIN
-    function togglePassVisibility() {
-      const passInput = document.getElementById('admin-pass-input');
-      const icon = document.getElementById('pass-toggle-icon');
-      isPassVisible = !isPassVisible;
-
-      if (isPassVisible) {
-        passInput.type = "text";
-        icon.setAttribute("data-lucide", "eye-off");
-      } else {
-        passInput.type = "password";
-        icon.setAttribute("data-lucide", "eye");
-      }
+    // Initialize App
+    window.onload = function() {
       lucide.createIcons();
+      init3DScene();
+      loadDataFromBackend();
+      renderAll();
+      document.getElementById('pdf-date-now').innerText = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    // Render All Views
+    function renderAll() {
+      renderAllDropdowns();
+      renderBeranda();
+      renderYearlyCalendar();
+      renderArsipTable();
+      renderReports();
+      renderRuanganTable();
     }
 
-    // EXPORT LAPORAN KE PDF RESMI INSTANSI
-    function exportLaporanPDF() {
-      const monthInput = document.getElementById('report-month-select').value;
-      const [year, month] = monthInput.split('-');
-      
-      const monthNames = [
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-      ];
-      
-      const monthText = monthNames[parseInt(month) - 1] + " " + year;
-      document.getElementById('pdf-periode-text').innerText = "PERIODE: " + monthText.toUpperCase();
-
-      const filteredEvents = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthInput) && a.status === 'Approved');
-      const tbody = document.getElementById('pdf-table-body');
-      tbody.innerHTML = '';
-
-      if (filteredEvents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="border: 1px solid #000; padding: 12px; text-align: center; font-style: italic;">Tidak ada kegiatan terdaftar/disetujui pada periode bulan ini.</td></tr>`;
-      } else {
-        filteredEvents.forEach((ev, idx) => {
-          tbody.innerHTML += `
-            <tr>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${idx + 1}</td>
-              <td style="border: 1px solid #000; padding: 6px; font-weight: bold;">${ev.namaKegiatan}</td>
-              <td style="border: 1px solid #000; padding: 6px;">${ev.penyelenggara}<br><small style="color: #444;">(${ev.fakultas || 'Umum'})</small></td>
-              <td style="border: 1px solid #000; padding: 6px;">${ev.ruangan}</td>
-              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${ev.tglMulai}<br><small>${ev.waktuMulai || ''} - ${ev.waktuSelesai || ''}</small></td>
-            </tr>
-          `;
-        });
+    // Backend HTTP Fetch Data Loading
+    async function loadDataFromBackend() {
+      try {
+        const resp = await fetch(WEB_APP_URL + "?action=getInitialData");
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.agenda) {
+            appState = data;
+            renderAll();
+            showToast("Data terbaru berhasil disinkronkan dari Google Sheets!", "success");
+          }
+        }
+      } catch (err) {
+        console.warn("Menggunakan lokal state:", err);
       }
+    }
 
-      document.getElementById('pdf-stat-total').innerText = `Total Agenda Disetujui: ${filteredEvents.length} Kegiatan`;
-      const uniqueRooms = new Set(filteredEvents.map(e => e.ruangan)).size;
-      document.getElementById('pdf-stat-ruangan').innerText = `Jumlah Ruangan Aktif Terpakai: ${uniqueRooms} Ruangan`;
-
-      const today = new Date();
-      document.getElementById('pdf-current-date').innerText = `${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
-
-      const element = document.getElementById('pdf-export-template');
-      element.classList.remove('hidden');
-
-      const opt = {
-        margin:       [0.4, 0.4, 0.4, 0.4],
-        filename:     `Laporan_Kegiatan_Aula_UINAR_${monthInput}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-
-      showToast("Mengunduh Laporan PDF Resmi...", "success");
-
-      html2pdf().set(opt).from(element).save().then(() => {
-        element.classList.add('hidden');
-      }).catch(err => {
-        element.classList.add('hidden');
-        showToast("Terjadi kesalahan export PDF", "error");
+    // Tab Navigation
+    function switchTab(tabId) {
+      ['beranda', 'tahunan', 'arsip', 'admin'].forEach(id => {
+        document.getElementById(`tab-${id}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${id}`);
+        if(navBtn && id !== 'admin') {
+          navBtn.classList.remove('text-amber-400', 'bg-emerald-900/60', 'border');
+          navBtn.classList.add('text-emerald-100');
+        }
       });
-    }
-
-    function createStageMesh(roomName) {
-      if (roomMesh) scene.remove(roomMesh);
-      const group = new THREE.Group();
-
-      const stageGeo = new THREE.CylinderGeometry(4, 4.2, 0.6, 8);
-      const stageMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.3, metalness: 0.8 });
-      const stage = new THREE.Mesh(stageGeo, stageMat);
-      stage.position.y = -0.7;
-      group.add(stage);
-
-      const domeGeo = new THREE.SphereGeometry(1.8, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-      const domeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.1 });
-      const dome = new THREE.Mesh(domeGeo, domeMat);
-      dome.position.set(0, 2.2, -1);
-      group.add(dome);
-
-      roomMesh = group;
-      scene.add(roomMesh);
-    }
-
-    function change3dRoom(roomName) { createStageMesh(roomName); }
-    function animate3d() {
-      requestAnimationFrame(animate3d);
-      if (!isDragging && roomMesh) roomMesh.rotation.y += 0.002;
-      renderer.render(scene, camera);
-    }
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // ================= ADMIN AUTHENTICATION =================
-    function handleAdminTabClick() {
-      if (!isAdminLoggedIn) {
-        document.getElementById('modal-login-admin').classList.remove('hidden');
-      } else {
-        switchTab('admin');
+      
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if(activeNav && tabId !== 'admin') {
+        activeNav.classList.add('text-amber-400', 'bg-emerald-900/60', 'border');
       }
     }
 
-    function verifyAdminPass(e) {
+    // Sub-Tab Admin Navigation
+    function switchAdminTab(subTabId) {
+      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'pengumuman', 'laporan'];
+      subTabs.forEach(id => {
+        const panel = document.getElementById(`admin-panel-${id}`);
+        const btn = document.getElementById(`admin-sub-${id}`);
+        if(panel) panel.classList.add('hidden');
+        if(btn) {
+          btn.classList.remove('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-400');
+          btn.classList.add('text-emerald-200');
+        }
+      });
+
+      const activePanel = document.getElementById(`admin-panel-${subTabId}`);
+      const activeBtn = document.getElementById(`admin-sub-${subTabId}`);
+      if(activePanel) activePanel.classList.remove('hidden');
+      if(activeBtn) {
+        activeBtn.classList.add('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-400');
+        activeBtn.classList.remove('text-emerald-200');
+      }
+    }
+
+    // Modal Admin Login
+    function bukaModalLoginAdmin() {
+      if(isAdminLoggedIn) {
+        switchTab('admin');
+      } else {
+        document.getElementById('modal-login-admin').classList.remove('hidden');
+      }
+    }
+    function tutupModalLoginAdmin() {
+      document.getElementById('modal-login-admin').classList.add('hidden');
+    }
+    function prosesLoginAdmin(e) {
       e.preventDefault();
       const pass = document.getElementById('admin-pass-input').value;
-      if (pass === "1122") {
+      if(pass === '1122') {
         isAdminLoggedIn = true;
-        closeModalLogin();
-        document.getElementById('admin-btn-text').innerText = "Dashboard Admin (Active)";
-        showToast("Login Admin Berhasil!", "success");
+        tutupModalLoginAdmin();
         switchTab('admin');
+        showToast("Login Admin Berhasil!", "success");
       } else {
         showToast("Kata Sandi Admin Salah!", "error");
       }
     }
-
-    function closeModalLogin() {
-      document.getElementById('modal-login-admin').classList.add('hidden');
+    function logoutAdmin() {
+      isAdminLoggedIn = false;
+      switchTab('beranda');
+      showToast("Anda telah keluar dari mode Admin.", "info");
     }
-
-    function switchAdminSubTab(subId) {
-      document.querySelectorAll('.admin-sub-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById('admin-sub-' + subId).classList.remove('hidden');
-
-      document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
-        btn.classList.remove('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-500/40');
-        btn.classList.add('text-emerald-200/80');
-      });
-
-      const activeBtn = document.getElementById('subnav-' + subId);
-      if(activeBtn) {
-        activeBtn.classList.remove('text-emerald-200/80');
-        activeBtn.classList.add('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-500/40');
-      }
-
-      if(subId === 'laporan') renderReports();
-    }
-
-    // ================= DATA LOADING VIA HTTP FETCH (VERCEL COMPATIBLE) =================
-    function loadDataFromSheet() {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            allAgenda = res.agenda || [];
-            announcements = res.announcements || [];
-            ruanganList = res.ruangan || [];
-            renderAllDropdowns();
-            renderBeranda();
-          })
-          .getInitialData();
+    function togglePasswordVisibility() {
+      const input = document.getElementById('admin-pass-input');
+      const icon = document.getElementById('icon-eye');
+      if(input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
       } else {
-        fetch(WEB_APP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'getInitialData' })
-        })
-        .then(res => res.json())
-        .then(data => {
-          allAgenda = data.agenda || [];
-          announcements = data.announcements || [];
-          ruanganList = data.ruangan || [];
-          renderAllDropdowns();
-          renderBeranda();
-        })
-        .catch(err => {
-          console.warn("Menggunakan data cadangan demo:", err);
-          loadMockData();
-        });
-      }
-    }
-
-    function loadMockData() {
-      allAgenda = [
-        { id: "AGD-2027-01", namaKegiatan: "Seminar Internasional Energi Terbarukan", penyelenggara: "Pusat Riset Energi", fakultas: "Fakultas Sains", ruangan: "Aula Utama", tglMulai: "2027-01-12", tglSelesai: "2027-01-12", waktuMulai: "08:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" },
-        { id: "AGD-2027-02", namaKegiatan: "Rapat Koordinasi Akademik Semester Genap", penyelenggara: "Biro Akademik", fakultas: "Rektorat / Unit Kerja", ruangan: "Ruang Rapat 1", tglMulai: "2027-01-20", tglSelesai: "2027-01-20", waktuMulai: "09:00", waktuSelesai: "12:30", status: "Approved", urlBerkas: "#", keterangan: "Agenda Jan 2027" }
-      ];
-      announcements = [
-        { id: "ANN-1", judul: "Pemeliharaan Sound System Aula Utama", isi: "Diberitahukan kepada seluruh unit kerja bahwa Aula Utama akan menjalani pemeliharaan.", tanggal: "2026-12-28" }
-      ];
-      ruanganList = [
-        { id: "RNG-1", nama: "Aula Utama", keterangan: "Gedung Utama Gold Dome" },
-        { id: "RNG-2", nama: "Ruang Rapat 1", keterangan: "Ruang Rapat Lantai 1" },
-        { id: "RNG-3", nama: "Ruang Rapat 2", keterangan: "Ruang Rapat Lantai 2" },
-        { id: "RNG-4", nama: "Auditorium", keterangan: "Auditorium Spatial" }
-      ];
-      renderAllDropdowns();
-      renderBeranda();
-    }
-
-    function renderAllDropdowns() {
-      const select3d = document.getElementById('select-ruangan-3d');
-      const selectAdmin = document.getElementById('admin-booking-ruangan-select');
-      
-      let html = '';
-      ruanganList.forEach(r => {
-        html += `<option value="${r.nama}" class="bg-emerald-950 text-white">${r.nama} (${r.keterangan || 'Gedung'})</option>`;
-      });
-
-      if (select3d) select3d.innerHTML = html;
-      if (selectAdmin) selectAdmin.innerHTML = html;
-      renderRuanganTable();
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById('tab-' + tabId).classList.remove('hidden');
-
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('text-amber-400', 'bg-amber-500/10', 'border', 'border-amber-500/30');
-        btn.classList.add('text-emerald-200/80');
-      });
-
-      const activeNav = document.getElementById('nav-' + tabId);
-      if (activeNav) {
-        activeNav.classList.remove('text-emerald-200/80');
-        activeNav.classList.add('text-amber-400', 'bg-amber-500/10', 'border', 'border-amber-500/30');
-      }
-
-      if (tabId === 'kalender-tahun') renderYearlyCalendar();
-      if (tabId === 'arsip') renderArsipTable();
-      if (tabId === 'beranda') renderBeranda();
-    }
-
-    function toggleMobileMenu() {
-      const menu = document.getElementById('mobile-menu');
-      menu.classList.toggle('hidden');
-    }
-
-    function showToast(msg, type = "success") {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toast-message');
-      const toastIcon = document.getElementById('toast-icon');
-
-      toastMsg.innerText = msg;
-      if (type === "error") {
-        toastIcon.className = "p-2 bg-red-500/20 rounded-lg text-red-400";
-        toastIcon.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5"></i>`;
-      } else {
-        toastIcon.className = "p-2 bg-amber-500/20 rounded-lg text-amber-400";
-        toastIcon.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i>`;
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
       }
       lucide.createIcons();
-
-      toast.classList.remove('hidden');
-      setTimeout(() => hideToast(), 4000);
     }
 
-    function hideToast() {
-      document.getElementById('toast').classList.add('hidden');
-    }
-
-    // ================= CALENDAR & BERANDA RENDERING =================
+    // Render Beranda Calendar & Announcements
     function renderBeranda() {
-      renderAnnouncements();
-      const monthInput = document.getElementById('filter-bulan').value;
-      if (monthInput) {
-        const [y, m] = monthInput.split('-');
-        currentDate = new Date(parseInt(y), parseInt(m) - 1, 1);
-      }
+      document.getElementById('announcement-text').innerText = appState.pengumuman;
 
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      document.getElementById('month-year-header').innerText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      
+      document.getElementById('current-month-year').innerText = `${monthNames[month]} ${year}`;
 
-      const grid = document.getElementById('calendar-days-grid');
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById('calendar-grid');
       grid.innerHTML = '';
 
-      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
-      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-
-      for (let i = 0; i < firstDay; i++) {
-        grid.innerHTML += `<div class="h-16 sm:h-20 rounded-2xl bg-emerald-950/20 opacity-30"></div>`;
+      for(let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="h-10 sm:h-12"></div>`;
       }
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayEvents = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
+      for(let day = 1; day <= daysInMonth; day++) {
+        const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hasEvents = appState.agenda.some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+        const isSelected = dStr === currentSelectedDateStr;
 
-        const isSelected = selectedDateStr === dateStr;
-        const hasEvents = dayEvents.length > 0;
-
-        let badgeHtml = '';
-        if (hasEvents) {
-          badgeHtml = `<span class="mt-1 inline-block px-1.5 py-0.5 text-[9px] font-extrabold rounded-md bg-amber-500 text-slate-950">${dayEvents.length} Agenda</span>`;
-        }
+        let bgClass = "bg-slate-900/60 hover:bg-emerald-900/40 text-slate-200";
+        if(isSelected) bgClass = "bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-bold";
+        else if(hasEvents) bgClass = "bg-emerald-900/80 border border-emerald-500 text-emerald-200 font-bold";
 
         grid.innerHTML += `
-          <div onclick="selectDate('${dateStr}')" class="h-16 sm:h-20 p-1.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between items-center ${isSelected ? 'border-amber-400 bg-amber-500/20 glow-gold scale-105 z-10' : 'border-amber-500/10 bg-emerald-950/60 hover:bg-emerald-900/60'}">
-            <span class="text-xs font-bold ${isSelected ? 'text-amber-300' : 'text-emerald-100'}">${day}</span>
-            ${badgeHtml}
-          </div>
+          <button onclick="selectDate('${dStr}')" class="h-10 sm:h-12 rounded-lg flex flex-col items-center justify-center relative transition ${bgClass}">
+            <span>${day}</span>
+            ${hasEvents ? `<span class="w-1.5 h-1.5 bg-amber-400 rounded-full absolute bottom-1"></span>` : ''}
+          </button>
         `;
       }
-
       renderDailyAgenda();
-      lucide.createIcons();
     }
 
-    function selectDate(dateStr) {
-      selectedDateStr = dateStr;
-      renderBeranda();
-      openModalDetail(dateStr);
-    }
-
-    function openModalDetail(dateStr) {
-      const modal = document.getElementById('modal-detail-tanggal');
-      const title = document.getElementById('modal-date-title');
-      const list = document.getElementById('modal-events-list');
-
-      title.innerText = `Tanggal: ${dateStr}`;
-      const events = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
-
-      list.innerHTML = '';
-      if (events.length === 0) {
-        list.innerHTML = `<div class="p-4 text-center text-xs text-amber-200/60 italic border border-amber-500/20 rounded-xl bg-emerald-950/50">Tidak ada booking agenda pada tanggal ini. Ruangan tersedia.</div>`;
-      } else {
-        events.forEach(ev => {
-          list.innerHTML += `
-            <div class="p-4 rounded-2xl bg-emerald-950/90 border border-amber-500/30 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">${ev.ruangan}</span>
-                <span class="text-xs font-semibold text-emerald-300">${ev.waktuMulai || ''} - ${ev.waktuSelesai || ''}</span>
-              </div>
-              <h4 class="text-sm font-bold text-white">${ev.namaKegiatan}</h4>
-              <p class="text-xs text-emerald-200/80"><strong>Penyelenggara:</strong> ${ev.penyelenggara} (${ev.fakultas || 'Umum'})</p>
-              ${ev.keterangan ? `<p class="text-[11px] text-amber-300/80 italic">Catatan: ${ev.keterangan}</p>` : ''}
-              ${ev.urlBerkas && ev.urlBerkas !== '#' ? `<a href="${ev.urlBerkas}" target="_blank" class="inline-flex items-center space-x-1 text-xs text-amber-400 underline font-bold mt-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i><span>Buka Lampiran Drive</span></a>` : ''}
-            </div>
-          `;
-        });
-      }
-      modal.classList.remove('hidden');
-      lucide.createIcons();
-    }
-
-    function closeModalDetail() {
-      document.getElementById('modal-detail-tanggal').classList.add('hidden');
-    }
-
-    function prevMonth() {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7);
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
       renderBeranda();
     }
 
-    function nextMonth() {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7);
+    function selectDate(dStr) {
+      currentSelectedDateStr = dStr;
       renderBeranda();
+      bukaModalDetailTanggal(dStr);
     }
 
     function renderDailyAgenda() {
       const list = document.getElementById('daily-agenda-list');
-      const badge = document.getElementById('selected-date-badge');
-      badge.innerText = selectedDateStr;
-
-      const events = allAgenda.filter(a => a.tglMulai === selectedDateStr && a.status === 'Approved');
-      list.innerHTML = '';
-
-      if (events.length === 0) {
-        list.innerHTML = `<div class="p-6 text-center text-xs text-amber-200/60 italic border border-amber-500/20 rounded-2xl bg-emerald-950/40">Tidak ada agenda pada tanggal ini.</div>`;
+      document.getElementById('selected-date-title').innerText = `Agenda: ${currentSelectedDateStr}`;
+      
+      const filtered = appState.agenda.filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
+      if(filtered.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada kegiatan terjadwal di tanggal ini.</p>`;
         return;
       }
 
-      events.forEach(ev => {
-        list.innerHTML += `
-          <div class="p-4 rounded-2xl bg-emerald-950/80 border border-amber-500/25 space-y-2 hover:border-amber-400 transition">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-amber-300">${ev.ruangan}</span>
-              <span class="text-emerald-300 font-semibold">${ev.waktuMulai || ''} - ${ev.waktuSelesai || ''}</span>
-            </div>
-            <h4 class="text-sm font-extrabold text-white">${ev.namaKegiatan}</h4>
-            <p class="text-xs text-emerald-200/70">${ev.penyelenggara} • <span class="text-amber-300">${ev.fakultas || 'Umum'}</span></p>
-          </div>
-        `;
-      });
+      list.innerHTML = filtered.map(a => `
+        <div class="bg-emerald-900/40 border border-amber-500/30 p-3 rounded-xl space-y-1">
+          <h4 class="font-bold text-xs text-amber-300">${a.nama}</h4>
+          <p class="text-[11px] text-emerald-200">📌 ${a.ruangan}</p>
+          <p class="text-[11px] text-slate-300">👤 ${a.penyelenggara}</p>
+          <p class="text-[10px] text-amber-400 font-medium">🕒 ${a.jamMulai} - ${a.jamSelesai} WIB</p>
+        </div>
+      `).join('');
     }
 
-    function renderAnnouncements() {
-      const container = document.getElementById('announcement-banner-container');
-      container.innerHTML = '';
-      if (announcements.length === 0) return;
-
-      announcements.forEach(ann => {
-        container.innerHTML += `
-          <div class="glass-card p-4 rounded-2xl border border-amber-500/40 flex items-start space-x-3 shadow-lg">
-            <div class="p-2 bg-amber-500/20 rounded-xl text-amber-400">
-              <i data-lucide="megaphone" class="w-5 h-5"></i>
-            </div>
-            <div class="flex-grow">
-              <h4 class="text-sm font-extrabold text-amber-300">${ann.judul}</h4>
-              <p class="text-xs text-emerald-100/90 mt-0.5">${ann.isi}</p>
-              <span class="text-[10px] text-amber-400/60 mt-1 block">${ann.tanggal || ''}</span>
-            </div>
+    function bukaModalDetailTanggal(dStr) {
+      const modal = document.getElementById('modal-detail-tanggal');
+      document.getElementById('modal-date-header').innerText = `Detail Agenda - Tanggal ${dStr}`;
+      const body = document.getElementById('modal-date-body');
+      
+      const filtered = appState.agenda.filter(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+      if(filtered.length === 0) {
+        body.innerHTML = `<p class="text-xs text-slate-300 italic">Ruangan kosong / Tidak ada booking pada tanggal ini.</p>`;
+      } else {
+        body.innerHTML = filtered.map(a => `
+          <div class="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-2">
+            <h4 class="font-bold text-sm text-amber-300">${a.nama}</h4>
+            <p class="text-xs text-emerald-200">🏛️ <strong>Ruangan:</strong> ${a.ruangan}</p>
+            <p class="text-xs text-emerald-200">🏢 <strong>Penyelenggara:</strong> ${a.penyelenggara} (${a.fakultas})</p>
+            <p class="text-xs text-emerald-200">⏰ <strong>Waktu:</strong> ${a.jamMulai} - ${a.jamSelesai} WIB</p>
+            ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="inline-block text-xs text-amber-400 underline font-bold">📄 Buka Proposal Google Drive</a>` : ''}
           </div>
-        `;
-      });
-      lucide.createIcons();
-    }
-
-    // ================= YEARLY CALENDAR =================
-    function renderYearlyCalendar() {
-      const year = document.getElementById('select-year').value;
-      const container = document.getElementById('yearly-grid');
-      container.innerHTML = '';
-
-      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-
-      for (let m = 0; m < 12; m++) {
-        const monthStr = `${year}-${String(m + 1).padStart(2, '0')}`;
-        const count = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthStr) && a.status === 'Approved').length;
-
-        container.innerHTML += `
-          <div onclick="document.getElementById('filter-bulan').value='${monthStr}'; switchTab('beranda');" class="glass-card p-5 rounded-2xl border border-amber-500/20 hover:border-amber-400 transition cursor-pointer flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-bold text-white">${monthNames[m]}</h3>
-              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">${count} Agenda</span>
-            </div>
-            <p class="text-xs text-emerald-200/60">Klik untuk membuka detail kalender bulan ini.</p>
-          </div>
-        `;
+        `).join('');
       }
+      modal.classList.remove('hidden');
+    }
+    function tutupModalDetailTanggal() {
+      document.getElementById('modal-detail-tanggal').classList.add('hidden');
     }
 
-    // ================= ARSIP TABLE =================
-    function renderArsipTable() {
-      const query = document.getElementById('search-arsip').value.toLowerCase();
-      const tbody = document.getElementById('arsip-table-body');
-      tbody.innerHTML = '';
+    // Backend Submission Handle (Collision & Insert)
+    async function handleAdminFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-booking');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Menyimpan...`;
 
-      const filtered = allAgenda.filter(a => 
-        (a.namaKegiatan.toLowerCase().includes(query) || (a.penyelenggara && a.penyelenggara.toLowerCase().includes(query)))
+      const newBooking = {
+        nama: document.getElementById('booking-nama').value,
+        penyelenggara: document.getElementById('booking-penyelenggara').value,
+        fakultas: document.getElementById('booking-fakultas').value,
+        ruangan: document.getElementById('booking-ruangan').value,
+        tglMulai: document.getElementById('booking-tgl-mulai').value,
+        tglSelesai: document.getElementById('booking-tgl-selesai').value,
+        jamMulai: document.getElementById('booking-jam-mulai').value,
+        jamSelesai: document.getElementById('booking-jam-selesai').value,
+        status: "Approved"
+      };
+
+      // Frontend Anti-Collision Check
+      const bentrok = appState.agenda.some(a => 
+        a.ruangan === newBooking.ruangan && 
+        !(newBooking.tglSelesai < a.tglMulai || newBooking.tglMulai > a.tglSelesai)
       );
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-xs text-amber-200/60 italic">Tidak ada data arsip kegiatan.</td></tr>`;
+      if(bentrok) {
+        showToast(`[BENTROK JADWAL] Ruangan "${newBooking.ruangan}" sudah terisi pada tanggal tersebut!`, "error");
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
+        lucide.createIcons();
         return;
       }
 
-      filtered.forEach(ev => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-emerald-900/40 transition">
-            <td class="p-4 font-bold text-white">${ev.namaKegiatan}</td>
-            <td class="p-4 text-emerald-200">${ev.penyelenggara} <br><span class="text-[11px] text-amber-400/80">(${ev.fakultas || 'Umum'})</span></td>
-            <td class="p-4"><span class="px-2 py-1 text-xs font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">${ev.ruangan}</span></td>
-            <td class="p-4 text-xs text-emerald-100">${ev.tglMulai}<br><span class="text-emerald-300/70">${ev.waktuMulai || ''} - ${ev.waktuSelesai || ''}</span></td>
-            <td class="p-4">
-              ${ev.urlBerkas && ev.urlBerkas !== '#' ? `<a href="${ev.urlBerkas}" target="_blank" class="text-xs text-amber-400 underline font-bold inline-flex items-center space-x-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span>Drive</span></a>` : '<span class="text-xs text-emerald-200/40 italic">Tidak Ada</span>'}
-            </td>
-          </tr>
-        `;
-      });
+      // Add to Local State
+      newBooking.id = "E-" + Date.now().toString().slice(-4);
+      appState.agenda.push(newBooking);
+      renderAll();
+      showToast("Agenda Baru Berhasil Disimpan!", "success");
+
+      // Backend HTTP Sync
+      try {
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ action: "simpanAgendaAdmin", data: JSON.stringify(newBooking) })
+        });
+      } catch(err) {
+        console.log("Local state updated.");
+      }
+
+      document.getElementById('form-booking-admin').reset();
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
       lucide.createIcons();
     }
 
-    // ================= ADMIN FORMS & ACTIONS =================
-    function handleAdminFormSubmit(e) {
-      e.preventDefault();
-      const form = e.target;
-      const fileInput = document.getElementById('berkasInputAdmin');
-      const file = fileInput.files[0];
-
-      const formData = {
-        namaKegiatan: form.namaKegiatan.value,
-        penyelenggara: form.penyelenggara.value,
-        fakultas: form.fakultas.value,
-        ruangan: form.ruangan.value,
-        tglMulai: form.tglMulai.value,
-        tglSelesai: form.tglSelesai.value,
-        waktuMulai: form.waktuMulai.value,
-        waktuSelesai: form.waktuSelesai.value,
-        keterangan: form.keterangan.value
-      };
-
-      const exist = allAgenda.find(a => a.tglMulai === formData.tglMulai && a.ruangan === formData.ruangan && a.status === 'Approved');
-      if (exist) {
-        showToast(`[BENTROK JADWAL] Ruangan "${formData.ruangan}" sudah terisi pada tanggal ${formData.tglMulai}!`, "error");
-        return;
-      }
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          const fileData = {
-            fileName: file.name,
-            mimeType: file.type,
-            data: evt.target.result
-          };
-          saveAgendaProcess(formData, fileData);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        saveAgendaProcess(formData, null);
-      }
-    }
-
-    function saveAgendaProcess(formData, fileData) {
-      showToast("Menyimpan data agenda ke Google Sheets...", "success");
-
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'simpanAgendaAdmin',
-          formObject: formData,
-          fileData: fileData
-        })
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          showToast(res.message, "success");
-          document.getElementById('bookingFormAdmin').reset();
-          loadDataFromSheet();
-        } else {
-          showToast(res.message, "error");
-        }
-      })
-      .catch(err => {
-        showToast("Agenda berhasil disimpan (Mode Local Demo)", "success");
-        const newObj = { id: "AGD-" + Date.now(), ...formData, status: "Approved", urlBerkas: "#" };
-        allAgenda.unshift(newObj);
-        document.getElementById('bookingFormAdmin').reset();
-        renderBeranda();
-      });
-    }
-
-    // ================= RUANGAN MANAGER WITH TWO-WAY SYNC =================
-    function handleRuanganSubmit(e) {
-      e.preventDefault();
-      const id = document.getElementById('ruangan-id-input').value;
-      const nama = document.getElementById('ruangan-nama-input').value;
-      const keterangan = document.getElementById('ruangan-ket-input').value;
-
-      showToast("Menyimpan ke Google Sheets...", "success");
-
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'simpanRuangan', id, nama, keterangan })
-      })
-      .then(res => res.json())
-      .then(res => {
-        showToast(res.message, res.success ? "success" : "error");
-        resetRuanganForm();
-        loadDataFromSheet();
-      })
-      .catch(() => {
-        if (id) {
-          const idx = ruanganList.findIndex(r => r.id === id);
-          if (idx !== -1) ruanganList[idx] = { id, nama, keterangan };
-        } else {
-          ruanganList.push({ id: "RNG-" + Date.now(), nama, keterangan });
-        }
-        showToast("Data ruangan tersimpan di lokal demo!", "success");
-        resetRuanganForm();
-        renderAllDropdowns();
-      });
-    }
-
-    function resetRuanganForm() {
-      document.getElementById('ruangan-id-input').value = '';
-      document.getElementById('ruangan-nama-input').value = '';
-      document.getElementById('ruangan-ket-input').value = '';
-      document.getElementById('ruangan-form-title').innerText = 'Tambah Ruangan / Aula Baru';
-      document.getElementById('ruangan-submit-btn-text').innerText = 'Simpan ke Spreadsheet';
-      document.getElementById('ruangan-cancel-btn').classList.add('hidden');
-    }
-
-    function editRuangan(id) {
-      const room = ruanganList.find(r => r.id === id);
-      if (!room) return;
-      document.getElementById('ruangan-id-input').value = room.id;
-      document.getElementById('ruangan-nama-input').value = room.nama;
-      document.getElementById('ruangan-ket-input').value = room.keterangan || '';
-      document.getElementById('ruangan-form-title').innerText = 'Edit Data Ruangan';
-      document.getElementById('ruangan-submit-btn-text').innerText = 'Perbarui Ruangan';
-      document.getElementById('ruangan-cancel-btn').classList.remove('hidden');
-      switchAdminSubTab('ruangan');
-    }
-
-    function deleteRuanganConfirm(id) {
-      if (!confirm("Apakah Anda yakin ingin menghapus ruangan ini dari Google Sheets?")) return;
-      
-      showToast("Menghapus ruangan...", "success");
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteRuangan', id })
-      })
-      .then(res => res.json())
-      .then(res => {
-        showToast(res.message, res.success ? "success" : "error");
-        loadDataFromSheet();
-      })
-      .catch(() => {
-        ruanganList = ruanganList.filter(r => r.id !== id);
-        showToast("Ruangan dihapus (Lokal Demo)!", "success");
-        renderAllDropdowns();
-      });
-    }
-
-    function renderRuanganTable() {
-      const tbody = document.getElementById('admin-ruangan-body');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-      if (ruanganList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-200/60 italic">Belum ada ruangan terdaftar di Google Sheets.</td></tr>`;
-        return;
-      }
-      ruanganList.forEach(r => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-emerald-900/40 transition">
-            <td class="p-3 font-mono text-amber-400/70">${r.id}</td>
-            <td class="p-3 font-bold text-white">${r.nama}</td>
-            <td class="p-3 text-emerald-200">${r.keterangan || '-'}</td>
-            <td class="p-3 text-center space-x-2">
-              <button onclick="editRuangan('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition">Edit</button>
-              <button onclick="deleteRuanganConfirm('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition">Hapus</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    // ================= PENGUMUMAN FORM =================
-    function handlePengumumanSubmit(e) {
-      e.preventDefault();
-      const judul = document.getElementById('ann-judul').value;
-      const isi = document.getElementById('ann-isi').value;
-
-      const newAnn = { id: "ANN-" + Date.now(), judul, isi, tanggal: new Date().toISOString().split('T')[0] };
-      announcements.unshift(newAnn);
-
-      showToast("Pengumuman berhasil diterbitkan!", "success");
-      document.getElementById('ann-judul').value = '';
-      document.getElementById('ann-isi').value = '';
-      renderAnnouncements();
-    }
-
-    // ================= IMPORT FILE EXCEL MANUAL & PEMISAHAN TANGGAL =================
-    function processExcelImport() {
-      const fileInput = document.getElementById('excelFileInput');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        showToast("Pilih file Excel terlebih dahulu!", "error");
-        return;
-      }
-
-      showToast("Membaca data file Excel...", "success");
+    // Excel Import Handle
+    function handleExcelImport(e) {
+      const file = e.target.files[0];
+      if(!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet);
 
-          if (jsonData.length === 0) {
-            showToast("File Excel kosong atau format tidak sesuai!", "error");
-            return;
+        let count = 0;
+        json.forEach(row => {
+          if(row['Nama Kegiatan'] || row['NAMA KEGIATAN']) {
+            appState.agenda.push({
+              id: "EX-" + Math.floor(Math.random()*10000),
+              nama: row['Nama Kegiatan'] || row['NAMA KEGIATAN'],
+              penyelenggara: row['Penyelenggara'] || row['PENYELENGGARA'] || "Unit Kerja",
+              fakultas: row['Fakultas'] || row['FAKULTAS'] || "Rektorat / Unit Pusat",
+              ruangan: row['Ruangan'] || row['RUANGAN'] || appState.ruangan[0].nama,
+              tglMulai: row['Tanggal'] || row['TANGGAL'] || "2027-06-01",
+              tglSelesai: row['Tanggal'] || row['TANGGAL'] || "2027-06-01",
+              jamMulai: "08:00",
+              jamSelesai: "16:00",
+              status: "Approved"
+            });
+            count++;
           }
+        });
 
-          let addedCount = 0;
-          let conflictCount = 0;
-
-          jsonData.forEach((row, idx) => {
-            // Pencocokan Nama Kolom secara Fleksibel
-            const namaKegiatan = row["Nama Kegiatan"] || row["Nama"] || row["Kegiatan"] || row["NAMA KEGIATAN"] || "";
-            const penyelenggara = row["Penyelenggara"] || row["Penyelenggara / Unit Kerja"] || row["PENYELENGGARA"] || "Umum";
-            const fakultas = row["Fakultas"] || row["Fakultas / Unit"] || row["FAKULTAS"] || "Umum";
-            const ruangan = row["Ruangan"] || row["Aula"] || row["Ruangan / Aula"] || row["RUANGAN"] || "Aula Utama";
-            
-            // Format Tanggal (Otomatis dipilah ke tanggal & bulan)
-            let rawDate = row["Tanggal"] || row["Tanggal Mulai"] || row["TANGGAL"] || row["Tgl"] || "";
-            let tglFormatted = "";
-
-            if (rawDate instanceof Date) {
-              tglFormatted = rawDate.toISOString().split('T')[0];
-            } else if (typeof rawDate === 'string' && rawDate.trim() !== '') {
-              const d = new Date(rawDate);
-              if (!isNaN(d.getTime())) {
-                tglFormatted = d.toISOString().split('T')[0];
-              } else {
-                tglFormatted = rawDate.trim();
-              }
-            }
-
-            const waktuMulai = row["Waktu Mulai"] || row["Jam Mulai"] || "08:00";
-            const waktuSelesai = row["Waktu Selesai"] || row["Jam Selesai"] || "16:00";
-            const keterangan = row["Keterangan"] || row["Catatan"] || "Import Manual Excel";
-
-            if (namaKegiatan && tglFormatted) {
-              // Cek Bentrok Jadwal
-              const conflict = allAgenda.find(a => a.tglMulai === tglFormatted && a.ruangan === ruangan && a.status === 'Approved');
-              if (!conflict) {
-                const newObj = {
-                  id: "AGD-EXCEL-" + Date.now() + "-" + idx,
-                  namaKegiatan: namaKegiatan,
-                  penyelenggara: penyelenggara,
-                  fakultas: fakultas,
-                  ruangan: ruangan,
-                  tglMulai: tglFormatted,
-                  tglSelesai: tglFormatted,
-                  waktuMulai: waktuMulai,
-                  waktuSelesai: waktuSelesai,
-                  status: "Approved",
-                  urlBerkas: "#",
-                  keterangan: keterangan
-                };
-                allAgenda.unshift(newObj);
-                addedCount++;
-              } else {
-                conflictCount++;
-              }
-            }
-          });
-
-          showToast(`Berhasil meng-import ${addedCount} agenda dari Excel! (${conflictCount} bentrok diabaikan)`, "success");
-          fileInput.value = '';
-          
-          // Refresh Semua Tampilan (Beranda, Kalender Bulanan/Tahunan, & Arsip)
-          renderBeranda();
-          renderArsipTable();
-          renderYearlyCalendar();
-        } catch (err) {
-          showToast("Gagal memproses file Excel: " + err.message, "error");
-        }
+        renderAll();
+        showToast(`Berhasil mengimpor ${count} kegiatan dari Excel!`, "success");
+        document.getElementById('excel-status-text').innerText = `Impor Berhasil: ${count} baris diproses.`;
       };
-
       reader.readAsArrayBuffer(file);
     }
 
-    // ================= REPORTS =================
+    // Manage Ruangan Functions
+    function renderRuanganTable() {
+      const body = document.getElementById('ruangan-table-body');
+      body.innerHTML = appState.ruangan.map(r => `
+        <tr>
+          <td class="p-3 text-amber-400 font-bold">#${r.id}</td>
+          <td class="p-3 font-semibold text-slate-100">${r.nama}</td>
+          <td class="p-3 text-slate-300">${r.keterangan || '-'}</td>
+          <td class="p-3 text-right space-x-2">
+            <button onclick="editRuangan(${r.id})" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded hover:bg-amber-500/40">Edit</button>
+            <button onclick="deleteRuanganConfirm(${r.id})" class="px-2 py-1 bg-red-900/40 text-red-300 rounded hover:bg-red-900/70">Hapus</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function handleRuanganSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('ruangan-edit-id').value;
+      const nama = document.getElementById('ruangan-nama').value;
+      const keterangan = document.getElementById('ruangan-keterangan').value;
+
+      if(editId) {
+        const item = appState.ruangan.find(r => r.id == editId);
+        if(item) {
+          item.nama = nama;
+          item.keterangan = keterangan;
+        }
+      } else {
+        const newId = appState.ruangan.length ? Math.max(...appState.ruangan.map(r => r.id)) + 1 : 1;
+        appState.ruangan.push({ id: newId, nama, keterangan });
+      }
+
+      resetRuanganForm();
+      renderAll();
+      showToast("Data Ruangan Tersimpan!", "success");
+    }
+
+    function editRuangan(id) {
+      const item = appState.ruangan.find(r => r.id == id);
+      if(item) {
+        document.getElementById('ruangan-edit-id').value = item.id;
+        document.getElementById('ruangan-nama').value = item.nama;
+        document.getElementById('ruangan-keterangan').value = item.keterangan || '';
+      }
+    }
+
+    function deleteRuanganConfirm(id) {
+      if(confirm("Apakah Anda yakin ingin menghapus ruangan ini?")) {
+        appState.ruangan = appState.ruangan.filter(r => r.id != id);
+        renderAll();
+        showToast("Ruangan Berhasil Dihapus", "info");
+      }
+    }
+
+    function resetRuanganForm() {
+      document.getElementById('ruangan-edit-id').value = '';
+      document.getElementById('form-ruangan').reset();
+    }
+
+    // Manage Pengumuman
+    function handlePengumumanSubmit(e) {
+      e.preventDefault();
+      const txt = document.getElementById('input-pengumuman-text').value;
+      appState.pengumuman = txt;
+      renderBeranda();
+      showToast("Pengumuman Beranda Diberbarui!", "success");
+    }
+
+    // Render Dropdowns
+    function renderAllDropdowns() {
+      const selectStage = document.getElementById('stage-room-select');
+      const selectBooking = document.getElementById('booking-ruangan');
+
+      const opts = appState.ruangan.map(r => `<option value="${r.nama}">${r.nama}</option>`).join('');
+      selectStage.innerHTML = opts;
+      selectBooking.innerHTML = opts;
+    }
+
+    // Year Calendar & Reports & Archives
+    function renderYearlyCalendar() {
+      const grid = document.getElementById('yearly-grid');
+      const year = document.getElementById('year-filter').value;
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+      
+      grid.innerHTML = monthNames.map((mName, idx) => {
+        const count = appState.agenda.filter(a => {
+          const m = new Date(a.tglMulai).getMonth();
+          const y = new Date(a.tglMulai).getFullYear();
+          return m === idx && y == year;
+        }).length;
+
+        return `
+          <div class="bg-emerald-950/40 border border-amber-500/20 p-4 rounded-xl">
+            <h4 class="font-bold text-amber-300 text-sm mb-2">${mName} ${year}</h4>
+            <p class="text-xs text-slate-300">${count} Kegiatan Terjadwal</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderArsipTable() {
+      const query = document.getElementById('arsip-search').value.toLowerCase();
+      const tbody = document.getElementById('arsip-table-body');
+      
+      const filtered = appState.agenda.filter(a => 
+        a.nama.toLowerCase().includes(query) || a.penyelenggara.toLowerCase().includes(query)
+      );
+
+      tbody.innerHTML = filtered.map(a => `
+        <tr class="hover:bg-emerald-900/30">
+          <td class="p-3 text-amber-300 font-medium">${a.tglMulai}</td>
+          <td class="p-3 font-semibold text-slate-100">${a.nama}</td>
+          <td class="p-3 text-emerald-200">${a.penyelenggara}</td>
+          <td class="p-3 text-slate-300">${a.ruangan}</td>
+          <td class="p-3 text-amber-400">${a.jamMulai} WIB</td>
+          <td class="p-3">
+            ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="text-amber-400 underline font-bold">Drive</a>` : '<span class="text-slate-500">-</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
     function renderReports() {
-      const monthInput = document.getElementById('report-month-select').value;
-      const filteredEvents = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthInput) && a.status === 'Approved');
+      const fakultasGrid = document.getElementById('laporan-fakultas-grid');
+      const bulananList = document.getElementById('laporan-bulanan-list');
 
-      // Room Summary
-      const roomSummaryContainer = document.getElementById('report-room-summary');
-      const roomCounts = {};
-      filteredEvents.forEach(e => {
-        roomCounts[e.ruangan] = (roomCounts[e.ruangan] || 0) + 1;
+      const fakMap = {};
+      appState.agenda.forEach(a => {
+        fakMap[a.fakultas] = (fakMap[a.fakultas] || 0) + 1;
       });
 
-      if (Object.keys(roomCounts).length === 0) {
-        roomSummaryContainer.innerHTML = `<p class="italic text-emerald-200/50">Tidak ada pemakaian ruangan pada periode ini.</p>`;
-      } else {
-        roomSummaryContainer.innerHTML = Object.entries(roomCounts).map(([room, cnt]) => `
-          <div class="flex justify-between items-center bg-emerald-950/60 p-2.5 rounded-xl border border-amber-500/20">
-            <span>${room}</span>
-            <span class="font-bold text-amber-400">${cnt} Kegiatan</span>
-          </div>
-        `).join('');
-      }
+      fakultasGrid.innerHTML = Object.keys(fakMap).map(f => `
+        <div class="bg-slate-900 p-3 rounded-lg border border-emerald-800 flex justify-between items-center">
+          <span class="text-xs font-semibold text-slate-200">${f}</span>
+          <span class="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400">${fakMap[f]} Kegiatan</span>
+        </div>
+      `).join('');
 
-      // Faculty Summary
-      const facultySummaryContainer = document.getElementById('report-faculty-summary');
-      const facultyCounts = {};
-      filteredEvents.forEach(e => {
-        const fac = e.fakultas || 'Umum';
-        facultyCounts[fac] = (facultyCounts[fac] || 0) + 1;
-      });
+      bulananList.innerHTML = `<p class="text-xs text-slate-300">Total Keseluruhan Agenda Terdaftar: <strong>${appState.agenda.length} Kegiatan</strong></p>`;
+    }
 
-      if (Object.keys(facultyCounts).length === 0) {
-        facultySummaryContainer.innerHTML = `<p class="italic text-emerald-200/50">Tidak ada kegiatan unit kerja pada periode ini.</p>`;
-      } else {
-        facultySummaryContainer.innerHTML = Object.entries(facultyCounts).map(([fac, cnt]) => `
-          <div class="flex justify-between items-center bg-emerald-950/60 p-2.5 rounded-xl border border-amber-500/20">
-            <span>${fac}</span>
-            <span class="font-bold text-amber-400">${cnt} Kegiatan</span>
-          </div>
-        `).join('');
+    function exportLaporanPDF() {
+      const element = document.getElementById('pdf-report-container');
+      const opt = {
+        margin:       0.5,
+        filename:     'Laporan_Kegiatan_UINAR.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function refreshDataSheet() {
+      loadDataFromBackend();
+    }
+
+    // 3D Scene Initialization
+    function init3DScene() {
+      const container = document.getElementById('canvas-3d-container');
+      if(!container) return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
+
+      const light = new THREE.DirectionalLight(0xf59e0b, 1);
+      light.position.set(5, 10, 7).normalize();
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0x064e3b, 1.5));
+
+      const geometry = new THREE.BoxGeometry(4, 0.4, 2.5);
+      const material = new THREE.MeshStandardMaterial({ color: 0x065f46, metalness: 0.3, roughness: 0.4 });
+      const stage = new THREE.Mesh(geometry, material);
+      scene.add(stage);
+
+      camera.position.set(0, 3, 6);
+      camera.lookAt(0, 0, 0);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        stage.rotation.y += 0.005;
+        renderer.render(scene, camera);
       }
+      animate();
+    }
+
+    function render3DStage() {
+      showToast(`Visualisasi 3D Ruangan Diperbarui`, "info");
+    }
+
+    // Utility Toast Notification
+    function showToast(msg, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let colorClass = "bg-emerald-900 border-amber-500 text-amber-200";
+      if(type === "error") colorClass = "bg-red-950 border-red-500 text-red-200";
+      if(type === "success") colorClass = "bg-emerald-950 border-emerald-400 text-emerald-200";
+
+      toast.className = `px-4 py-3 rounded-xl border shadow-2xl text-xs font-bold transition flex items-center gap-2 ${colorClass}`;
+      toast.innerHTML = `<span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
     }
   </script>
 </body>
