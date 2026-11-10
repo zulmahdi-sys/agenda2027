@@ -366,13 +366,10 @@
     <section id="tab-tahunan" class="hidden space-y-6">
       <div class="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
         <h2 class="text-xl sm:text-2xl font-bold gold-gradient-text">Kalender Acara Setahun</h2>
-        <select id="year-filter" onchange="renderYearlyCalendar()" aria-label="Pilih tahun kalender" class="min-h-11 w-full min-[420px]:w-auto bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg px-3 py-2.5">
-          <option value="2026" selected>Tahun 2026</option>
-          <option value="2027">Tahun 2027</option>
-        </select>
+        <select id="year-filter" onchange="renderYearlyCalendar()" aria-label="Pilih tahun kalender" class="min-h-11 w-full min-[420px]:w-auto bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg px-3 py-2.5"></select>
       </div>
       <div id="yearly-grid" class="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"></div>
-      <p class="flex items-center gap-2 text-xs font-semibold text-slate-600"><span aria-hidden="true" class="h-3 w-3 rounded bg-green-200 ring-1 ring-green-300"></span>Tanggal berwarna hijau memiliki agenda. Pilih tanggal untuk melihat detail.</p>
+      <p class="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600"><span class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded bg-green-200 ring-1 ring-green-300"></span>Tanggal berwarna hijau memiliki agenda</span><span class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded bg-red-200 ring-1 ring-red-300"></span>Tanggal berwarna merah adalah hari khusus nasional atau Islam</span><span>Pilih tanggal untuk melihat detail.</span></p>
     </section>
 
     <!-- 3. TAB ARSIP KEGIATAN -->
@@ -418,6 +415,7 @@
           <button onclick="switchAdminTab('input-booking')" id="admin-sub-input-booking" class="min-h-11 shrink-0 rounded-lg border border-amber-400 bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300 focus-visible:ring-2 focus-visible:ring-amber-400" aria-current="page">Input Booking</button>
           <button onclick="switchAdminTab('import-excel')" id="admin-sub-import-excel" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Import Excel</button>
           <button onclick="switchAdminTab('kelola-ruangan')" id="admin-sub-kelola-ruangan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Ruangan</button>
+          <button onclick="switchAdminTab('kalender-nasional')" id="admin-sub-kalender-nasional" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kalender Nasional</button>
           <button onclick="switchAdminTab('pengumuman')" id="admin-sub-pengumuman" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pengumuman</button>
           <button onclick="switchAdminTab('latar-belakang')" id="admin-sub-latar-belakang" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Latar Belakang</button>
           <button onclick="switchAdminTab('laporan')" id="admin-sub-laporan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Laporan & Rekapan</button>
@@ -540,17 +538,60 @@
           </div>
         </div>
 
+        <!-- SUB-TAB: KALENDER NASIONAL -->
+        <div id="admin-panel-kalender-nasional" class="hidden space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Hari Libur, Cuti Bersama & Hari Besar Islam</h3>
+            <p class="mt-1 text-xs text-emerald-200">Masukkan tanggal berdasarkan kalender resmi pemerintah. Setelah disimpan, tanggal otomatis ditandai dan dapat dilihat semua pengguna. Periksa kembali tanggal cuti bersama dan hari besar Islam karena dapat berubah sesuai penetapan resmi.</p>
+          </div>
+          <form id="form-calendar-event" onsubmit="handleCalendarEventSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-3">
+            <div>
+              <label for="calendar-event-date" class="mb-1 block text-xs font-bold text-amber-300">TANGGAL *</label>
+              <input id="calendar-event-date" type="date" required class="w-full rounded-lg border border-amber-500/40 bg-slate-900 p-3 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="calendar-event-type" class="mb-1 block text-xs font-bold text-amber-300">JENIS HARI *</label>
+              <select id="calendar-event-type" required class="w-full rounded-lg border border-amber-500/40 bg-slate-900 p-3 text-xs text-amber-200">
+                <option value="Libur nasional">Libur nasional</option>
+                <option value="Cuti bersama">Cuti bersama</option>
+                <option value="Hari besar Islam">Hari besar Islam</option>
+              </select>
+            </div>
+            <div>
+              <label for="calendar-event-name" class="mb-1 block text-xs font-bold text-amber-300">NAMA HARI / PERINGATAN *</label>
+              <input id="calendar-event-name" type="text" maxlength="150" required placeholder="Contoh: Idulfitri 1448 H" class="w-full rounded-lg border border-amber-500/40 bg-slate-900 p-3 text-xs text-slate-100">
+            </div>
+            <div class="md:col-span-3">
+              <button id="calendar-event-submit" type="submit" class="rounded-lg px-4 py-2 gold-btn text-xs font-bold">Simpan ke Kalender</button>
+            </div>
+          </form>
+          <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-emerald-900/80 font-bold text-amber-300">
+                <tr><th class="p-3">Tanggal</th><th class="p-3">Nama</th><th class="p-3">Jenis</th><th class="p-3 text-right">Aksi</th></tr>
+              </thead>
+              <tbody id="calendar-event-table-body" class="divide-y divide-emerald-900/40"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- SUB-TAB 4: PENGUMUMAN -->
         <div id="admin-panel-pengumuman" class="hidden space-y-4">
           <h3 class="text-lg font-bold text-amber-300">Pengumuman Running Banner Beranda</h3>
           <form onsubmit="handlePengumumanSubmit(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-amber-300 mb-1">TEKS PENGUMUMAN AKTIF</label>
-              <textarea id="input-pengumuman-text" rows="3" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3"></textarea>
+              <label class="block text-xs font-bold text-amber-300 mb-1">TEKS PENGUMUMAN</label>
+              <textarea id="input-pengumuman-text" rows="3" maxlength="5000" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3"></textarea>
             </div>
-            <button type="submit" class="px-6 py-2.5 gold-btn text-xs font-bold rounded-xl flex items-center gap-2">
-              <i data-lucide="send" class="w-4 h-4"></i> Terbitkan ke Beranda
-            </button>
+            <p id="announcement-admin-status" aria-live="polite" class="text-xs text-emerald-200">Status pengumuman akan dimuat dari spreadsheet.</p>
+            <div class="flex flex-wrap gap-3">
+              <button id="publish-announcement-button" type="submit" class="px-6 py-2.5 gold-btn text-xs font-bold rounded-xl flex items-center gap-2">
+                <i data-lucide="send" class="w-4 h-4"></i> Terbitkan ke Beranda
+              </button>
+              <button id="unpublish-announcement-button" type="button" onclick="unpublishAnnouncement()" class="px-6 py-2.5 rounded-xl border border-red-400/50 text-xs font-bold text-red-300 hover:bg-red-950/50">
+                Cabut Pengumuman
+              </button>
+            </div>
           </form>
         </div>
 
@@ -666,6 +707,7 @@
     let currentDate = new Date();
     let currentSelectedDateStr = normalizeDateValue(new Date());
     let isAdminLoggedIn = false;
+    let adminPassword = '';
 
     let appState = {
       ruangan: [
@@ -673,7 +715,9 @@
         { id: 2, nama: "Aula Utama Gedung Rektorat", keterangan: "Kapasitas 300 Orang, VIP Executive" },
         { id: 3, nama: "Ruang Rapat Senat Kampus", keterangan: "Kapasitas 100 Orang, Oval Table" }
       ],
-      pengumuman: "Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.",
+      pengumuman: "",
+      pengumumanPublished: false,
+      hariKhusus: [],
       agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
     };
 
@@ -681,6 +725,7 @@
     window.onload = function() {
       lucide.createIcons();
       switchTab('beranda');
+      populateYearFilter();
       loadSavedBackgroundImage();
       loadDataFromBackend();
       renderAll();
@@ -695,31 +740,49 @@
       renderArsipTable();
       renderReports();
       renderRuanganTable();
+      renderCalendarEventTable();
     }
 
     // Backend HTTP Fetch Data Loading
     async function loadDataFromBackend() {
       try {
         const resp = await fetch(WEB_APP_URL + "?action=getInitialData");
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data && Array.isArray(data.agenda)) {
-            appState = {
-              ...appState,
-              ...data,
-              agenda: data.agenda.length
-                ? data.agenda.map(normalizeAgendaItem)
-                : appState.agenda,
-              ruangan: data.ruangan || appState.ruangan,
-              pengumuman: data.pengumuman || appState.pengumuman
-            };
-            renderAll();
-            showToast("Data terbaru berhasil disinkronkan dari Google Sheets!", "success");
-          }
-        }
+        if (!resp.ok) throw new Error(`Server data mengembalikan HTTP ${resp.status}.`);
+        const data = await resp.json();
+        if (data && data.success === false) throw new Error(data.message || "Gagal memuat data dari server.");
+        if (!data || !Array.isArray(data.agenda)) throw new Error("Format data server tidak sesuai.");
+        appState = {
+          ...appState,
+          agenda: data.agenda.length
+            ? data.agenda.map(normalizeAgendaItem)
+            : appState.agenda,
+          ruangan: Array.isArray(data.ruangan) && data.ruangan.length ? data.ruangan : appState.ruangan,
+          pengumuman: typeof data.pengumuman === 'string' ? data.pengumuman : '',
+          pengumumanPublished: data.pengumumanPublished === true,
+          hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : []
+        };
+        document.getElementById('input-pengumuman-text').value = appState.pengumuman;
+        renderAnnouncementAdminState();
+        renderAll();
+        showToast("Data terbaru berhasil disinkronkan dari Google Sheets!", "success");
       } catch (err) {
-        console.warn("Menggunakan lokal state:", err);
+        console.error("Gagal menyinkronkan data dari server:", err);
+        showToast(`Data gagal dimuat dari server: ${err.message}`, "error");
       }
+    }
+
+    async function requestBackendAction(action, parameters = {}) {
+      const response = await fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ action, ...parameters })
+      });
+      if (!response.ok) throw new Error(`Server mengembalikan HTTP ${response.status}.`);
+      const result = await response.json();
+      if (!result || result.success !== true) {
+        throw new Error(result && result.message ? result.message : "Permintaan gagal diproses server.");
+      }
+      return result;
     }
 
     // Tab Navigation
@@ -774,7 +837,7 @@
 
     // Sub-Tab Admin Navigation
     function switchAdminTab(subTabId) {
-      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'pengumuman', 'latar-belakang', 'laporan'];
+      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'kalender-nasional', 'pengumuman', 'latar-belakang', 'laporan'];
       subTabs.forEach(id => {
         const panel = document.getElementById(`admin-panel-${id}`);
         const btn = document.getElementById(`admin-sub-${id}`);
@@ -807,20 +870,29 @@
     function tutupModalLoginAdmin() {
       document.getElementById('modal-login-admin').classList.add('hidden');
     }
-    function prosesLoginAdmin(e) {
+    async function prosesLoginAdmin(e) {
       e.preventDefault();
+      const submitButton = e.currentTarget.querySelector('button[type="submit"]');
       const pass = document.getElementById('admin-pass-input').value;
-      if(pass === '1122') {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Memeriksa...';
+      try {
+        await requestBackendAction('verifyAdmin', { adminPassword: pass });
         isAdminLoggedIn = true;
+        adminPassword = pass;
         tutupModalLoginAdmin();
         switchTab('admin');
         showToast("Login Admin Berhasil!", "success");
-      } else {
-        showToast("Kata Sandi Admin Salah!", "error");
+      } catch (error) {
+        showToast(error.message, "error");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Masuk Admin';
       }
     }
     function logoutAdmin() {
       isAdminLoggedIn = false;
+      adminPassword = '';
       switchTab('beranda');
       showToast("Anda telah keluar dari mode Admin.", "info");
     }
@@ -839,6 +911,8 @@
 
     // Render Beranda Calendar & Announcements
     function renderBeranda() {
+      const announcementBanner = document.getElementById('announcement-banner');
+      announcementBanner.classList.toggle('hidden', !appState.pengumumanPublished || !appState.pengumuman.trim());
       document.getElementById('announcement-text').innerText = appState.pengumuman;
 
       const year = currentDate.getFullYear();
@@ -1089,12 +1163,68 @@
     }
 
     // Manage Pengumuman
-    function handlePengumumanSubmit(e) {
+    function renderAnnouncementAdminState() {
+      const status = document.getElementById('announcement-admin-status');
+      const unpublishButton = document.getElementById('unpublish-announcement-button');
+      if (!status || !unpublishButton) return;
+      status.textContent = appState.pengumumanPublished
+        ? 'Status: sedang diterbitkan dan terlihat oleh semua pengguna.'
+        : 'Status: tidak diterbitkan. Teks tersimpan sebagai draf jika pernah diterbitkan.';
+      unpublishButton.disabled = !appState.pengumumanPublished;
+      unpublishButton.classList.toggle('opacity-50', !appState.pengumumanPublished);
+      unpublishButton.classList.toggle('cursor-not-allowed', !appState.pengumumanPublished);
+    }
+
+    async function handlePengumumanSubmit(e) {
       e.preventDefault();
-      const txt = document.getElementById('input-pengumuman-text').value;
-      appState.pengumuman = txt;
-      renderBeranda();
-      showToast("Pengumuman Beranda Diberbarui!", "success");
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk menerbitkan pengumuman.", "error");
+        return;
+      }
+      const text = document.getElementById('input-pengumuman-text').value.trim();
+      if (!text) {
+        showToast("Teks pengumuman tidak boleh kosong.", "error");
+        return;
+      }
+      const button = document.getElementById('publish-announcement-button');
+      button.disabled = true;
+      try {
+        const result = await requestBackendAction('publishAnnouncement', {
+          adminPassword,
+          text
+        });
+        appState.pengumuman = result.pengumuman;
+        appState.pengumumanPublished = result.pengumumanPublished === true;
+        renderBeranda();
+        renderAnnouncementAdminState();
+        showToast(result.message, "success");
+      } catch (error) {
+        showToast(`Pengumuman gagal diterbitkan: ${error.message}`, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function unpublishAnnouncement() {
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk mencabut pengumuman.", "error");
+        return;
+      }
+      if (!appState.pengumumanPublished || !confirm("Cabut pengumuman dari halaman Beranda?")) return;
+      const button = document.getElementById('unpublish-announcement-button');
+      button.disabled = true;
+      try {
+        const result = await requestBackendAction('unpublishAnnouncement', { adminPassword });
+        appState.pengumuman = result.pengumuman;
+        appState.pengumumanPublished = false;
+        renderBeranda();
+        renderAnnouncementAdminState();
+        showToast(result.message, "success");
+      } catch (error) {
+        showToast(`Pengumuman gagal dicabut: ${error.message}`, "error");
+      } finally {
+        button.disabled = false;
+      }
     }
 
     function loadSavedBackgroundImage() {
