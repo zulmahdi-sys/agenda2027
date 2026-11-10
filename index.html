@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Spatial Agenda & Booking Aula - UIN Ar-Raniry Banda Aceh</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js (3D Library) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      background-color: #022c22; /* Emerald 950 base */
+    }
+
+    .font-arabic {
+      font-family: 'Amiri', serif;
+    }
+
+    /* Geometric Islamic SVG Pattern Overlay */
+    .bg-islamic-pattern {
+      background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f59e0b' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40zm0-40h40v40H40V0zM0 40h40v40H0V40z'/%3E%3Cpath d='M20 0l20 20-20 20L0 20zM60 0l20 20-20 20-20-20zM20 40l20 20-20 20-20-20zM60 40l20 20-20 20-20-20z'/%3E%3Cpath d='M20 10l10 10-10 10-10-10zM60 10l10 10-10 10-10-10zM20 50l10 10-10 10-10-10zM60 50l10 10-10 10-10-10z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Glassmorphic Islamic Card */
+    .glass-panel {
+      background: rgba(4, 47, 38, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    
+    .glass-card {
+      background: rgba(6, 78, 59, 0.55);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(245, 158, 11, 0.18);
+    }
+
+    /* Islamic Golden Arch / Frame Accent */
+    .islamic-border {
+      position: relative;
+    }
+    .islamic-border::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 3px;
+      background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+    }
+
+    /* Glowing Effects */
+    .glow-gold {
+      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.35);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+    }
+    
+    /* Modern Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(2, 44, 34, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.5);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(245, 158, 11, 0.8);
+    }
+
+    canvas {
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="h-full text-amber-50 antialiased selection:bg-amber-500 selection:text-slate-950 flex flex-col bg-islamic-pattern">
+
+  <!-- ================= BACKGROUND 3D CANVAS ================= -->
+  <div id="canvas-container" class="fixed inset-0 z-0 pointer-events-auto"></div>
+
+  <!-- ================= NAVBAR RESPONSIF UIN AR-RANIRY ================= -->
+  <header class="relative z-40 w-full px-4 sm:px-8 py-3">
+    <nav class="max-w-7xl mx-auto glass-panel rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xl transition-all duration-300 islamic-border">
+      <!-- Logo & Brand UIN Ar-Raniry -->
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchTab('beranda')">
+        <div class="p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl group-hover:scale-105 transition duration-300 shadow-lg glow-gold">
+          <!-- Geometric Islamic Octagram Symbol -->
+          <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l2.4 3.6 4.3-1.3-1.3 4.3 3.6 2.4-3.6 2.4 1.3 4.3-4.3-1.3L12 22l-2.4-3.6-4.3 1.3 1.3-4.3-3.6-2.4 3.6-2.4-1.3-4.3 4.3 1.3L12 2z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+              UIN <span class="text-emerald-400">AR-RANIRY</span>
+            </span>
+            <span class="font-arabic text-amber-400 text-sm hidden sm:inline">جامعة أر الرانيري</span>
+          </div>
+          <span class="block text-[10px] text-emerald-300/70 font-medium tracking-widest uppercase">Agenda & Booking Aula / Gedung Acara</span>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Menu -->
+      <div class="hidden md:flex items-center space-x-2 bg-emerald-950/80 p-1.5 rounded-xl border border-amber-500/20">
+        <button onclick="switchTab('beranda')" id="nav-beranda" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2 text-amber-400 bg-amber-500/10 border border-amber-500/30">
+          <i data-lucide="compass" class="w-4 h-4"></i><span>Beranda & Virtual Stage</span>
+        </button>
+        <button onclick="switchTab('kalender-tahun')" id="nav-kalender-tahun" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-emerald-200/80 hover:text-amber-300 hover:bg-emerald-900/60 transition-all flex items-center space-x-2">
+          <i data-lucide="calendar-range" class="w-4 h-4"></i><span>Kalender Setahun</span>
+        </button>
+        <button onclick="switchTab('arsip')" id="nav-arsip" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-emerald-200/80 hover:text-amber-300 hover:bg-emerald-900/60 transition-all flex items-center space-x-2">
+          <i data-lucide="archive" class="w-4 h-4"></i><span>Arsip Kegiatan</span>
+        </button>
+      </div>
+
+      <!-- Admin Login / Portal Button -->
+      <div class="flex items-center space-x-3">
+        <button onclick="handleAdminTabClick()" id="nav-admin" class="flex items-center space-x-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-sm transition shadow-lg glow-gold active:scale-95">
+          <i data-lucide="shield-check" class="w-4 h-4"></i><span id="admin-btn-text">Dashboard Admin</span>
+        </button>
+
+        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-emerald-900/80 border border-amber-500/30 text-amber-400 hover:text-white focus:outline-none active:scale-95">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu Dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden max-w-7xl mx-auto mt-2 glass-panel rounded-2xl p-4 space-y-2 shadow-2xl animate-fade-in border border-amber-500/30">
+      <button onclick="switchTab('beranda'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center space-x-3">
+        <i data-lucide="compass" class="w-5 h-5"></i><span>Beranda & Stage 3D</span>
+      </button>
+      <button onclick="switchTab('kalender-tahun'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-emerald-100 hover:bg-emerald-900/60 flex items-center space-x-3">
+        <i data-lucide="calendar-range" class="w-5 h-5"></i><span>Kalender Setahun</span>
+      </button>
+      <button onclick="switchTab('arsip'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-emerald-100 hover:bg-emerald-900/60 flex items-center space-x-3">
+        <i data-lucide="archive" class="w-5 h-5"></i><span>Arsip Kegiatan</span>
+      </button>
+      <button onclick="handleAdminTabClick(); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 flex items-center space-x-3 mt-2 shadow-md">
+        <i data-lucide="shield-check" class="w-5 h-5"></i><span>Dashboard Admin</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT WRAPPER ================= -->
+  <main class="relative z-30 max-w-7xl mx-auto px-4 sm:px-8 py-4 flex-grow w-full flex flex-col justify-between pointer-events-none">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="pointer-events-auto hidden mb-6 p-4 rounded-xl text-white shadow-2xl glass-panel flex items-center justify-between border border-amber-500/40 animate-bounce">
+      <div class="flex items-center space-x-3">
+        <div id="toast-icon" class="p-2 bg-amber-500/20 rounded-lg text-amber-400">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+        <span id="toast-message" class="text-sm font-medium"></span>
+      </div>
+      <button onclick="hideToast()" class="p-1 text-emerald-300 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- ================= MODAL LOGIN ADMIN ================= -->
+    <div id="modal-login-admin" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-emerald-950/85 backdrop-blur-md pointer-events-auto">
+      <div class="glass-panel w-full max-w-md rounded-3xl p-6 border border-amber-500/40 shadow-2xl space-y-4 relative animate-fade-in islamic-border">
+        <div class="flex items-center justify-between pb-3 border-b border-amber-500/20">
+          <div class="flex items-center space-x-3">
+            <div class="p-2.5 bg-amber-500/20 rounded-xl border border-amber-500/40 text-amber-400 glow-gold">
+              <i data-lucide="lock" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-extrabold text-white">Login Autentikasi Admin</h3>
+              <p class="text-xs text-amber-300/80">Masukkan password admin untuk mengelola booking & pengumuman</p>
+            </div>
+          </div>
+          <button onclick="closeModalLogin()" class="p-2 rounded-xl bg-emerald-900/80 text-amber-300 hover:text-white border border-amber-500/30 active:scale-95 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <form onsubmit="verifyAdminPass(event)" class="space-y-4 pt-2">
+          <div>
+            <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Kata Sandi Admin *</label>
+            <input type="password" id="admin-pass-input" placeholder="Masukkan Sandi (Default: 1122)" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
+          </div>
+          <button type="submit" class="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg glow-gold flex justify-center items-center space-x-2 border border-amber-300/40 active:scale-95">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>Masuk Dashboard Admin</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL DETAIL AGENDA TANGGAL ================= -->
+    <div id="modal-detail-tanggal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-emerald-950/85 backdrop-blur-md pointer-events-auto">
+      <div class="glass-panel w-full max-w-lg rounded-3xl p-6 border border-amber-500/40 shadow-2xl space-y-4 relative animate-fade-in islamic-border">
+        <div class="flex items-center justify-between pb-3 border-b border-amber-500/20">
+          <div class="flex items-center space-x-3">
+            <div class="p-2.5 bg-amber-500/20 rounded-xl border border-amber-500/40 text-amber-400 glow-gold">
+              <i data-lucide="calendar-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg font-extrabold text-white">Detail Booking Agenda</h3>
+                <span class="font-arabic text-amber-400 text-sm">جدول</span>
+              </div>
+              <p id="modal-date-title" class="text-xs font-semibold text-amber-300/80"></p>
+            </div>
+          </div>
+          <button onclick="closeModalDetail()" class="p-2 rounded-xl bg-emerald-900/80 text-amber-300 hover:text-white border border-amber-500/30 active:scale-95 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div id="modal-events-list" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+        <div class="pt-3 border-t border-amber-500/20 flex justify-end">
+          <button onclick="closeModalDetail()" class="px-5 py-2 bg-emerald-900 hover:bg-emerald-800 text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 transition">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SECTION 1: BERANDA UIN AR-RANIRY 3D STAGE ================= -->
+    <section id="tab-beranda" class="tab-content space-y-6 pointer-events-auto">
+      
+      <!-- PENGUMUMAN LIVE BANNER -->
+      <div id="announcement-banner-container" class="space-y-3">
+        <!-- Dynamic Announcements Rendered Here -->
+      </div>
+
+      <!-- Header Banner UIN Ar-Raniry & Controls -->
+      <div class="glass-panel p-6 rounded-3xl shadow-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border border-amber-500/30 islamic-border">
+        <div>
+          <div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-3">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>Spatial Virtual Stage 3D - UIN Ar-Raniry</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Agenda & Booking Aula / Gedung Acara</h1>
+            <span class="font-arabic text-2xl text-amber-400 hidden sm:inline">جامعة أر الرانيري</span>
+          </div>
+          <p class="text-sm text-emerald-200/70 mt-1">UIN Ar-Raniry Banda Aceh - Inspeksi ruangan 3D interaktif dan jadwal penggunaan gedung acara.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div class="flex items-center space-x-2 bg-emerald-950/80 px-3 py-2 rounded-xl border border-amber-500/30">
+            <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+            <select id="select-ruangan-3d" onchange="change3dRoom(this.value)" class="bg-transparent text-xs font-semibold text-emerald-100 focus:outline-none">
+              <option value="Aula Utama" class="bg-emerald-950 text-white">Aula Utama (Gold Dome)</option>
+              <option value="Ruang Rapat 1" class="bg-emerald-950 text-white">Ruang Rapat 1</option>
+              <option value="Ruang Rapat 2" class="bg-emerald-950 text-white">Ruang Rapat 2</option>
+              <option value="Auditorium" class="bg-emerald-950 text-white">Auditorium Spatial</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-2 bg-emerald-950/80 px-3 py-2 rounded-xl border border-amber-500/30">
+            <i data-lucide="calendar" class="w-4 h-4 text-amber-400"></i>
+            <input type="month" id="filter-bulan" class="bg-transparent text-xs font-semibold text-emerald-100 focus:outline-none" onchange="renderBeranda()">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Kalender Bulanan Interaktif -->
+        <div class="lg:col-span-2 glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-6 pb-3 border-b border-amber-500/20">
+            <div class="flex items-center space-x-3">
+              <div class="p-2 bg-amber-500/20 rounded-xl border border-amber-500/30 text-amber-400">
+                <i data-lucide="calendar-days" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 id="month-year-header" class="text-lg font-extrabold text-white tracking-wide"></h2>
+                <span class="text-[11px] text-amber-400/80 font-arabic">التقويم الهجري والميلادي</span>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="prevMonth()" class="p-2 hover:bg-emerald-900/80 rounded-xl border border-amber-500/30 text-amber-300 transition active:scale-95"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+              <button onclick="nextMonth()" class="p-2 hover:bg-emerald-900/80 rounded-xl border border-amber-500/30 text-amber-300 transition active:scale-95"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-7 gap-2 text-center font-bold text-xs text-amber-300 uppercase tracking-widest mb-3">
+            <div>Ahad</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+          </div>
+          <div id="calendar-days-grid" class="grid grid-cols-7 gap-2"></div>
+        </div>
+
+        <!-- Agenda Harian Panel -->
+        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 flex flex-col">
+          <div class="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-4">
+            <h2 class="text-base font-bold text-white flex items-center space-x-2">
+              <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i>
+              <span>Agenda Terjadwal</span>
+            </h2>
+            <span id="selected-date-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300"></span>
+          </div>
+
+          <div id="daily-agenda-list" class="space-y-3 overflow-y-auto max-h-[380px] flex-grow pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SECTION 2: KALENDER SETAHUN ================= -->
+    <section id="tab-kalender-tahun" class="tab-content hidden space-y-6 pointer-events-auto">
+      <div class="glass-panel p-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-amber-500/30 islamic-border">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Kalender Tahunan Agenda</h1>
+          <p class="text-sm text-emerald-200/70">Matriks tinjauan jadwal 12 bulan sepanjang tahun.</p>
+        </div>
+        <div class="flex items-center space-x-3 bg-emerald-950/80 px-4 py-2 rounded-xl border border-amber-500/30">
+          <i data-lucide="filter" class="w-4 h-4 text-amber-400"></i>
+          <select id="select-year" class="bg-transparent text-sm font-bold text-amber-200 focus:outline-none cursor-pointer" onchange="renderYearlyCalendar()">
+            <option value="2026" class="bg-emerald-950">Tahun 2026 M / 1447 H</option>
+            <option value="2027" class="bg-emerald-950">Tahun 2027 M / 1448 H</option>
+          </select>
+        </div>
+      </div>
+      <div id="yearly-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+    </section>
+
+    <!-- ================= SECTION 3: ARSIP KEGIATAN ================= -->
+    <section id="tab-arsip" class="tab-content hidden space-y-6 pointer-events-auto">
+      <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 islamic-border">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-amber-500/20">
+          <div class="flex items-center space-x-3">
+            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400 glow-gold">
+              <i data-lucide="archive" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-white">Arsip Kegiatan & Dokumentasi Drive</h1>
+              <p class="text-xs text-emerald-200/70">Riwayat histori kegiatan aula UIN Ar-Raniry yang telah atau akan dilaksanakan</p>
+            </div>
+          </div>
+          
+          <input type="text" id="search-arsip" oninput="renderArsipTable()" placeholder="Cari nama kegiatan / unit kerja..." class="bg-emerald-950/90 border border-amber-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none w-full sm:w-64">
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-amber-500/20">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-emerald-950/90 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20">
+                <th class="p-4">Kegiatan</th>
+                <th class="p-4">Fakultas / Unit Kerja</th>
+                <th class="p-4">Ruangan</th>
+                <th class="p-4">Tanggal & Jam</th>
+                <th class="p-4">Berkas Drive</th>
+              </tr>
+            </thead>
+            <tbody id="arsip-table-body" class="divide-y divide-amber-500/10 text-sm bg-emerald-950/40"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SECTION 4: DASHBOARD ADMIN & LAPORAN ================= -->
+    <section id="tab-admin" class="tab-content hidden space-y-6 pointer-events-auto">
+      
+      <!-- Sub-Tab Header Admin -->
+      <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 islamic-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold text-white flex items-center space-x-3">
+            <i data-lucide="shield-check" class="w-7 h-7 text-amber-400"></i>
+            <span>Dashboard Admin UIN Ar-Raniry</span>
+          </h1>
+          <p class="text-xs text-emerald-200/70 mt-1">Input agenda, kelola pengumuman beranda, & unduh rekapan laporan bulanan/per-fakultas.</p>
+        </div>
+
+        <div class="flex items-center space-x-2 bg-emerald-950/90 p-1.5 rounded-2xl border border-amber-500/30">
+          <button onclick="switchAdminSubTab('input')" id="subnav-input" class="admin-subnav-btn px-4 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40">Input & Booking</button>
+          <button onclick="switchAdminSubTab('pengumuman')" id="subnav-pengumuman" class="admin-subnav-btn px-4 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Pengumuman</button>
+          <button onclick="switchAdminSubTab('laporan')" id="subnav-laporan" class="admin-subnav-btn px-4 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Laporan & Rekapan</button>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 1: INPUT AGENDA / BOOKING -->
+      <div id="admin-sub-input" class="admin-sub-content space-y-6">
+        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
+          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
+            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
+              <i data-lucide="plus-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white">Input & Booking Tempat Baru (Admin Only)</h2>
+              <p class="text-xs text-emerald-200/70">Data langsung otomatis Approved & tersimpan di Google Sheets & Drive</p>
+            </div>
+          </div>
+
+          <form id="bookingFormAdmin" onsubmit="handleAdminFormSubmit(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Nama Kegiatan *</label>
+              <input type="text" name="namaKegiatan" required placeholder="Contoh: Kuliah Umum & Semiloka Nasional UIN Ar-Raniry" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Penyelenggara / Unit Kerja *</label>
+                <input type="text" name="penyelenggara" required placeholder="Contoh: Himpunan Mahasiswa / BEM" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Fakultas / Unit Kerja *</label>
+                <select name="fakultas" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+                  <option value="Fakultas Tarbiyah">Fakultas Tarbiyah & Keguruan</option>
+                  <option value="Fakultas Syariah">Fakultas Syariah & Hukum</option>
+                  <option value="Fakultas Ekonomi">Fakultas Ekonomi & Bisnis Islam</option>
+                  <option value="Fakultas Sains">Fakultas Sains & Teknologi</option>
+                  <option value="Rektorat / Unit Kerja">Rektorat / Unit Kerja Pusat</option>
+                  <option value="UKM / UKK">UKM / UKK Kemahasiswaan</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Pilihan Ruangan / Aula *</label>
+                <select name="ruangan" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+                  <option value="Aula Utama">Aula Utama (Gold Dome)</option>
+                  <option value="Ruang Rapat 1">Ruang Rapat 1</option>
+                  <option value="Ruang Rapat 2">Ruang Rapat 2</option>
+                  <option value="Auditorium">Auditorium Spatial</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Lampiran Berkas (Google Drive)</label>
+                <input type="file" id="berkasInputAdmin" accept=".pdf,.doc,.docx,.png,.jpg" class="w-full text-xs text-emerald-200/70 bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tgl Mulai *</label>
+                <input type="date" name="tglMulai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tgl Selesai *</label>
+                <input type="date" name="tglSelesai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Waktu Mulai *</label>
+                <input type="time" name="waktuMulai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Waktu Selesai *</label>
+                <input type="time" name="waktuSelesai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Keterangan Tambahan</label>
+              <textarea name="keterangan" rows="2" placeholder="Catatan fasilitas aula..." class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
+            </div>
+
+            <button type="submit" id="submitAdminBtn" class="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg glow-gold flex justify-center items-center space-x-2 border border-amber-300/40 active:scale-95">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+              <span>Simpan & Terbitkan Agenda</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Tabel Pengelolaan Agenda -->
+        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30">
+          <h3 class="font-bold text-white text-base mb-4 flex items-center space-x-2">
+            <i data-lucide="list" class="w-5 h-5 text-amber-400"></i>
+            <span>Daftar Seluruh Agenda Booking (Admin View)</span>
+          </h3>
+          <div class="overflow-x-auto rounded-2xl border border-amber-500/20">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-emerald-950/90 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20">
+                  <th class="p-3">Nama Kegiatan</th>
+                  <th class="p-3">Fakultas / Unit</th>
+                  <th class="p-3">Ruangan</th>
+                  <th class="p-3">Tanggal</th>
+                  <th class="p-3 text-center">Aksi Hapus</th>
+                </tr>
+              </thead>
+              <tbody id="admin-manage-body" class="divide-y divide-amber-500/10 text-xs bg-emerald-950/40"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 2: PENGUMUMAN BERANDA -->
+      <div id="admin-sub-pengumuman" class="admin-sub-content hidden space-y-6">
+        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
+          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
+            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
+              <i data-lucide="megaphone" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white">Buat Pengumuman Beranda Baru</h2>
+              <p class="text-xs text-emerald-200/70">Pengumuman ini akan langsung muncul sebagai banner utama di halaman beranda.</p>
+            </div>
+          </div>
+
+          <form onsubmit="handlePengumumanSubmit(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Judul Pengumuman *</label>
+              <input type="text" id="ann-judul" required placeholder="Contoh: Pemeliharaan Sound System Aula Utama UIN Ar-Raniry" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Isi Pesan Pengumuman *</label>
+              <textarea id="ann-isi" rows="3" required placeholder="Tuliskan pengumuman penting bagi pengguna aula..." class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
+            </div>
+            <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>Terbitkan Pengumuman ke Beranda</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 3: LAPORAN & REKAPAN (BULANAN, PER-FAKULTAS, TAHUNAN) -->
+      <div id="admin-sub-laporan" class="admin-sub-content hidden space-y-6">
+        
+        <!-- Filter Laporan -->
+        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-bold text-white">Filter & Rekapan Laporan</h3>
+            <p class="text-xs text-emerald-200/70">Pilih periode laporan yang ingin dihitung secara otomatis</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <input type="month" id="report-month-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
+            <select id="report-year-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Rekapan Kegiatan Bulanan -->
+          <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+              <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span>Rekapan Kegiatan Bulanan</span>
+              </h4>
+              <span id="report-monthly-count" class="px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-lg border border-amber-500/30">0 Kegiatan</span>
+            </div>
+            <div id="monthly-report-list" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- Rekapan Kegiatan Per-Fakultas / Unit Kerja -->
+          <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
+            <div class="border-b border-amber-500/20 pb-3">
+              <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
+                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                <span>Rekapan Per-Fakultas / Unit Kerja</span>
+              </h4>
+            </div>
+            <div id="faculty-report-bars" class="space-y-3"></div>
+          </div>
+
+        </div>
+
+        <!-- Rekapan Laporan Tahunan -->
+        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
+          <div class="border-b border-amber-500/20 pb-3 flex justify-between items-center">
+            <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+              <span>Ringkasan Laporan Tahunan</span>
+            </h4>
+            <span id="report-year-title" class="text-xs font-bold text-white">Tahun 2026</span>
+          </div>
+
+          <div id="yearly-report-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= LOGIC & CONTROLLERS ================= -->
+  <script>
+    let allAgenda = [];
+    let announcements = [];
+    let currentDate = new Date();
+    let selectedDateStr = new Date().toISOString().split('T')[0];
+    let isAdminLoggedIn = false;
+
+    // Three.js Scene Variables
+    let scene, camera, renderer, roomMesh, stageLight;
+    let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+
+    window.onload = function() {
+      lucide.createIcons();
+      document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7);
+      document.getElementById('report-month-select').value = currentDate.toISOString().substring(0, 7);
+      init3dScene();
+      loadDataFromSheet();
+    };
+
+    // ================= 3D VIRTUAL STAGE =================
+    function init3dScene() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x022c22, 0.035);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 4, 10);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0x047857, 0.7);
+      scene.add(ambientLight);
+
+      stageLight = new THREE.SpotLight(0xf59e0b, 2.5);
+      stageLight.position.set(0, 10, 0);
+      scene.add(stageLight);
+
+      const gridHelper = new THREE.GridHelper(30, 30, 0xf59e0b, 0x064e3b);
+      gridHelper.position.y = -1;
+      scene.add(gridHelper);
+
+      createStageMesh("Aula Utama");
+
+      window.addEventListener('resize', onWindowResize);
+      const dom = renderer.domElement;
+
+      dom.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+      dom.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        scene.rotation.y += (e.clientX - previousMousePosition.x) * 0.005;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+      });
+      window.addEventListener('mouseup', () => isDragging = false);
+
+      animate3d();
+    }
+
+    function createStageMesh(roomName) {
+      if (roomMesh) scene.remove(roomMesh);
+      const group = new THREE.Group();
+
+      const stageGeo = new THREE.CylinderGeometry(4, 4.2, 0.6, 8);
+      const stageMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.3, metalness: 0.8 });
+      const stage = new THREE.Mesh(stageGeo, stageMat);
+      stage.position.y = -0.7;
+      group.add(stage);
+
+      const domeGeo = new THREE.SphereGeometry(1.8, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+      const domeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.1 });
+      const dome = new THREE.Mesh(domeGeo, domeMat);
+      dome.position.set(0, 2.2, -1);
+      group.add(dome);
+
+      roomMesh = group;
+      scene.add(roomMesh);
+    }
+
+    function change3dRoom(roomName) { createStageMesh(roomName); }
+    function animate3d() {
+      requestAnimationFrame(animate3d);
+      if (!isDragging && roomMesh) roomMesh.rotation.y += 0.002;
+      renderer.render(scene, camera);
+    }
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ================= ADMIN AUTHENTICATION =================
+    function handleAdminTabClick() {
+      if (!isAdminLoggedIn) {
+        document.getElementById('modal-login-admin').classList.remove('hidden');
+      } else {
+        switchTab('admin');
+      }
+    }
+
+    function verifyAdminPass(e) {
+      e.preventDefault();
+      const pass = document.getElementById('admin-pass-input').value;
+      if (pass === "1122") {
+        isAdminLoggedIn = true;
+        closeModalLogin();
+        document.getElementById('admin-btn-text').innerText = "Dashboard Admin (Active)";
+        showToast("Login Admin Berhasil!", "success");
+        switchTab('admin');
+      } else {
+        showToast("Kata Sandi Admin Salah!", "error");
+      }
+    }
+
+    function closeModalLogin() {
+      document.getElementById('modal-login-admin').classList.add('hidden');
+    }
+
+    function switchAdminSubTab(subId) {
+      document.querySelectorAll('.admin-sub-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('admin-sub-' + subId).classList.remove('hidden');
+
+      document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
+        btn.classList.remove('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-500/40');
+        btn.classList.add('text-emerald-200/80');
+      });
+
+      const activeBtn = document.getElementById('subnav-' + subId);
+      if(activeBtn) {
+        activeBtn.classList.remove('text-emerald-200/80');
+        activeBtn.classList.add('text-amber-300', 'bg-amber-500/20', 'border', 'border-amber-500/40');
+      }
+
+      if(subId === 'laporan') renderReports();
+    }
+
+    // ================= DATA LOADING =================
+    function loadDataFromSheet() {
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            allAgenda = res.agenda || [];
+            announcements = res.announcements || [];
+            renderBeranda();
+          })
+          .getInitialData();
+      } else {
+        // Mock Data UIN Ar-Raniry untuk Uji Coba Demo
+        allAgenda = [
+          { id: "AGD-101", namaKegiatan: "Semiloka Arsitektur Islam & Peradaban", penyelenggara: "BEM Syariah UIN Ar-Raniry", fakultas: "Fakultas Syariah", ruangan: "Aula Utama", tglMulai: "2026-11-10", tglSelesai: "2026-11-10", waktuMulai: "09:00", waktuSelesai: "12:00", status: "Approved", urlBerkas: "#", keterangan: "AC & Sound System" },
+          { id: "AGD-102", namaKegiatan: "Kajian Rutin Kampus UIN Ar-Raniry", penyelenggara: "LDK Ar-Raniry", fakultas: "UKM / UKK", ruangan: "Ruang Rapat 1", tglMulai: "2026-11-15", tglSelesai: "2026-11-15", waktuMulai: "13:30", waktuSelesai: "16:00", status: "Approved", urlBerkas: "#" },
+          { id: "AGD-103", namaKegiatan: "Workshop Ekonomi Syariah & Digital", penyelenggara: "FEBI UIN Ar-Raniry", fakultas: "Fakultas Ekonomi", ruangan: "Auditorium", tglMulai: "2026-11-20", tglSelesai: "2026-11-20", waktuMulai: "08:00", waktuSelesai: "15:00", status: "Approved", urlBerkas: "" }
+        ];
+        announcements = [
+          { id: "ANN-1", judul: "Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh", isi: "Seluruh pengajuan booking tempat dan gedung acara di lingkungan kampus kini terintegrasi secara transparan.", tanggal: "2026-11-10" }
+        ];
+        renderBeranda();
+      }
+    }
+
+    // ================= RENDER BERANDA & ANNOUNCEMENT BANNER =================
+    function renderBeranda() {
+      renderAnnouncements();
+
+      const filterVal = document.getElementById('filter-bulan').value;
+      if (filterVal) {
+        const [y, m] = filterVal.split('-');
+        currentDate = new Date(y, m - 1, 1);
+      }
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      document.getElementById('month-year-header').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      const grid = document.getElementById('calendar-days-grid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="h-16 sm:h-20 glass-card rounded-xl opacity-20 border border-amber-500/10"></div>`;
+      }
+
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayEvents = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
+        
+        const isSelected = dateStr === selectedDateStr 
+          ? 'border-2 border-amber-400 bg-amber-500/20 shadow-lg glow-gold scale-[1.02]' 
+          : 'glass-card hover:border-amber-500/50';
+
+        let eventBadges = dayEvents.length > 0 
+          ? `<span class="mt-1 inline-flex items-center text-[9px] font-extrabold px-1.5 py-0.5 bg-amber-500 text-slate-950 rounded-md shadow-sm">${dayEvents.length} Booking</span>`
+          : '';
+
+        grid.innerHTML += `
+          <div onclick="selectDate('${dateStr}')" class="h-16 sm:h-20 p-2 rounded-xl cursor-pointer transition-all duration-200 flex flex-col justify-between ${isSelected}">
+            <span class="text-xs font-bold text-amber-100">${d}</span>
+            <div>${eventBadges}</div>
+          </div>
+        `;
+      }
+
+      renderDailyAgenda(selectedDateStr);
+      renderAdminManageTable();
+      renderArsipTable();
+    }
+
+    function renderAnnouncements() {
+      const container = document.getElementById('announcement-banner-container');
+      container.innerHTML = '';
+
+      if (announcements.length === 0) return;
+
+      announcements.forEach(ann => {
+        container.innerHTML += `
+          <div class="glass-panel p-4 rounded-2xl border-l-4 border-l-amber-400 border-amber-500/30 shadow-xl flex items-start justify-between space-x-3">
+            <div class="flex items-start space-x-3">
+              <div class="p-2 bg-amber-500/20 text-amber-400 rounded-xl mt-0.5">
+                <i data-lucide="megaphone" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="font-extrabold text-white text-sm">${ann.judul}</h4>
+                <p class="text-xs text-emerald-200/80 mt-0.5">${ann.isi}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold text-amber-300/60 whitespace-nowrap">${ann.tanggal}</span>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function selectDate(dateStr) {
+      selectedDateStr = dateStr;
+      renderBeranda();
+      openModalDetail(dateStr);
+    }
+
+    function openModalDetail(dateStr) {
+      const modal = document.getElementById('modal-detail-tanggal');
+      document.getElementById('modal-date-title').innerText = dateStr;
+      const container = document.getElementById('modal-events-list');
+      container.innerHTML = '';
+
+      const events = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
+
+      if (events.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-emerald-200/70 text-xs">
+            <i data-lucide="calendar-x" class="w-10 h-10 mx-auto mb-2 text-amber-400/60"></i>
+            Tidak ada booking atau kegiatan yang terdaftar/disetujui pada tanggal ini.
+          </div>`;
+      } else {
+        events.forEach(item => {
+          container.innerHTML += `
+            <div class="p-4 glass-card rounded-2xl border-l-4 border-l-amber-400 space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white text-base">${item.namaKegiatan}</h4>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">${item.fakultas}</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+                <div>Pemohon: <strong class="text-white">${item.penyelenggara}</strong></div>
+                <div>Ruangan: <strong class="text-white">${item.ruangan}</strong></div>
+                <div>Waktu: ${item.waktuMulai} - ${item.waktuSelesai}</div>
+                ${item.urlBerkas && item.urlBerkas !== "#" ? `<a href="${item.urlBerkas}" target="_blank" class="text-amber-400 underline">Berkas Drive</a>` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+      lucide.createIcons();
+      modal.classList.remove('hidden');
+    }
+
+    function closeModalDetail() { document.getElementById('modal-detail-tanggal').classList.add('hidden'); }
+    function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7); renderBeranda(); }
+    function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); document.getElementById('filter-bulan').value = currentDate.toISOString().substring(0, 7); renderBeranda(); }
+
+    function renderDailyAgenda(dateStr) {
+      document.getElementById('selected-date-badge').innerText = dateStr;
+      const container = document.getElementById('daily-agenda-list');
+      container.innerHTML = '';
+
+      const events = allAgenda.filter(a => a.tglMulai === dateStr && a.status === 'Approved');
+      if (events.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-emerald-200/60 text-xs"><i data-lucide="calendar-x" class="w-8 h-8 mx-auto mb-2 text-amber-400/50"></i>Tidak ada agenda kegiatan pada tanggal ini.</div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      events.forEach(item => {
+        container.innerHTML += `
+          <div class="p-3.5 glass-card rounded-2xl border-l-4 border-l-amber-400 shadow-md">
+            <h4 class="font-bold text-white text-sm">${item.namaKegiatan}</h4>
+            <div class="text-xs text-amber-300 font-semibold mt-1">${item.fakultas} - ${item.ruangan}</div>
+            <div class="text-xs text-emerald-200/80 mt-1"><i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>${item.waktuMulai} - ${item.waktuSelesai}</div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    // ================= RENDER ARSIP KEGIATAN =================
+    function renderArsipTable() {
+      const query = (document.getElementById('search-arsip')?.value || '').toLowerCase();
+      const tbody = document.getElementById('arsip-table-body');
+      tbody.innerHTML = '';
+
+      const filtered = allAgenda.filter(a => 
+        a.namaKegiatan.toLowerCase().includes(query) || 
+        a.penyelenggara.toLowerCase().includes(query) ||
+        a.fakultas.toLowerCase().includes(query)
+      );
+
+      filtered.forEach(item => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-emerald-900/40 transition border-b border-amber-500/10">
+            <td class="p-4 font-bold text-white">${item.namaKegiatan}</td>
+            <td class="p-4 text-xs text-amber-300 font-medium">${item.fakultas} (${item.penyelenggara})</td>
+            <td class="p-4 text-xs text-emerald-100">${item.ruangan}</td>
+            <td class="p-4 text-xs text-emerald-200/70">${item.tglMulai} (${item.waktuMulai})</td>
+            <td class="p-4">
+              ${item.urlBerkas && item.urlBerkas !== "#" 
+                ? `<a href="${item.urlBerkas}" target="_blank" class="text-xs text-amber-400 underline font-semibold">Buka Drive</a>` 
+                : `<span class="text-emerald-200/40 text-xs">-</span>`}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // ================= ADMIN SUBMISSIONS & REPORTING =================
+    function handleAdminFormSubmit(e) {
+      e.preventDefault();
+      const form = document.getElementById('bookingFormAdmin');
+      const formData = new FormData(form);
+      const dataObj = {};
+      formData.forEach((val, key) => dataObj[key] = val);
+
+      const fileInput = document.getElementById('berkasInputAdmin');
+      if (fileInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const fileData = { fileName: fileInput.files[0].name, mimeType: fileInput.files[0].type, data: evt.target.result };
+          executeSimpanAdmin(dataObj, fileData);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        executeSimpanAdmin(dataObj, null);
+      }
+    }
+
+    function executeSimpanAdmin(dataObj, fileData) {
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showToast(res.message, "success");
+            document.getElementById('bookingFormAdmin').reset();
+            loadDataFromSheet();
+          })
+          .simpanAgendaAdmin(dataObj, fileData);
+      } else {
+        allAgenda.push({ id: "AGD-" + Date.now(), ...dataObj, status: "Approved" });
+        showToast("Agenda Admin Berhasil Disimpan (Demo Mode)", "success");
+        document.getElementById('bookingFormAdmin').reset();
+        renderBeranda();
+      }
+    }
+
+    function handlePengumumanSubmit(e) {
+      e.preventDefault();
+      const judul = document.getElementById('ann-judul').value;
+      const isi = document.getElementById('ann-isi').value;
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showToast(res.message, "success");
+            document.getElementById('ann-judul').value = '';
+            document.getElementById('ann-isi').value = '';
+            loadDataFromSheet();
+          })
+          .simpanPengumuman(judul, isi);
+      } else {
+        announcements.unshift({ id: "ANN-" + Date.now(), judul, isi, tanggal: new Date().toISOString().split('T')[0] });
+        showToast("Pengumuman diterbitkan ke beranda (Demo)", "success");
+        renderBeranda();
+      }
+    }
+
+    function renderAdminManageTable() {
+      const tbody = document.getElementById('admin-manage-body');
+      tbody.innerHTML = '';
+      allAgenda.forEach(item => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-emerald-900/40 transition">
+            <td class="p-3 font-bold text-white">${item.namaKegiatan}</td>
+            <td class="p-3 text-amber-300">${item.fakultas}</td>
+            <td class="p-3 text-emerald-100">${item.ruangan}</td>
+            <td class="p-3 text-emerald-200/70">${item.tglMulai}</td>
+            <td class="p-3 text-center">
+              <button onclick="deleteAgendaItem('${item.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-md text-[10px] font-bold">Hapus</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function deleteAgendaItem(id) {
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run.withSuccessHandler(() => { showToast("Item dihapus", "success"); loadDataFromSheet(); }).deleteAgenda(id);
+      } else {
+        allAgenda = allAgenda.filter(a => a.id !== id);
+        showToast("Agenda dihapus (Demo)", "success");
+        renderBeranda();
+      }
+    }
+
+    // ================= LAPORAN & REKAPAN CALCULATOR =================
+    function renderReports() {
+      const monthFilter = document.getElementById('report-month-select').value;
+      const yearFilter = document.getElementById('report-year-select').value;
+
+      // 1. Rekapan Bulanan
+      const monthlyItems = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthFilter));
+      document.getElementById('report-monthly-count').innerText = `${monthlyItems.length} Kegiatan`;
+      const monthlyContainer = document.getElementById('monthly-report-list');
+      monthlyContainer.innerHTML = '';
+
+      if (monthlyItems.length === 0) {
+        monthlyContainer.innerHTML = `<div class="text-xs text-emerald-200/60 py-4 text-center">Tidak ada kegiatan pada bulan ini.</div>`;
+      } else {
+        monthlyItems.forEach(m => {
+          monthlyContainer.innerHTML += `
+            <div class="p-2.5 glass-card rounded-xl text-xs flex justify-between items-center border border-amber-500/20">
+              <div>
+                <strong class="text-white">${m.namaKegiatan}</strong>
+                <div class="text-[10px] text-amber-300">${m.fakultas} - ${m.ruangan}</div>
+              </div>
+              <span class="text-[10px] text-emerald-200/70">${m.tglMulai}</span>
+            </div>
+          `;
+        });
+      }
+
+      // 2. Rekapan Per-Fakultas / Unit Kerja
+      const facultyCounts = {};
+      allAgenda.forEach(a => {
+        const fac = a.fakultas || "Lain-lain";
+        facultyCounts[fac] = (facultyCounts[fac] || 0) + 1;
+      });
+
+      const totalAll = allAgenda.length || 1;
+      const facultyBars = document.getElementById('faculty-report-bars');
+      facultyBars.innerHTML = '';
+
+      Object.keys(facultyCounts).forEach(fac => {
+        const count = facultyCounts[fac];
+        const percent = Math.round((count / totalAll) * 100);
+        facultyBars.innerHTML += `
+          <div>
+            <div class="flex justify-between text-xs text-emerald-100 font-semibold mb-1">
+              <span>${fac}</span>
+              <span class="text-amber-300">${count} Booking (${percent}%)</span>
+            </div>
+            <div class="w-full bg-emerald-950 rounded-full h-2 overflow-hidden border border-amber-500/20">
+              <div class="bg-gradient-to-r from-amber-500 to-yellow-400 h-2 rounded-full" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      });
+
+      // 3. Laporan Tahunan Summary
+      document.getElementById('report-year-title').innerText = `Tahun ${yearFilter}`;
+      const yearlyItems = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(yearFilter));
+      
+      const yearlySummary = document.getElementById('yearly-report-summary');
+      yearlySummary.innerHTML = `
+        <div class="p-4 glass-card rounded-2xl border border-amber-500/30 text-center">
+          <div class="text-2xl font-extrabold text-amber-400">${yearlyItems.length}</div>
+          <div class="text-[11px] text-emerald-200/70 mt-1 uppercase font-bold">Total Kegiatan</div>
+        </div>
+        <div class="p-4 glass-card rounded-2xl border border-amber-500/30 text-center">
+          <div class="text-2xl font-extrabold text-amber-400">${Object.keys(facultyCounts).length}</div>
+          <div class="text-[11px] text-emerald-200/70 mt-1 uppercase font-bold">Unit Kerja/Fakultas</div>
+        </div>
+        <div class="p-4 glass-card rounded-2xl border border-amber-500/30 text-center">
+          <div class="text-2xl font-extrabold text-amber-400">${announcements.length}</div>
+          <div class="text-[11px] text-emerald-200/70 mt-1 uppercase font-bold">Pengumuman Aktif</div>
+        </div>
+        <div class="p-4 glass-card rounded-2xl border border-amber-500/30 text-center">
+          <div class="text-2xl font-extrabold text-amber-400">${yearlyItems.filter(i=>i.urlBerkas).length}</div>
+          <div class="text-[11px] text-emerald-200/70 mt-1 uppercase font-bold">Arsip Drive</div>
+        </div>
+      `;
+    }
+
+    // ================= KALENDER TAHUNAN MATRIX =================
+    function renderYearlyCalendar() {
+      const year = document.getElementById('select-year').value;
+      const container = document.getElementById('yearly-grid');
+      container.innerHTML = '';
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+      monthNames.forEach((mName, mIdx) => {
+        const firstDay = new Date(year, mIdx, 1).getDay();
+        const totalDays = new Date(year, mIdx + 1, 0).getDate();
+        let daysHtml = '';
+        for (let i = 0; i < firstDay; i++) daysHtml += `<div></div>`;
+        for (let d = 1; d <= totalDays; d++) {
+          const dateStr = `${year}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const hasEvent = allAgenda.some(a => a.tglMulai === dateStr && a.status === 'Approved');
+          const bgClass = hasEvent ? 'bg-amber-500 text-slate-950 font-extrabold rounded-md glow-gold' : 'text-emerald-200/60';
+          daysHtml += `<div class="text-center text-[10px] py-0.5 ${bgClass}">${d}</div>`;
+        }
+
+        container.innerHTML += `
+          <div class="glass-panel p-4 rounded-2xl border border-amber-500/20">
+            <h3 class="font-bold text-amber-300 text-xs mb-3 text-center uppercase tracking-wider">${mName} ${year}</h3>
+            <div class="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-amber-400/60 uppercase mb-2">
+              <div>A</div><div>S</div><div>S</div><div>R</div><div>K</div><div>J</div><div>S</div>
+            </div>
+            <div class="grid grid-cols-7 gap-1">${daysHtml}</div>
+          </div>
+        `;
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-amber-400', 'bg-amber-500/10', 'border', 'border-amber-500/30');
+        btn.classList.add('text-emerald-200/80');
+      });
+
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if(activeBtn) {
+        activeBtn.classList.remove('text-emerald-200/80');
+        activeBtn.classList.add('text-amber-400', 'bg-amber-500/10', 'border', 'border-amber-500/30');
+      }
+
+      if(tabId === 'beranda') renderBeranda();
+      if(tabId === 'kalender-tahun') renderYearlyCalendar();
+      if(tabId === 'arsip') renderArsipTable();
+    }
+
+    function showToast(msg, type) {
+      const toast = document.getElementById('toast');
+      toast.classList.remove('hidden');
+      document.getElementById('toast-message').innerText = msg;
+      setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+  </script>
+</body>
+</html>
