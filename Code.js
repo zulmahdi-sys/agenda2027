@@ -21,7 +21,8 @@ function getInitialData() {
   try {
     const agenda = getAgendaData();
     const announcements = getAnnouncementData();
-    return { agenda: agenda, announcements: announcements };
+    const ruangan = getRuanganData();
+    return { agenda: agenda, announcements: announcements, ruangan: ruangan };
   } catch (e) {
     throw new Error("Gagal mengambil data sistem: " + e.message);
   }
@@ -85,12 +86,35 @@ function getAgendaData() {
 }
 
 /**
- * Simpan Agenda Baru (Khusus Admin Input)
+ * Simpan Agenda Baru (Khusus Admin Input) dengan Validasi Bentrok Tanggal & Ruangan
  */
 function simpanAgendaAdmin(formObject, fileData) {
   try {
     const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName("Agenda");
+
+    // ================= VALIDASI PENCEGAHAN BENTROK =================
+    const data = sheet.getDataRange().getValues();
+    if (data.length > 1) {
+      const targetTgl = formObject.tglMulai;
+      const targetRuangan = formObject.ruangan;
+
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const tglExist = row[5] instanceof Date ? formatDate(row[5]) : row[5];
+        const ruanganExist = row[4];
+        const statusExist = row[10];
+
+        // Jika tanggal sama, ruangan sama, dan status Approved -> TOLAK!
+        if (tglExist === targetTgl && ruanganExist === targetRuangan && statusExist === "Approved") {
+          return { 
+            success: false, 
+            message: `[BENTROK JADWAL] Ruangan "${targetRuangan}" sudah di-booking untuk kegiatan lain pada tanggal ${targetTgl}. Permohonan ditolak otomatis!` 
+          };
+        }
+      }
+    }
+    // ==============================================================
 
     let fileUrl = "";
     if (fileData && fileData.data) {
@@ -116,7 +140,7 @@ function simpanAgendaAdmin(formObject, fileData) {
       formObject.waktuMulai,
       formObject.waktuSelesai,
       formObject.kategori || "Umum",
-      "Approved", // Direct Admin Input is automatically approved
+      "Approved", // Direct Admin Input
       fileUrl,
       formObject.keterangan || "",
       timestamp
@@ -129,60 +153,81 @@ function simpanAgendaAdmin(formObject, fileData) {
 }
 
 /**
- * Kelola Data Pengumuman Beranda
+ * Kelola Data Ruangan / Aula (Two-Way Synchronization Support)
  */
-function getAnnouncementData() {
+function getRuanganData() {
   try {
     const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Pengumuman");
+    let sheet = ss.getSheetByName("Ruangan");
     if (!sheet) {
-      sheet = ss.insertSheet("Pengumuman");
-      sheet.appendRow(["ID", "Judul Pengumuman", "Isi Pengumuman", "Tanggal", "Status"]);
-      sheet.getRange("A1:E1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
+      sheet = ss.insertSheet("Ruangan");
+      sheet.appendRow(["ID", "Nama Ruangan", "Keterangan"]);
+      sheet.getRange("A1:C1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
+      // Default initial rooms
+      sheet.appendRow(["RNG-1", "Aula Utama", "Gedung Utama Gold Dome"]);
+      sheet.appendRow(["RNG-2", "Ruang Rapat 1", "Ruang Rapat Lantai 1"]);
+      sheet.appendRow(["RNG-3", "Ruang Rapat 2", "Ruang Rapat Lantai 2"]);
+      sheet.appendRow(["RNG-4", "Auditorium", "Auditorium Spatial"]);
     }
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return [];
-    return data.slice(1).map(row => ({
-      id: row[0],
-      judul: row[1],
-      isi: row[2],
-      tanggal: row[3] instanceof Date ? formatDate(row[3]) : row[3],
-      status: row[4]
+
+    // Mengambil seluruh baris data dari Google Sheets (Baris 2 ke bawah)
+    return data.slice(1).filter(row => row[1] && row[1].toString().trim() !== "").map((row, idx) => ({
+      id: row[0] ? row[0].toString() : ("RNG-AUTO-" + (idx + 1)),
+      nama: row[1].toString().trim(),
+      keterangan: row[2] ? row[2].toString().trim() : ""
     }));
   } catch (e) {
     return [];
   }
 }
 
-function simpanPengumuman(judul, isi) {
+function simpanRuangan(id, nama, keterangan) {
   try {
     const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Pengumuman");
+    let sheet = ss.getSheetByName("Ruangan");
     if (!sheet) {
-      sheet = ss.insertSheet("Pengumuman");
-      sheet.appendRow(["ID", "Judul Pengumuman", "Isi Pengumuman", "Tanggal", "Status"]);
+      sheet = ss.insertSheet("Ruangan");
+      sheet.appendRow(["ID", "Nama Ruangan", "Keterangan"]);
     }
-    const newId = "ANN-" + Date.now();
-    const dateStr = formatDate(new Date());
-    sheet.appendRow([newId, judul, isi, dateStr, "Aktif"]);
-    return { success: true, message: "Pengumuman berhasil diterbitkan!" };
-  } catch(e) {
-    return { success: false, message: e.message };
+    const data = sheet.getDataRange().getValues();
+
+    if (id) {
+      // Edit Mode: Update baris yang cocok di Spreadsheet berdasarkan ID atau Nama
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0].toString() === id.toString() || data[i][1].toString().trim().toLowerCase() === nama.trim().toLowerCase()) {
+          sheet.getRange(i + 1, 1).setValue(id);
+          sheet.getRange(i + 1, 2).setValue(nama);
+          sheet.getRange(i + 1, 3).setValue(keterangan || "");
+          return { success: true, message: `Ruangan "${nama}" berhasil diperbarui di Google Sheets!` };
+        }
+      }
+    }
+    
+    // Add Mode: Baris Baru ke Spreadsheet
+    const newId = id || ("RNG-" + Date.now());
+    sheet.appendRow([newId, nama, keterangan || ""]);
+    return { success: true, message: `Ruangan baru "${nama}" berhasil tersimpan ke Google Sheets!` };
+  } catch (e) {
+    return { success: false, message: "Gagal memperbarui Google Sheets: " + e.message };
   }
 }
 
-function deleteAgenda(id) {
+function deleteRuangan(id) {
   try {
     const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("Agenda");
+    const sheet = ss.getSheetByName("Ruangan");
+    if (!sheet) return { success: false, message: "Sheet Ruangan tidak ditemukan." };
+    
     const data = sheet.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === id) {
+      if (data[i][0].toString() === id.toString()) {
         sheet.deleteRow(i + 1);
-        return { success: true, message: "Agenda berhasil dihapus!" };
+        return { success: true, message: "Ruangan berhasil dihapus dari Google Sheets!" };
       }
     }
-    return { success: false, message: "Data tidak ditemukan." };
+    return { success: false, message: "Ruangan tidak ditemukan di Google Sheets." };
   } catch (e) {
     return { success: false, message: e.message };
   }
