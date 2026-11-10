@@ -322,15 +322,6 @@
 
     <!-- 1. TAB BERANDA -->
     <section id="tab-beranda" class="space-y-6">
-      <!-- Announcement Banner -->
-      <div id="announcement-banner" class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3 shadow-md">
-        <i data-lucide="megaphone" class="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5"></i>
-        <div>
-          <h4 class="font-bold text-amber-300 text-sm">PENGUMUMAN RESMI</h4>
-          <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
-        </div>
-      </div>
-
       <!-- Main Calendar & Daily Agenda Section -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Monthly Calendar View -->
@@ -363,11 +354,14 @@
             Agenda Terjadwal
           </h3>
           <div id="daily-agenda-list" class="flex-grow space-y-3 overflow-y-auto max-h-96 pr-1"></div>
-          <div class="mt-5 border-t border-amber-500/20 pt-4">
-            <h4 id="room-availability-title" class="text-sm font-bold text-amber-300">Ketersediaan Ruangan</h4>
-            <p class="mb-3 mt-1 text-[10px] text-slate-400">Status ruangan untuk tanggal yang dipilih.</p>
-            <div id="room-availability-list" class="max-h-64 space-y-2 overflow-y-auto pr-1"></div>
-          </div>
+        </div>
+      </div>
+
+      <div id="announcement-banner" class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3 shadow-md">
+        <i data-lucide="megaphone" class="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5"></i>
+        <div>
+          <h4 class="font-bold text-amber-300 text-sm">PENGUMUMAN RESMI</h4>
+          <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
         </div>
       </div>
     </section>
@@ -684,7 +678,7 @@
             <!-- Rekapan Kegiatan Bulanan -->
             <div>
               <h4 class="font-bold text-amber-300 text-sm mb-3">Statistik Penggunaan Ruangan Bulanan</h4>
-              <div id="laporan-bulanan-list" class="space-y-2"></div>
+              <div id="laporan-bulanan-list" class="space-y-3"></div>
             </div>
             <div>
               <h4 class="mb-3 text-sm font-bold text-amber-300">Rincian Kegiatan dan Booking</h4>
@@ -1155,15 +1149,6 @@
       renderDailyAgenda();
     }
 
-    function getBookingsForRoomOnDate(roomName, date) {
-      const normalizedRoomName = String(roomName || '').trim().toLowerCase();
-      return getPublishedAgenda().filter(item =>
-        String(item.ruangan || '').trim().toLowerCase() === normalizedRoomName &&
-        normalizeDateValue(item.tglMulai) <= date &&
-        normalizeDateValue(item.tglSelesai || item.tglMulai) >= date
-      );
-    }
-
     function changeMonth(delta) {
       currentDate.setMonth(currentDate.getMonth() + delta);
       renderBeranda();
@@ -1181,7 +1166,6 @@
       
       const filtered = getPublishedAgenda().filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
       const specialDays = getCalendarEventsForDate(currentSelectedDateStr);
-      renderRoomAvailability(currentSelectedDateStr);
       if(filtered.length === 0 && specialDays.length === 0) {
         list.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada kegiatan terjadwal di tanggal ini.</p>`;
         return;
@@ -1200,33 +1184,6 @@
           <p class="text-[10px] text-amber-400 font-medium">🕒 ${formatTimeIndonesia(a.jamMulai)} - ${formatTimeIndonesia(a.jamSelesai)} WIB</p>
         </div>
       `).join('');
-    }
-
-    function renderRoomAvailability(date) {
-      const list = document.getElementById('room-availability-list');
-      document.getElementById('room-availability-title').textContent =
-        `Ketersediaan Ruangan - ${formatDateIndonesia(date)}`;
-
-      if (!appState.ruangan.length) {
-        list.innerHTML = '<p class="text-xs text-slate-400 italic">Data ruangan belum tersedia.</p>';
-        return;
-      }
-
-      list.innerHTML = appState.ruangan.map(room => {
-        const bookings = getPublishedAgenda().filter(item =>
-          String(item.ruangan || '').trim().toLowerCase() === String(room.nama || '').trim().toLowerCase() &&
-          normalizeDateValue(item.tglMulai) <= date &&
-          normalizeDateValue(item.tglSelesai || item.tglMulai) >= date
-        );
-        return `
-          <div class="rounded-lg border ${bookings.length ? 'border-amber-500/30 bg-amber-950/30' : 'border-emerald-500/30 bg-emerald-950/30'} p-2.5">
-            <p class="text-xs font-semibold text-slate-100">${escapeHtml(room.nama)}</p>
-            ${bookings.length
-              ? bookings.map(booking => `<p class="mt-1 text-[10px] text-amber-200">Digunakan: ${escapeHtml(booking.nama || 'Kegiatan')} (${formatTimeIndonesia(booking.jamMulai)}-${formatTimeIndonesia(booking.jamSelesai)} WIB)</p>`).join('')
-              : '<p class="mt-1 text-[10px] font-medium text-emerald-300">Belum ada booking</p>'}
-          </div>
-        `;
-      }).join('');
     }
 
     function bukaModalDetailTanggal(dStr) {
@@ -2019,12 +1976,38 @@
         `${monthlyBookings.length} booking diterbitkan pada rentang bulan ${monthLabel}.`;
 
       const fakMap = {};
-      const roomMap = {};
+      const roomStats = new Map();
+      const numberFormat = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
+      let totalRoomDays = 0;
+      let totalScheduledHours = 0;
       monthlyBookings.forEach(item => {
         const faculty = item.fakultas || 'Umum';
         const room = item.ruangan || 'Belum ditentukan';
         fakMap[faculty] = (fakMap[faculty] || 0) + 1;
-        roomMap[room] = (roomMap[room] || 0) + 1;
+        const stats = roomStats.get(room) || { bookings: 0, roomDays: 0, scheduledHours: 0 };
+        const bookingStart = normalizeDateValue(item.tglMulai);
+        const bookingEnd = normalizeDateValue(item.tglSelesai || item.tglMulai);
+        const clippedStart = bookingStart < monthStart ? monthStart : bookingStart;
+        const clippedEnd = bookingEnd > monthEnd ? monthEnd : bookingEnd;
+        const startDate = new Date(`${clippedStart}T00:00:00Z`);
+        const endDate = new Date(`${clippedEnd}T00:00:00Z`);
+        const bookingDays = Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())
+          ? 0
+          : Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1);
+        const startTime = normalizeTimeValue(item.jamMulai || item.waktuMulai);
+        const endTime = normalizeTimeValue(item.jamSelesai || item.waktuSelesai);
+        const startMatch = startTime.match(/^(\d{1,2}):(\d{2})$/);
+        const endMatch = endTime.match(/^(\d{1,2}):(\d{2})$/);
+        const dailyHours = startMatch && endMatch
+          ? Math.max(0, (Number(endMatch[1]) * 60 + Number(endMatch[2]) -
+            Number(startMatch[1]) * 60 - Number(startMatch[2])) / 60)
+          : 0;
+        stats.bookings += 1;
+        stats.roomDays += bookingDays;
+        stats.scheduledHours += bookingDays * dailyHours;
+        totalRoomDays += bookingDays;
+        totalScheduledHours += bookingDays * dailyHours;
+        roomStats.set(room, stats);
       });
 
       fakultasGrid.innerHTML = Object.keys(fakMap).map(f => `
@@ -2034,14 +2017,61 @@
         </div>
       `).join('') || '<p class="text-xs text-slate-400">Belum ada booking pada bulan ini.</p>';
 
+      const sortedRoomStats = [...roomStats.entries()].sort((a, b) => a[0].localeCompare(b[0], 'id'));
       bulananList.innerHTML = `
-        <p class="mb-2 text-xs text-slate-300">Total booking terbit: <strong>${monthlyBookings.length} kegiatan</strong></p>
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">${Object.keys(roomMap).map(room => `
-          <div class="flex items-center justify-between rounded-lg border border-emerald-800 bg-slate-900 p-3">
-            <span class="text-xs text-slate-200">${escapeHtml(room)}</span>
-            <span class="text-xs font-bold text-amber-300">${roomMap[room]} booking</span>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+            <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Booking terbit</p>
+            <p class="mt-1 text-lg font-bold text-emerald-800">${monthlyBookings.length}</p>
           </div>
-        `).join('') || '<p class="text-xs text-slate-400">Belum ada penggunaan ruangan pada bulan ini.</p>'}</div>
+          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+            <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Ruangan digunakan</p>
+            <p class="mt-1 text-lg font-bold text-emerald-800">${roomStats.size}</p>
+          </div>
+          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+            <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Hari-pemakaian</p>
+            <p class="mt-1 text-lg font-bold text-emerald-800">${totalRoomDays}</p>
+          </div>
+          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+            <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Jam terjadwal</p>
+            <p class="mt-1 text-lg font-bold text-emerald-800">${numberFormat.format(totalScheduledHours)} jam</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-emerald-700 bg-white">
+          <table class="w-full min-w-[560px] border-collapse text-left text-[10px]">
+            <thead class="bg-emerald-900 text-white">
+              <tr>
+                <th class="border border-emerald-700 px-3 py-2 text-center">No.</th>
+                <th class="border border-emerald-700 px-3 py-2">Ruangan / Aula</th>
+                <th class="border border-emerald-700 px-3 py-2 text-center">Jumlah Booking</th>
+                <th class="border border-emerald-700 px-3 py-2 text-center">Hari-pemakaian</th>
+                <th class="border border-emerald-700 px-3 py-2 text-right">Jam Terjadwal</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-800">
+              ${sortedRoomStats.map(([room, stats], index) => `
+                <tr class="${index % 2 ? 'bg-slate-50' : 'bg-white'}">
+                  <td class="border border-slate-300 px-3 py-2 text-center">${index + 1}</td>
+                  <td class="border border-slate-300 px-3 py-2 font-semibold">${escapeHtml(room)}</td>
+                  <td class="border border-slate-300 px-3 py-2 text-center">${stats.bookings}</td>
+                  <td class="border border-slate-300 px-3 py-2 text-center">${stats.roomDays}</td>
+                  <td class="border border-slate-300 px-3 py-2 text-right">${numberFormat.format(stats.scheduledHours)} jam</td>
+                </tr>
+              `).join('') || '<tr><td colspan="5" class="border border-slate-300 px-3 py-4 text-center text-slate-500">Belum ada penggunaan ruangan pada bulan ini.</td></tr>'}
+            </tbody>
+            ${sortedRoomStats.length ? `
+              <tfoot class="bg-emerald-50 font-bold text-emerald-900">
+                <tr>
+                  <td colspan="2" class="border border-emerald-700 px-3 py-2 text-right">Total</td>
+                  <td class="border border-emerald-700 px-3 py-2 text-center">${monthlyBookings.length}</td>
+                  <td class="border border-emerald-700 px-3 py-2 text-center">${totalRoomDays}</td>
+                  <td class="border border-emerald-700 px-3 py-2 text-right">${numberFormat.format(totalScheduledHours)} jam</td>
+                </tr>
+              </tfoot>
+            ` : ''}
+          </table>
+        </div>
+        <p class="text-[9px] text-slate-500">Jam terjadwal dihitung dari pukul booking setiap hari dalam rentang tanggal yang masuk pada bulan laporan, bukan catatan realisasi penggunaan.</p>
       `;
       detailBody.innerHTML = monthlyBookings.length ? monthlyBookings.map((item, index) => `
         <tr>
