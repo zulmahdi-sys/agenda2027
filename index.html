@@ -13,6 +13,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- html2pdf.js for PDF Exporting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- SheetJS (xlsx) for Importing Excel Files -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -383,6 +385,7 @@
 
         <div class="flex flex-wrap items-center gap-2 bg-emerald-950/90 p-1.5 rounded-2xl border border-amber-500/30">
           <button onclick="switchAdminSubTab('input')" id="subnav-input" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40">Input Booking</button>
+          <button onclick="switchAdminSubTab('excel')" id="subnav-excel" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Import Excel</button>
           <button onclick="switchAdminSubTab('ruangan')" id="subnav-ruangan" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Kelola Ruangan</button>
           <button onclick="switchAdminSubTab('pengumuman')" id="subnav-pengumuman" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Pengumuman</button>
           <button onclick="switchAdminSubTab('laporan')" id="subnav-laporan" class="admin-subnav-btn px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-200/80 hover:text-amber-300">Laporan & Rekapan</button>
@@ -402,75 +405,46 @@
             </div>
           </div>
 
-          <form id="bookingFormAdmin" onsubmit="handleAdminFormSubmit(event)" class="space-y-4">
+      <!-- ADMIN SUBTAB BARU: IMPORT EXCEL MANUAL ARSIP KEGIATAN -->
+      <div id="admin-sub-excel" class="admin-sub-content hidden space-y-6">
+        <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
+          <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-amber-500/20">
+            <div class="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/40 text-amber-400">
+              <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+            </div>
             <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Nama Kegiatan *</label>
-              <input type="text" name="namaKegiatan" required placeholder="Contoh: Kuliah Umum & Semiloka Nasional UIN Ar-Raniry" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              <h2 class="text-lg font-bold text-white">Import File Excel Agenda & Arsip Kegiatan</h2>
+              <p class="text-xs text-emerald-200/70">Unggah berkas spreadsheet Excel (.xlsx / .xls / .csv) untuk memasukkan daftar kegiatan secara massal. Data otomatis dipilah berdasarkan tanggal & bulan.</p>
             </div>
+          </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Penyelenggara / Unit Kerja *</label>
-                <input type="text" name="penyelenggara" required placeholder="Contoh: Himpunan Mahasiswa / BEM" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+          <div class="space-y-4">
+            <div class="p-4 rounded-2xl bg-emerald-950/60 border border-amber-500/20 text-xs text-emerald-200 space-y-2">
+              <p class="font-bold text-amber-300">Petunjuk Format Kolom File Excel:</p>
+              <p>Pastikan baris pertama (Header) file Excel Anda memiliki nama kolom sebagai berikut:</p>
+              <div class="flex flex-wrap gap-2 pt-1 font-mono text-[11px]">
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Nama Kegiatan</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Penyelenggara</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Fakultas</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Ruangan</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Tanggal (YYYY-MM-DD)</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Waktu Mulai</span>
+                <span class="px-2 py-1 bg-emerald-900 border border-amber-500/30 rounded-md text-amber-200">Waktu Selesai</span>
               </div>
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Fakultas / Unit Kerja *</label>
-                <select name="fakultas" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-                  <option value="Fakultas Tarbiyah">Fakultas Tarbiyah & Keguruan</option>
-                  <option value="Fakultas Syariah">Fakultas Syariah & Hukum</option>
-                  <option value="Fakultas Ekonomi">Fakultas Ekonomi & Bisnis Islam</option>
-                  <option value="Fakultas Sains">Fakultas Sains & Teknologi</option>
-                  <option value="Rektorat / Unit Kerja">Rektorat / Unit Kerja Pusat</option>
-                  <option value="UKM / UKK">UKM / UKK Kemahasiswaan</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Pilihan Ruangan / Aula *</label>
-                <select name="ruangan" id="admin-booking-ruangan-select" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-                  <!-- Populated Dynamically -->
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Lampiran Berkas (Google Drive)</label>
-                <input type="file" id="berkasInputAdmin" accept=".pdf,.doc,.docx,.png,.jpg" class="w-full text-xs text-emerald-200/70 bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950">
-              </div>
-            </div>
-
-            <!-- Input Tanggal & Waktu -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tanggal Mulai *</label>
-                <input type="date" name="tglMulai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tanggal Selesai *</label>
-                <input type="date" name="tglSelesai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Jam Mulai *</label>
-                <input type="time" name="waktuMulai" value="08:00" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Jam Selesai *</label>
-                <input type="time" name="waktuSelesai" value="16:00" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Catatan / Keterangan Tambahan</label>
-              <textarea name="keterangan" rows="2" placeholder="Contoh: Memerlukan sound system tambahan, AC central dinyalakan 1 jam sebelum acara" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
             </div>
 
             <div class="pt-2">
-              <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold px-8 py-3.5 rounded-xl text-sm transition shadow-lg glow-gold flex items-center justify-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer">
-                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-                <span>Simpan Agenda Terbaru</span>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">Pilih File Excel (.xlsx / .xls / .csv) *</label>
+              <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full text-xs text-emerald-200/70 bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-3 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950">
+            </div>
+
+            <div class="flex space-x-3 pt-3">
+              <button onclick="processExcelImport()" class="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95 cursor-pointer">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                <span>Proses & Import Agenda</span>
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
@@ -1407,6 +1381,102 @@
       document.getElementById('ann-judul').value = '';
       document.getElementById('ann-isi').value = '';
       renderAnnouncements();
+    }
+
+    // ================= IMPORT FILE EXCEL MANUAL & PEMISAHAN TANGGAL =================
+    function processExcelImport() {
+      const fileInput = document.getElementById('excelFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        showToast("Pilih file Excel terlebih dahulu!", "error");
+        return;
+      }
+
+      showToast("Membaca data file Excel...", "success");
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (jsonData.length === 0) {
+            showToast("File Excel kosong atau format tidak sesuai!", "error");
+            return;
+          }
+
+          let addedCount = 0;
+          let conflictCount = 0;
+
+          jsonData.forEach((row, idx) => {
+            // Pencocokan Nama Kolom secara Fleksibel
+            const namaKegiatan = row["Nama Kegiatan"] || row["Nama"] || row["Kegiatan"] || row["NAMA KEGIATAN"] || "";
+            const penyelenggara = row["Penyelenggara"] || row["Penyelenggara / Unit Kerja"] || row["PENYELENGGARA"] || "Umum";
+            const fakultas = row["Fakultas"] || row["Fakultas / Unit"] || row["FAKULTAS"] || "Umum";
+            const ruangan = row["Ruangan"] || row["Aula"] || row["Ruangan / Aula"] || row["RUANGAN"] || "Aula Utama";
+            
+            // Format Tanggal (Otomatis dipilah ke tanggal & bulan)
+            let rawDate = row["Tanggal"] || row["Tanggal Mulai"] || row["TANGGAL"] || row["Tgl"] || "";
+            let tglFormatted = "";
+
+            if (rawDate instanceof Date) {
+              tglFormatted = rawDate.toISOString().split('T')[0];
+            } else if (typeof rawDate === 'string' && rawDate.trim() !== '') {
+              const d = new Date(rawDate);
+              if (!isNaN(d.getTime())) {
+                tglFormatted = d.toISOString().split('T')[0];
+              } else {
+                tglFormatted = rawDate.trim();
+              }
+            }
+
+            const waktuMulai = row["Waktu Mulai"] || row["Jam Mulai"] || "08:00";
+            const waktuSelesai = row["Waktu Selesai"] || row["Jam Selesai"] || "16:00";
+            const keterangan = row["Keterangan"] || row["Catatan"] || "Import Manual Excel";
+
+            if (namaKegiatan && tglFormatted) {
+              // Cek Bentrok Jadwal
+              const conflict = allAgenda.find(a => a.tglMulai === tglFormatted && a.ruangan === ruangan && a.status === 'Approved');
+              if (!conflict) {
+                const newObj = {
+                  id: "AGD-EXCEL-" + Date.now() + "-" + idx,
+                  namaKegiatan: namaKegiatan,
+                  penyelenggara: penyelenggara,
+                  fakultas: fakultas,
+                  ruangan: ruangan,
+                  tglMulai: tglFormatted,
+                  tglSelesai: tglFormatted,
+                  waktuMulai: waktuMulai,
+                  waktuSelesai: waktuSelesai,
+                  status: "Approved",
+                  urlBerkas: "#",
+                  keterangan: keterangan
+                };
+                allAgenda.unshift(newObj);
+                addedCount++;
+              } else {
+                conflictCount++;
+              }
+            }
+          });
+
+          showToast(`Berhasil meng-import ${addedCount} agenda dari Excel! (${conflictCount} bentrok diabaikan)`, "success");
+          fileInput.value = '';
+          
+          // Refresh Semua Tampilan (Beranda, Kalender Bulanan/Tahunan, & Arsip)
+          renderBeranda();
+          renderArsipTable();
+          renderYearlyCalendar();
+        } catch (err) {
+          showToast("Gagal memproses file Excel: " + err.message, "error");
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
     }
 
     // ================= REPORTS =================
