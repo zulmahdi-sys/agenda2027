@@ -498,6 +498,13 @@
               <h4 class="text-sm font-bold text-amber-300">Kelola Booking Kegiatan</h4>
               <p class="mt-1 text-[10px] text-slate-400">Admin dapat mengubah data, menghapus booking, atau menerbitkan kembali booking yang masih berupa draf.</p>
             </div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label for="admin-booking-month-filter" class="text-xs font-semibold text-slate-300">Filter bulan:</label>
+              <select id="admin-booking-month-filter" onchange="renderAdminBookingTable()" class="rounded-lg border border-emerald-700 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+                <option value="all">Semua bulan</option>
+              </select>
+              <span class="text-[10px] text-slate-400">Bulan berjalan di atas; tanggal terbaru ditampilkan lebih dahulu.</span>
+            </div>
             <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
               <table class="w-full min-w-[1050px] text-left text-xs">
                 <thead class="bg-emerald-900/80 font-bold text-amber-300">
@@ -1363,9 +1370,42 @@
     function renderAdminBookingTable() {
       const body = document.getElementById('admin-booking-table-body');
       if (!body) return;
-      const bookings = [...appState.agenda].sort((a, b) =>
-        normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai))
-      );
+      const monthFilter = document.getElementById('admin-booking-month-filter');
+      let selectedMonth = monthFilter ? monthFilter.value : 'all';
+      const currentMonth = getLocalMonthValue();
+      const bookingsByMonth = [...new Set(appState.agenda
+        .map(booking => normalizeDateValue(booking.tglMulai).match(/^(\d{4}-\d{2})-\d{2}$/)?.[1])
+        .filter(Boolean))];
+      if (!bookingsByMonth.includes(currentMonth)) bookingsByMonth.push(currentMonth);
+      bookingsByMonth.sort((a, b) => a === currentMonth ? -1 : b === currentMonth ? 1 : b.localeCompare(a));
+      if (monthFilter) {
+        const previousSelection = selectedMonth;
+        monthFilter.innerHTML = '<option value="all">Semua bulan</option>' + bookingsByMonth.map(month => {
+          const [year, monthNumber] = month.split('-').map(Number);
+          const label = new Intl.DateTimeFormat('id-ID', {
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC'
+          }).format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+          return `<option value="${month}">${escapeHtml(label)}</option>`;
+        }).join('');
+        monthFilter.value = bookingsByMonth.includes(previousSelection) ? previousSelection : 'all';
+        selectedMonth = monthFilter.value;
+      }
+
+      const bookings = [...appState.agenda]
+        .filter(booking => selectedMonth === 'all' ||
+          normalizeDateValue(booking.tglMulai).startsWith(`${selectedMonth}-`))
+        .sort((a, b) => {
+          const dateA = normalizeDateValue(a.tglMulai);
+          const dateB = normalizeDateValue(b.tglMulai);
+          const monthA = dateA.match(/^(\d{4}-\d{2})-\d{2}$/)?.[1] || '';
+          const monthB = dateB.match(/^(\d{4}-\d{2})-\d{2}$/)?.[1] || '';
+          const currentMonthOrder = Number(monthB === currentMonth) - Number(monthA === currentMonth);
+          return currentMonthOrder ||
+            dateB.localeCompare(dateA) ||
+            normalizeTimeValue(b.jamMulai || b.waktuMulai).localeCompare(normalizeTimeValue(a.jamMulai || a.waktuMulai));
+        });
       body.innerHTML = bookings.length ? bookings.map(booking => {
         const published = isAgendaPublished(booking);
         const canManage = Boolean(booking.id && (booking.rowId || booking.backendRecord));
@@ -1386,7 +1426,7 @@
             </td>
           </tr>
         `;
-      }).join('') : '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data booking.</td></tr>';
+      }).join('') : `<tr><td colspan="7" class="p-4 text-center text-slate-400">${appState.agenda.length ? 'Tidak ada booking pada bulan yang dipilih.' : 'Belum ada data booking.'}</td></tr>`;
     }
 
     async function setBookingPublished(id, published) {
