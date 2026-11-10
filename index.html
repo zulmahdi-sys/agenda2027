@@ -11,6 +11,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- html2pdf.js for PDF Exporting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -189,7 +191,12 @@
         <form onsubmit="verifyAdminPass(event)" class="space-y-4 pt-2">
           <div>
             <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Kata Sandi Admin *</label>
-            <input type="password" id="admin-pass-input" placeholder="Masukkan Sandi (Default: 1122)" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
+            <div class="relative">
+              <input type="password" id="admin-pass-input" placeholder="Masukkan Sandi (Default: 1122)" required class="w-full bg-emerald-950/90 border border-amber-500/40 rounded-xl pl-4 pr-11 py-3 text-sm text-white focus:border-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none">
+              <button type="button" onclick="togglePassVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400/70 hover:text-amber-300 p-1 focus:outline-none">
+                <i data-lucide="eye" id="pass-toggle-icon" class="w-5 h-5"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" class="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg glow-gold flex justify-center items-center space-x-2 border border-amber-300/40 active:scale-95">
             <i data-lucide="key" class="w-4 h-4"></i>
@@ -430,6 +437,42 @@
                 <input type="file" id="berkasInputAdmin" accept=".pdf,.doc,.docx,.png,.jpg" class="w-full text-xs text-emerald-200/70 bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950">
               </div>
             </div>
+
+            <!-- DITAMBAHKAN: Tanggal, Waktu, Keterangan & Tombol Simpan Agenda Terbaru -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tanggal Mulai *</label>
+                <input type="date" name="tglMulai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Tanggal Selesai *</label>
+                <input type="date" name="tglSelesai" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Jam Mulai *</label>
+                <input type="time" name="waktuMulai" value="08:00" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Jam Selesai *</label>
+                <input type="time" name="waktuSelesai" value="16:00" required class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Catatan / Keterangan Tambahan</label>
+              <textarea name="keterangan" rows="2" placeholder="Contoh: Memerlukan sound system tambahan, AC central dinyalakan 1 jam sebelum acara" class="w-full bg-emerald-950/80 border border-amber-500/30 rounded-xl px-4 py-2 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-extrabold px-8 py-3.5 rounded-xl text-sm transition shadow-lg glow-gold flex items-center justify-center space-x-2 border border-amber-300/40 active:scale-95 cursor-pointer">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                <span>Simpan Agenda Terbaru</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- ADMIN SUBTAB: KELOLA RUANGAN / AULA -->
       <div id="admin-sub-ruangan" class="admin-sub-content hidden space-y-6">
         <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-amber-500/30">
@@ -519,66 +562,85 @@
       <!-- ADMIN SUBTAB 3: LAPORAN & REKAPAN (BULANAN, PER-FAKULTAS, TAHUNAN) -->
       <div id="admin-sub-laporan" class="admin-sub-content hidden space-y-6">
         
-        <!-- Filter Laporan -->
+        <!-- Filter Laporan & Export PDF -->
         <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 class="text-base font-bold text-white">Filter & Rekapan Laporan</h3>
-            <p class="text-xs text-emerald-200/70">Pilih periode laporan yang ingin dihitung secara otomatis</p>
+            <p class="text-xs text-emerald-200/70">Pilih periode laporan dan cetak dokumen resmi instansi</p>
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex flex-wrap items-center gap-3">
             <input type="month" id="report-month-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
             <select id="report-year-select" class="bg-emerald-950 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200" onchange="renderReports()">
               <option value="2026">2026</option>
               <option value="2027">2027</option>
             </select>
+            <button onclick="exportLaporanPDF()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs flex items-center space-x-2 shadow-md glow-gold active:scale-95 transition">
+              <i data-lucide="file-down" class="w-4 h-4"></i>
+              <span>Export PDF Resmi</span>
+            </button>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          <!-- Rekapan Kegiatan Bulanan -->
-          <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
-            <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
-              <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
-                <i data-lucide="calendar" class="w-4 h-4"></i>
-                <span>Rekapan Kegiatan Bulanan</span>
-              </h4>
-              <span id="report-monthly-count" class="px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-lg border border-amber-500/30">0 Kegiatan</span>
-            </div>
-            <div id="monthly-report-list" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
-          </div>
-
-          <!-- Rekapan Kegiatan Per-Fakultas / Unit Kerja -->
-          <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
-            <div class="border-b border-amber-500/20 pb-3">
-              <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
-                <i data-lucide="pie-chart" class="w-4 h-4"></i>
-                <span>Rekapan Per-Fakultas / Unit Kerja</span>
-              </h4>
-            </div>
-            <div id="faculty-report-bars" class="space-y-3"></div>
-          </div>
-
-        </div>
-
-        <!-- Rekapan Laporan Tahunan -->
-        <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/20 space-y-4">
-          <div class="border-b border-amber-500/20 pb-3 flex justify-between items-center">
-            <h4 class="font-bold text-amber-300 text-sm flex items-center space-x-2">
-              <i data-lucide="trending-up" class="w-4 h-4"></i>
-              <span>Ringkasan Laporan Tahunan</span>
-            </h4>
-            <span id="report-year-title" class="text-xs font-bold text-white">Tahun 2026</span>
-          </div>
-
-          <div id="yearly-report-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
-        </div>
-
+  <!-- TEMPLATE HIDDEN KHUSUS CETAK PDF RESMI INSTANSI -->
+  <div id="pdf-export-template" class="hidden">
+    <div style="font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; padding: 30px; line-height: 1.4;">
+      
+      <!-- KOP SURAT RESMI UIN AR-RANIRY -->
+      <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px;">
+        <h2 style="font-size: 16pt; font-weight: bold; margin: 0; text-transform: uppercase;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
+        <h3 style="font-size: 14pt; font-weight: bold; margin: 2px 0; text-transform: uppercase;">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</h3>
+        <p style="font-size: 10pt; margin: 0; font-style: italic;">Jl. Syeikh Abdur Rauf Kopelma Darussalam Banda Aceh, Telp: (0651) 7557442</p>
+        <p style="font-size: 9pt; margin: 0; font-weight: bold; color: #333;">Website: https://ar-raniry.ac.id | Email: info@ar-raniry.ac.id</p>
       </div>
 
-    </section>
+      <!-- JUDUL LAPORAN -->
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h3 style="font-size: 13pt; font-weight: bold; text-decoration: underline; text-transform: uppercase; margin: 0;">LAPORAN REKAPAN PENGGUNAAN AULA & GEDUNG ACARA</h3>
+        <p id="pdf-periode-text" style="font-size: 10pt; font-weight: bold; margin-top: 4px;"></p>
+      </div>
 
-  </main>
+      <!-- TABEL RESMI REKAPAN AGENDA -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 10pt;">
+        <thead>
+          <tr style="background-color: #f2f2f2; text-align: center; font-weight: bold;">
+            <th style="border: 1px solid #000; padding: 8px; width: 5%;">No</th>
+            <th style="border: 1px solid #000; padding: 8px; width: 30%;">Nama Kegiatan</th>
+            <th style="border: 1px solid #000; padding: 8px; width: 25%;">Penyelenggara / Unit</th>
+            <th style="border: 1px solid #000; padding: 8px; width: 20%;">Ruangan / Aula</th>
+            <th style="border: 1px solid #000; padding: 8px; width: 20%;">Tanggal & Waktu</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-table-body">
+          <!-- Populated dynamically via Javascript -->
+        </tbody>
+      </table>
+
+      <!-- STATISTIK & RINGKASAN -->
+      <div style="margin-bottom: 30px; font-size: 10pt; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+        <strong>Ringkasan Laporan:</strong>
+        <ul style="margin: 5px 0 0 20px; padding: 0;">
+          <li id="pdf-stat-total">Total Agenda Disetujui: 0 Kegiatan</li>
+          <li id="pdf-stat-ruangan">Jumlah Ruangan Aktif Terpakai: 0 Ruangan</li>
+        </ul>
+      </div>
+
+      <!-- TANDA TANGAN / PENGESAHAN -->
+      <div style="display: flex; justify-content: space-between; margin-top: 40px; font-size: 10pt; page-break-inside: avoid;">
+        <div style="width: 40%; text-align: center;">
+          <p style="margin-bottom: 60px;">Mengetahui,<br><strong>Kepala Bagian Umum UIN Ar-Raniry</strong></p>
+          <p style="margin: 0; text-decoration: underline; font-weight: bold;">( Dr. H. Ahmad Zaki, M.Ag )</p>
+          <p style="margin: 0;">NIP. 19780312 200501 1 002</p>
+        </div>
+        <div style="width: 40%; text-align: center;">
+          <p style="margin-bottom: 60px;">Banda Aceh, <span id="pdf-current-date"></span><br><strong>Pengelola Gedung & Aula</strong></p>
+          <p style="margin: 0; text-decoration: underline; font-weight: bold;">( Admin Pengelola Aula )</p>
+          <p style="margin: 0;">NIP. 19850614 201012 1 004</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ================= LOGIC & CONTROLLERS ================= -->
   <script>
@@ -588,10 +650,81 @@
     let currentDate = new Date();
     let selectedDateStr = new Date().toISOString().split('T')[0];
     let isAdminLoggedIn = false;
+    let isPassVisible = false;
 
     // Three.js Scene Variables
     let scene, camera, renderer, roomMesh, stageLight;
     let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+
+    // INITIALIZE THREE.JS 3D VIRTUAL STAGE
+    function init3dScene() {
+      const container = document.getElementById('canvas-container');
+      if (!container) return;
+
+      // Scene & Camera
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 4, 10);
+      camera.lookAt(0, 0, 0);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      stageLight = new THREE.PointLight(0xf59e0b, 1.5, 50);
+      stageLight.position.set(5, 8, 5);
+      scene.add(stageLight);
+
+      const dirLight = new THREE.DirectionalLight(0x10b981, 0.8);
+      dirLight.position.set(-5, 5, -5);
+      scene.add(dirLight);
+
+      // Initial Stage Model
+      createStageMesh("Aula Utama");
+
+      // Event Listeners for 3D Drag Rotation & Touch
+      const dom = renderer.domElement;
+      
+      const onPointerDown = (e) => {
+        isDragging = true;
+        previousMousePosition = {
+          x: e.clientX || (e.touches && e.touches[0].clientX) || 0,
+          y: e.clientY || (e.touches && e.touches[0].clientY) || 0
+        };
+      };
+
+      const onPointerMove = (e) => {
+        if (!isDragging || !roomMesh) return;
+        const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+        const deltaX = currentX - previousMousePosition.x;
+        roomMesh.rotation.y += deltaX * 0.01;
+        previousMousePosition = {
+          x: currentX,
+          y: e.clientY || (e.touches && e.touches[0].clientY) || 0
+        };
+      };
+
+      const onPointerUp = () => { isDragging = false; };
+
+      dom.addEventListener('mousedown', onPointerDown);
+      dom.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+
+      dom.addEventListener('touchstart', onPointerDown, { passive: true });
+      dom.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
+
+      window.addEventListener('resize', onWindowResize);
+
+      // Start Animation Loop
+      animate3d();
+    }
 
     window.onload = function() {
       lucide.createIcons();
@@ -601,45 +734,85 @@
       loadDataFromSheet();
     };
 
-    // ================= 3D VIRTUAL STAGE =================
-    function init3dScene() {
-      const container = document.getElementById('canvas-container');
-      scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x022c22, 0.035);
+    // TOGGLE VISIBILITY PASSWORD ADMIN
+    function togglePassVisibility() {
+      const passInput = document.getElementById('admin-pass-input');
+      const icon = document.getElementById('pass-toggle-icon');
+      isPassVisible = !isPassVisible;
 
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 4, 10);
+      if (isPassVisible) {
+        passInput.type = "text";
+        icon.setAttribute("data-lucide", "eye-off");
+      } else {
+        passInput.type = "password";
+        icon.setAttribute("data-lucide", "eye");
+      }
+      lucide.createIcons();
+    }
 
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(renderer.domElement);
+    // EXPORT LAPORAN KE PDF RESMI INSTANSI
+    function exportLaporanPDF() {
+      const monthInput = document.getElementById('report-month-select').value;
+      const [year, month] = monthInput.split('-');
+      
+      const monthNames = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      
+      const monthText = monthNames[parseInt(month) - 1] + " " + year;
+      document.getElementById('pdf-periode-text').innerText = "PERIODE: " + monthText.toUpperCase();
 
-      const ambientLight = new THREE.AmbientLight(0x047857, 0.7);
-      scene.add(ambientLight);
+      // Populate Table
+      const filteredEvents = allAgenda.filter(a => a.tglMulai && a.tglMulai.startsWith(monthInput) && a.status === 'Approved');
+      const tbody = document.getElementById('pdf-table-body');
+      tbody.innerHTML = '';
 
-      stageLight = new THREE.SpotLight(0xf59e0b, 2.5);
-      stageLight.position.set(0, 10, 0);
-      scene.add(stageLight);
+      if (filteredEvents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="border: 1px solid #000; padding: 12px; text-align: center; font-style: italic;">Tidak ada kegiatan terdaftar/disetujui pada periode bulan ini.</td></tr>`;
+      } else {
+        filteredEvents.forEach((ev, idx) => {
+          tbody.innerHTML += `
+            <tr>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${idx + 1}</td>
+              <td style="border: 1px solid #000; padding: 6px; font-weight: bold;">${ev.namaKegiatan}</td>
+              <td style="border: 1px solid #000; padding: 6px;">${ev.penyelenggara}<br><small style="color: #444;">(${ev.fakultas || 'Umum'})</small></td>
+              <td style="border: 1px solid #000; padding: 6px;">${ev.ruangan}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${ev.tglMulai}<br><small>${ev.waktuMulai || ''} - ${ev.waktuSelesai || ''}</small></td>
+            </tr>
+          `;
+        });
+      }
 
-      const gridHelper = new THREE.GridHelper(30, 30, 0xf59e0b, 0x064e3b);
-      gridHelper.position.y = -1;
-      scene.add(gridHelper);
+      // Stats
+      document.getElementById('pdf-stat-total').innerText = `Total Agenda Disetujui: ${filteredEvents.length} Kegiatan`;
+      const uniqueRooms = new Set(filteredEvents.map(e => e.ruangan)).size;
+      document.getElementById('pdf-stat-ruangan').innerText = `Jumlah Ruangan Aktif Terpakai: ${uniqueRooms} Ruangan`;
 
-      createStageMesh("Aula Utama");
+      // Date TTD
+      const today = new Date();
+      document.getElementById('pdf-current-date').innerText = `${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
 
-      window.addEventListener('resize', onWindowResize);
-      const dom = renderer.domElement;
+      // Trigger HTML2PDF
+      const element = document.getElementById('pdf-export-template');
+      element.classList.remove('hidden');
 
-      dom.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
-      dom.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        scene.rotation.y += (e.clientX - previousMousePosition.x) * 0.005;
-        previousMousePosition = { x: e.clientX, y: e.clientY };
+      const opt = {
+        margin:       [0.4, 0.4, 0.4, 0.4],
+        filename:     `Laporan_Kegiatan_Aula_UINAR_${monthInput}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      showToast("Mengunduh Laporan PDF Resmi...", "success");
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        element.classList.add('hidden');
+      }).catch(err => {
+        element.classList.add('hidden');
+        showToast("Terjadi kesalahan export PDF", "error");
       });
-      window.addEventListener('mouseup', () => isDragging = false);
-
-      animate3d();
     }
 
     function createStageMesh(roomName) {
@@ -1228,13 +1401,28 @@
         if (typeof google !== 'undefined' && google.script) {
           google.script.run
             .withSuccessHandler(function(res) {
-              showToast(res.message, "success");
-              form.reset();
-              loadDataFromSheet();
+              if (res.success) {
+                showToast(res.message, "success");
+                form.reset();
+                loadDataFromSheet();
+              } else {
+                showToast(res.message, "error");
+              }
             })
             .simpanAgendaAdmin(formObj, fileData);
         } else {
-          // Demo mode
+          // Demo mode with collision validation
+          const isConflict = allAgenda.some(a => 
+            a.tglMulai === formObj.tglMulai && 
+            a.ruangan === formObj.ruangan && 
+            a.status === 'Approved'
+          );
+
+          if (isConflict) {
+            showToast(`[BENTROK JADWAL] Ruangan "${formObj.ruangan}" sudah di-booking pada tanggal ${formObj.tglMulai}!`, "error");
+            return;
+          }
+
           const newAgenda = {
             id: "AGD-" + Date.now(),
             namaKegiatan: formObj.namaKegiatan,
@@ -1249,7 +1437,7 @@
             urlBerkas: fileData ? "#" : ""
           };
           allAgenda.push(newAgenda);
-          showToast("Booking berhasil ditambahkan (Demo)", "success");
+          showToast("Booking berhasil ditambahkan!", "success");
           form.reset();
           renderBeranda();
         }
