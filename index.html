@@ -483,7 +483,7 @@
             </div>
             <div>
               <h2 id="ruangan-form-title" class="text-lg font-bold text-white">Tambah Ruangan / Aula Baru</h2>
-              <p class="text-xs text-emerald-200/70">Kelola daftar gedung & aula yang dapat dipesan oleh unit kerja UIN Ar-Raniry.</p>
+              <p class="text-xs text-emerald-200/70">Kelola daftar gedung & aula yang tersinkronisasi 2 arah dengan Google Sheets.</p>
             </div>
           </div>
 
@@ -500,7 +500,7 @@
             <div class="flex space-x-3">
               <button type="submit" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs flex items-center space-x-2 shadow-lg glow-gold active:scale-95">
                 <i data-lucide="save" class="w-4 h-4"></i>
-                <span id="ruangan-submit-btn-text">Simpan Ruangan</span>
+                <span id="ruangan-submit-btn-text">Simpan ke Spreadsheet</span>
               </button>
               <button type="button" id="ruangan-cancel-btn" onclick="resetRuanganForm()" class="hidden bg-emerald-900/80 text-amber-200 hover:text-white border border-amber-500/30 px-4 py-3 rounded-xl text-xs font-bold transition">
                 Batal Edit
@@ -511,14 +511,21 @@
 
         <!-- Tabel Daftar Ruangan -->
         <div class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30">
-          <h3 class="font-bold text-white text-base mb-4 flex items-center space-x-2">
-            <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
-            <span>Daftar Ruangan & Aula Terdaftar</span>
-          </h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white text-base flex items-center space-x-2">
+              <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
+              <span>Daftar Ruangan & Aula Terdaftar (Tersinkronisasi Spreadsheet)</span>
+            </h3>
+            <button onclick="loadDataFromSheet()" class="px-3 py-1.5 bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 rounded-xl border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh Data Sheet</span>
+            </button>
+          </div>
           <div class="overflow-x-auto rounded-2xl border border-amber-500/20">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-emerald-950/90 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20">
+                  <th class="p-3">ID Baris</th>
                   <th class="p-3">Nama Ruangan / Aula</th>
                   <th class="p-3">Keterangan / Fasilitas</th>
                   <th class="p-3 text-center">Aksi Kelola</th>
@@ -1289,12 +1296,14 @@
       });
     }
 
-    // ================= RUANGAN MANAGER =================
+    // ================= RUANGAN MANAGER WITH TWO-WAY SYNC =================
     function handleRuanganSubmit(e) {
       e.preventDefault();
       const id = document.getElementById('ruangan-id-input').value;
       const nama = document.getElementById('ruangan-nama-input').value;
       const keterangan = document.getElementById('ruangan-ket-input').value;
+
+      showToast("Menyimpan ke Google Sheets...", "success");
 
       fetch(WEB_APP_URL, {
         method: 'POST',
@@ -1314,7 +1323,7 @@
         } else {
           ruanganList.push({ id: "RNG-" + Date.now(), nama, keterangan });
         }
-        showToast("Data ruangan disimpan!", "success");
+        showToast("Data ruangan tersimpan di lokal demo!", "success");
         resetRuanganForm();
         renderAllDropdowns();
       });
@@ -1324,24 +1333,27 @@
       document.getElementById('ruangan-id-input').value = '';
       document.getElementById('ruangan-nama-input').value = '';
       document.getElementById('ruangan-ket-input').value = '';
-      document.getElementById('ruangan-form-title').innerText = "Tambah Ruangan / Aula Baru";
-      document.getElementById('ruangan-submit-btn-text').innerText = "Simpan Ruangan";
+      document.getElementById('ruangan-form-title').innerText = 'Tambah Ruangan / Aula Baru';
+      document.getElementById('ruangan-submit-btn-text').innerText = 'Simpan ke Spreadsheet';
       document.getElementById('ruangan-cancel-btn').classList.add('hidden');
     }
 
     function editRuangan(id) {
-      const item = ruanganList.find(r => r.id === id);
-      if (!item) return;
-      document.getElementById('ruangan-id-input').value = item.id;
-      document.getElementById('ruangan-nama-input').value = item.nama;
-      document.getElementById('ruangan-ket-input').value = item.keterangan || '';
-      document.getElementById('ruangan-form-title').innerText = "Edit Data Ruangan";
-      document.getElementById('ruangan-submit-btn-text').innerText = "Perbarui Ruangan";
+      const room = ruanganList.find(r => r.id === id);
+      if (!room) return;
+      document.getElementById('ruangan-id-input').value = room.id;
+      document.getElementById('ruangan-nama-input').value = room.nama;
+      document.getElementById('ruangan-ket-input').value = room.keterangan || '';
+      document.getElementById('ruangan-form-title').innerText = 'Edit Data Ruangan';
+      document.getElementById('ruangan-submit-btn-text').innerText = 'Perbarui Ruangan';
       document.getElementById('ruangan-cancel-btn').classList.remove('hidden');
+      switchAdminSubTab('ruangan');
     }
 
     function deleteRuanganConfirm(id) {
-      if (!confirm("Hapus ruangan ini?")) return;
+      if (!confirm("Apakah Anda yakin ingin menghapus ruangan ini dari Google Sheets?")) return;
+      
+      showToast("Menghapus ruangan...", "success");
       fetch(WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1354,7 +1366,7 @@
       })
       .catch(() => {
         ruanganList = ruanganList.filter(r => r.id !== id);
-        showToast("Ruangan dihapus!", "success");
+        showToast("Ruangan dihapus (Lokal Demo)!", "success");
         renderAllDropdowns();
       });
     }
@@ -1363,14 +1375,19 @@
       const tbody = document.getElementById('admin-ruangan-body');
       if (!tbody) return;
       tbody.innerHTML = '';
+      if (ruanganList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-200/60 italic">Belum ada ruangan terdaftar di Google Sheets.</td></tr>`;
+        return;
+      }
       ruanganList.forEach(r => {
         tbody.innerHTML += `
           <tr class="hover:bg-emerald-900/40 transition">
+            <td class="p-3 font-mono text-amber-400/70">${r.id}</td>
             <td class="p-3 font-bold text-white">${r.nama}</td>
             <td class="p-3 text-emerald-200">${r.keterangan || '-'}</td>
             <td class="p-3 text-center space-x-2">
-              <button onclick="editRuangan('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">Edit</button>
-              <button onclick="deleteRuanganConfirm('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-500/20 text-red-300 border border-red-500/30">Hapus</button>
+              <button onclick="editRuangan('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition">Edit</button>
+              <button onclick="deleteRuanganConfirm('${r.id}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition">Hapus</button>
             </td>
           </tr>
         `;
