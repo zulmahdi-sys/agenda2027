@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#020617">
+  <meta name="theme-color" content="#f8fafc">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <title>Sistem Booking Aula & Agenda - UIN Ar-Raniry Banda Aceh</title>
   
   <!-- Tailwind CSS & Lucide Icons -->
@@ -17,7 +20,7 @@
   
   <style>
     html {
-      color-scheme: dark;
+      color-scheme: light;
       scroll-padding-top: 5rem;
     }
     body {
@@ -67,6 +70,151 @@
       background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #b45309 100%);
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
     }
+    body.bg-slate-950 {
+      background-color: #f8fafc !important;
+      color: #1e293b !important;
+    }
+    [class*="bg-slate-900"],
+    [class*="bg-slate-800"],
+    [class*="bg-slate-700"],
+    [class*="bg-emerald-950"],
+    [class*="bg-emerald-900"],
+    [class*="bg-emerald-800"] {
+      background-color: #ffffff !important;
+    }
+    [class*="bg-amber-950"],
+    [class*="bg-amber-900"],
+    [class*="bg-amber-500/"] {
+      background-color: #fffbeb !important;
+    }
+    [class*="bg-red-950"],
+    [class*="bg-red-900"] {
+      background-color: #fef2f2 !important;
+    }
+    [class*="text-slate-100"],
+    [class*="text-slate-200"],
+    [class*="text-slate-300"] {
+      color: #334155 !important;
+    }
+    [class*="text-slate-400"],
+    [class*="text-slate-500"] {
+      color: #64748b !important;
+    }
+    [class*="text-emerald-100"],
+    [class*="text-emerald-200"],
+    [class*="text-emerald-300"],
+    [class*="text-emerald-400"] {
+      color: #166534 !important;
+    }
+    [class*="text-amber-100"],
+    [class*="text-amber-200"],
+    [class*="text-amber-300"],
+    [class*="text-amber-400"] {
+      color: #92400e !important;
+    }
+    [class*="text-red-100"],
+    [class*="text-red-200"],
+    [class*="text-red-300"] {
+      color: #b91c1c !important;
+    }
+    [class*="border-amber-"],
+    [class*="border-emerald-"],
+    [class*="border-slate-"] {
+      border-color: #e2e8f0 !important;
+    }
+    [aria-current="page"] {
+      color: #166534 !important;
+      background-color: #ecfdf5 !important;
+      border-color: #bbf7d0 !important;
+    }
+    button[aria-label*="ada kegiatan"] {
+      color: #166534 !important;
+      background-color: #dcfce7 !important;
+    }
+    #modal-login-admin,
+    #modal-detail-tanggal {
+      background-color: rgb(15 23 42 / 55%) !important;
+    }
+    .gold-gradient-text {
+      background: none;
+      -webkit-text-fill-color: #166534;
+      color: #166534;
+    }
+    .gold-btn {
+      background: #15803d;
+      color: #ffffff;
+    }
+    .gold-btn:hover {
+      background: #166534;
+      box-shadow: 0 4px 12px rgb(22 101 52 / 18%);
+    }
+    body.bg-slate-950 {
+      color: #111827 !important;
+      font-weight: 500;
+    }
+    [class*="text-slate-100"],
+    [class*="text-slate-200"],
+    [class*="text-slate-300"],
+    [class*="text-slate-400"],
+    [class*="text-slate-500"],
+    [class*="text-emerald-100"],
+    [class*="text-emerald-200"],
+    [class*="text-emerald-300"],
+    [class*="text-emerald-400"],
+    [class*="text-amber-100"],
+    [class*="text-amber-200"],
+    [class*="text-amber-300"],
+    [class*="text-amber-400"] {
+      color: #111827 !important;
+      font-weight: 500;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      color: #111827;
+      font-weight: 700;
+    }
+    .gold-gradient-text {
+      -webkit-text-fill-color: #111827;
+      color: #111827;
+    }
+    .yearly-month-card {
+      border-top: 3px solid #16a34a !important;
+      animation: calendar-arrive 420ms ease-out both;
+      animation-delay: calc(var(--calendar-index, 0) * 35ms);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+    .yearly-month-card:hover {
+      border-color: #86efac !important;
+      box-shadow: 0 8px 20px rgb(22 163 74 / 12%);
+      transform: translateY(-2px);
+    }
+    .yearly-month-card button[title*="kegiatan"] {
+      background-color: #dcfce7 !important;
+      color: #14532d !important;
+      font-weight: 700;
+      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+    .yearly-month-card button[title*="kegiatan"]:hover,
+    .yearly-month-card button[title*="kegiatan"]:focus-visible {
+      background-color: #bbf7d0 !important;
+      color: #14532d !important;
+      transform: scale(1.08);
+    }
+    @keyframes calendar-arrive {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+        border-top-color: #bbf7d0;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        border-top-color: #16a34a;
+      }
+    }
+    .gold-btn {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -85,8 +233,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 sm:h-20">
         <button type="button" class="flex min-w-0 items-center space-x-2 sm:space-x-3 text-left" onclick="switchTab('beranda')" aria-label="Buka kalender kegiatan">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
-            <i data-lucide="building-2" class="w-6 h-6 text-amber-400"></i>
+          <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+            <img src="./uin-ar-raniry-logo.png" alt="" width="44" height="44" class="h-9 w-9 sm:h-11 sm:w-11 object-contain">
           </div>
           <div class="min-w-0">
             <h1 class="font-bold text-base sm:text-lg text-amber-300 tracking-wide">UIN AR-RANIRY</h1>
@@ -374,10 +522,14 @@
           <!-- Print Preview Wrapper for PDF Export -->
           <div id="pdf-report-container" class="bg-emerald-950 p-6 rounded-xl border border-amber-500/30 space-y-6">
             <!-- Kop Surat Resmi Instansi (Hanya Tampil saat Cetak PDF) -->
-            <div class="text-center pb-4 border-b-4 border-double border-amber-500 text-slate-100">
-              <h2 class="font-bold text-lg uppercase tracking-wider text-amber-300">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
-              <h3 class="font-extrabold text-xl uppercase tracking-wide text-amber-400">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</h3>
-              <p class="text-xs text-emerald-200 mt-1">Jl. Lingkar Kampus, Kopelma Darussalam, Banda Aceh - Web: ar-raniry.ac.id</p>
+            <div class="grid grid-cols-1 sm:grid-cols-[6rem_minmax(0,1fr)_6rem] items-center gap-2 pb-4 border-b-4 border-double border-amber-500 text-slate-100">
+              <img src="./uin-ar-raniry-logo.png" alt="Logo UIN Ar-Raniry Banda Aceh" width="96" height="103" class="mx-auto mb-2 h-16 w-16 object-contain sm:mb-0 sm:h-24 sm:w-24">
+              <div class="text-center">
+                <h2 class="font-bold text-sm sm:text-lg uppercase tracking-wider text-amber-300">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
+                <h3 class="font-extrabold text-base sm:text-xl uppercase tracking-wide text-amber-400">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</h3>
+                <p class="text-[10px] sm:text-xs text-emerald-200 mt-1">Jl. Lingkar Kampus, Kopelma Darussalam, Banda Aceh - Web: ar-raniry.ac.id</p>
+              </div>
+              <div aria-hidden="true"></div>
             </div>
 
             <!-- Rekapan Per-Fakultas / Unit Kerja -->
@@ -922,7 +1074,7 @@
         }
 
         return `
-          <div class="min-w-0 bg-emerald-950/50 border border-amber-500/20 p-3 sm:p-4 rounded-xl">
+          <div class="yearly-month-card min-w-0 bg-emerald-950/50 border border-amber-500/20 p-3 sm:p-4 rounded-xl" style="--calendar-index: ${idx}">
             <h4 class="font-bold text-amber-300 text-sm mb-3">${mName} ${year}</h4>
             <div class="grid grid-cols-7 gap-1 text-center text-[10px]">
               <span class="font-bold text-amber-400">Min</span><span class="font-bold text-amber-400">Sen</span><span class="font-bold text-amber-400">Sel</span><span class="font-bold text-amber-400">Rab</span><span class="font-bold text-amber-400">Kam</span><span class="font-bold text-amber-400">Jum</span><span class="font-bold text-amber-400">Sab</span>

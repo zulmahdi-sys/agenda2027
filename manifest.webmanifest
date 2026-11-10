@@ -1,0 +1,24 @@
+{
+  "name": "Agenda & Booking UIN Ar-Raniry",
+  "short_name": "Agenda UINAR",
+  "description": "Kalender kegiatan dan booking aula UIN Ar-Raniry Banda Aceh.",
+  "lang": "id",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
