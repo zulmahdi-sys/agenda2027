@@ -30,7 +30,7 @@
       -webkit-tap-highlight-color: transparent;
     }
     body.has-custom-background {
-      background-image: linear-gradient(rgb(248 250 252 / 84%), rgb(226 232 240 / 88%)), var(--custom-background-image);
+      background-image: var(--custom-background-image);
       background-position: center;
       background-repeat: no-repeat;
       background-size: cover;
@@ -83,7 +83,7 @@
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
     }
     body.bg-slate-950 {
-      background-color: #e2e8f0 !important;
+      background-color: #ffffff !important;
       color: #1e293b !important;
     }
     [class*="bg-slate-900"],
@@ -351,8 +351,9 @@
           </div>
           <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
           <div class="mt-4 flex flex-wrap gap-3 text-[10px] text-slate-400">
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-emerald-500"></span>Agenda kegiatan</span>
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-red-400"></span>Libur / cuti / hari besar</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-emerald-500"></span>Sudah dibooking</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded border border-slate-300 bg-white"></span>Masih kosong</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-red-400"></span>Hari libur / besar Islam</span>
           </div>
         </div>
 
@@ -362,6 +363,11 @@
             Agenda Terjadwal
           </h3>
           <div id="daily-agenda-list" class="flex-grow space-y-3 overflow-y-auto max-h-96 pr-1"></div>
+          <div class="mt-5 border-t border-amber-500/20 pt-4">
+            <h4 id="room-availability-title" class="text-sm font-bold text-amber-300">Ketersediaan Ruangan</h4>
+            <p class="mb-3 mt-1 text-[10px] text-slate-400">Status ruangan untuk tanggal yang dipilih.</p>
+            <div id="room-availability-list" class="max-h-64 space-y-2 overflow-y-auto pr-1"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -372,6 +378,7 @@
         <h2 class="text-xl sm:text-2xl font-bold gold-gradient-text">Kalender Acara Setahun</h2>
         <select id="year-filter" onchange="renderYearlyCalendar()" aria-label="Pilih tahun kalender" class="min-h-11 w-full min-[420px]:w-auto bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg px-3 py-2.5"></select>
       </div>
+      <p id="calendar-sync-status" role="status" aria-live="polite" class="text-xs text-slate-400">Kalender hari libur dan hari besar sedang disiapkan.</p>
       <div id="yearly-grid" class="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"></div>
       <p class="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-600"><span class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded bg-green-200 ring-1 ring-green-300"></span>Tanggal berwarna hijau memiliki agenda</span><span class="flex items-center gap-2"><span aria-hidden="true" class="h-3 w-3 rounded bg-red-200 ring-1 ring-red-300"></span>Tanggal berwarna merah adalah hari khusus nasional atau Islam</span><span>Pilih tanggal untuk melihat detail.</span></p>
     </section>
@@ -429,6 +436,7 @@
         <div id="admin-panel-input-booking" class="space-y-4">
           <h3 class="text-lg font-bold text-amber-300">Input & Booking Tempat Baru</h3>
           <form id="form-booking-admin" onsubmit="handleAdminFormSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="hidden" id="booking-edit-id">
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">NAMA KEGIATAN *</label>
               <input type="text" id="booking-nama" required placeholder="Contoh: Rapat Senat Terbuka" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
@@ -438,8 +446,12 @@
               <input type="text" id="booking-penyelenggara" required placeholder="Contoh: BEM FST UINAR" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
             </div>
             <div>
+              <label for="booking-operator-aula" class="block text-xs font-bold text-amber-300 mb-1">NAMA PETUGAS / OPERATOR AULA/GEDUNG</label>
+              <input type="text" id="booking-operator-aula" maxlength="150" placeholder="Nama petugas/operator yang bertugas" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">FAKULTAS / UNIT KERJA *</label>
-              <select id="booking-fakultas" required class="w-full bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-3">
+              <select id="booking-fakultas" required onchange="toggleCustomFaculty()" class="w-full bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-3">
                 <option value="Fakultas Sains & Teknologi">Fakultas Sains & Teknologi</option>
                 <option value="Fakultas Tarbiyah & Keguruan">Fakultas Tarbiyah & Keguruan</option>
                 <option value="Fakultas Syariah & Hukum">Fakultas Syariah & Hukum</option>
@@ -450,7 +462,9 @@
                 <option value="Fakultas Ilmu Sosial & Pemerintahan">Fakultas Ilmu Sosial & Pemerintahan</option>
                 <option value="Pascasarjana">Pascasarjana</option>
                 <option value="Rektorat / Unit Pusat">Rektorat / Unit Pusat</option>
+                <option value="__custom__">Lainnya (isi manual)</option>
               </select>
+              <input type="text" id="booking-fakultas-manual" maxlength="150" placeholder="Masukkan nama fakultas / unit kerja" aria-label="Nama fakultas atau unit kerja lainnya" class="hidden mt-2 w-full rounded-lg border border-amber-500/40 bg-slate-900 p-3 text-xs text-slate-100">
             </div>
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">PILIHAN RUANGAN / AULA *</label>
@@ -482,8 +496,23 @@
               <button type="submit" id="btn-submit-booking" class="w-full py-3 rounded-xl font-bold gold-btn text-sm flex items-center justify-center gap-2">
                 <i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru
               </button>
+              <button type="button" id="btn-cancel-booking-edit" onclick="cancelBookingEdit()" class="hidden mt-2 w-full rounded-xl border border-slate-500 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-slate-800">Batalkan Edit</button>
             </div>
           </form>
+          <div class="mt-6 space-y-3">
+            <div>
+              <h4 class="text-sm font-bold text-amber-300">Kelola Booking Kegiatan</h4>
+              <p class="mt-1 text-[10px] text-slate-400">Admin dapat mengubah data, menghapus booking, atau menerbitkan kembali booking yang masih berupa draf.</p>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
+              <table class="w-full min-w-[1050px] text-left text-xs">
+                <thead class="bg-emerald-900/80 font-bold text-amber-300">
+                  <tr><th class="p-3">Kegiatan</th><th class="p-3">Penyelenggara / Unit</th><th class="p-3">Petugas / Operator</th><th class="p-3">Ruangan</th><th class="p-3">Tanggal & Waktu</th><th class="p-3">Status</th><th class="p-3 text-right">Aksi</th></tr>
+                </thead>
+                <tbody id="admin-booking-table-body" class="divide-y divide-emerald-900/40"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- SUB-TAB 2: IMPORT EXCEL -->
@@ -546,7 +575,7 @@
         <div id="admin-panel-kalender-nasional" class="hidden space-y-4">
           <div>
             <h3 class="text-lg font-bold text-amber-300">Hari Libur, Cuti Bersama & Hari Besar Islam</h3>
-            <p class="mt-1 text-xs text-emerald-200">Masukkan tanggal berdasarkan kalender resmi pemerintah. Setelah disimpan, tanggal otomatis ditandai dan dapat dilihat semua pengguna. Periksa kembali tanggal cuti bersama dan hari besar Islam karena dapat berubah sesuai penetapan resmi.</p>
+            <p class="mt-1 text-xs text-emerald-200">Hari libur dan hari besar disinkronkan otomatis. Data 2027 mengikuti SKB 3 Menteri; tahun lain menggunakan kalender publik dan tanggal Hijriah perkiraan. Tanggal yang Anda tambahkan di sini tetap tersimpan sebagai data manual.</p>
           </div>
           <form id="form-calendar-event" onsubmit="handleCalendarEventSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-3">
             <div>
@@ -624,9 +653,17 @@
               <i data-lucide="file-text" class="w-4 h-4"></i> Export PDF Laporan Resmi
             </button>
           </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div>
+              <label for="report-month" class="mb-1 block text-xs font-bold text-amber-300">BULAN LAPORAN</label>
+              <input id="report-month" type="month" onchange="renderReports()" class="min-h-11 rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-sm text-amber-200">
+            </div>
+            <p id="report-month-summary" class="pb-2 text-xs text-emerald-200"></p>
+          </div>
 
           <!-- Print Preview Wrapper for PDF Export -->
           <div id="pdf-report-container" class="bg-emerald-950 p-6 rounded-xl border border-amber-500/30 space-y-6">
+            <h3 id="pdf-month-title" class="text-center text-base font-bold text-amber-300">Laporan Booking Bulanan</h3>
             <!-- Kop Surat Resmi Instansi (Hanya Tampil saat Cetak PDF) -->
             <div class="grid grid-cols-1 sm:grid-cols-[6rem_minmax(0,1fr)_6rem] items-center gap-2 pb-4 border-b-4 border-double border-amber-500 text-slate-100">
               <img src="./uin-ar-raniry-logo.png" alt="Logo UIN Ar-Raniry Banda Aceh" width="96" height="103" class="mx-auto mb-2 h-16 w-16 object-contain sm:mb-0 sm:h-24 sm:w-24">
@@ -648,6 +685,17 @@
             <div>
               <h4 class="font-bold text-amber-300 text-sm mb-3">Statistik Penggunaan Ruangan Bulanan</h4>
               <div id="laporan-bulanan-list" class="space-y-2"></div>
+            </div>
+            <div>
+              <h4 class="mb-3 text-sm font-bold text-amber-300">Rincian Kegiatan dan Booking</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[800px] border-collapse text-left text-[10px]">
+                  <thead class="bg-emerald-900/80 text-amber-300">
+                    <tr><th class="border border-emerald-700 p-2">No.</th><th class="border border-emerald-700 p-2">Kegiatan</th><th class="border border-emerald-700 p-2">Penyelenggara</th><th class="border border-emerald-700 p-2">Fakultas / Unit</th><th class="border border-emerald-700 p-2">Ruangan</th><th class="border border-emerald-700 p-2">Petugas / Operator</th><th class="border border-emerald-700 p-2">Tanggal</th><th class="border border-emerald-700 p-2">Pukul</th><th class="border border-emerald-700 p-2">Status</th></tr>
+                  </thead>
+                  <tbody id="laporan-detail-table-body" class="text-slate-100"></tbody>
+                </table>
+              </div>
             </div>
             
             <!-- Tanda Tangan Penanggung Jawab -->
@@ -712,6 +760,9 @@
     let currentSelectedDateStr = normalizeDateValue(new Date());
     let isAdminLoggedIn = false;
     let adminPassword = '';
+    const automaticCalendarYearsLoaded = new Set();
+    const automaticCalendarYearsLoading = new Set();
+    const automaticCalendarLastAttempt = new Map();
 
     let appState = {
       ruangan: [
@@ -722,6 +773,7 @@
       pengumuman: "",
       pengumumanPublished: false,
       hariKhusus: [],
+      hariKhususOtomatis: [],
       agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
     };
 
@@ -732,7 +784,10 @@
       populateYearFilter();
       loadSavedBackgroundImage();
       loadDataFromBackend();
+      const reportMonthInput = document.getElementById('report-month');
+      reportMonthInput.value = getLocalMonthValue();
       renderAll();
+      loadAutomaticCalendarForYear(currentDate.getFullYear() + 1);
       document.getElementById('pdf-date-now').innerText = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
@@ -743,6 +798,7 @@
       renderYearlyCalendar();
       renderArsipTable();
       renderReports();
+      renderAdminBookingTable();
       renderRuanganTable();
       renderCalendarEventTable();
     }
@@ -915,10 +971,148 @@
 
     // Render Beranda Calendar & Announcements
     function getCalendarEventsForDate(date) {
-      return appState.hariKhusus.filter(item => normalizeDateValue(item.tanggal) === date);
+      return getAllCalendarEvents().filter(item => normalizeDateValue(item.tanggal) === date);
+    }
+
+    function getAllCalendarEvents() {
+      const uniqueEvents = new Map();
+      [...appState.hariKhusus, ...appState.hariKhususOtomatis].forEach(item => {
+        const key = `${normalizeDateValue(item.tanggal)}|${String(item.nama || '').trim().toLowerCase()}`;
+        if (!uniqueEvents.has(key)) uniqueEvents.set(key, item);
+      });
+      return [...uniqueEvents.values()];
+    }
+
+    function getBundledOfficialCalendar(year) {
+      const calendars = {
+        2026: [
+          ["2026-01-01", "Tahun Baru 2026 Masehi", "Libur nasional"],
+          ["2026-01-16", "Isra Mikraj Nabi Muhammad SAW", "Libur nasional / Hari besar Islam"],
+          ["2026-02-16", "Cuti Bersama Tahun Baru Imlek 2577 Kongzili", "Cuti bersama"],
+          ["2026-02-17", "Tahun Baru Imlek 2577 Kongzili", "Libur nasional"],
+          ["2026-03-18", "Cuti Bersama Hari Suci Nyepi", "Cuti bersama"],
+          ["2026-03-19", "Hari Suci Nyepi (Tahun Baru Saka 1948)", "Libur nasional"],
+          ["2026-03-20", "Cuti Bersama Hari Raya Idulfitri 1447 H", "Cuti bersama"],
+          ["2026-03-21", "Hari Raya Idulfitri 1447 H", "Libur nasional / Hari besar Islam"],
+          ["2026-03-22", "Hari Raya Idulfitri 1447 H", "Libur nasional / Hari besar Islam"],
+          ["2026-03-23", "Cuti Bersama Hari Raya Idulfitri 1447 H", "Cuti bersama"],
+          ["2026-03-24", "Cuti Bersama Hari Raya Idulfitri 1447 H", "Cuti bersama"],
+          ["2026-04-03", "Wafat Yesus Kristus", "Libur nasional"],
+          ["2026-04-05", "Kebangkitan Yesus Kristus (Paskah)", "Libur nasional"],
+          ["2026-05-01", "Hari Buruh Internasional", "Libur nasional"],
+          ["2026-05-14", "Kenaikan Yesus Kristus", "Libur nasional"],
+          ["2026-05-15", "Cuti Bersama Kenaikan Yesus Kristus", "Cuti bersama"],
+          ["2026-05-27", "Hari Raya Iduladha 1447 H", "Libur nasional / Hari besar Islam"],
+          ["2026-05-28", "Cuti Bersama Hari Raya Iduladha 1447 H", "Cuti bersama"],
+          ["2026-05-31", "Hari Raya Waisak 2570 BE", "Libur nasional"],
+          ["2026-06-01", "Hari Lahir Pancasila", "Libur nasional"],
+          ["2026-06-16", "Tahun Baru Islam 1448 H", "Libur nasional / Hari besar Islam"],
+          ["2026-08-17", "Proklamasi Kemerdekaan Republik Indonesia", "Libur nasional"],
+          ["2026-08-25", "Maulid Nabi Muhammad SAW", "Libur nasional / Hari besar Islam"],
+          ["2026-12-24", "Cuti Bersama Kelahiran Yesus Kristus (Natal)", "Cuti bersama"],
+          ["2026-12-25", "Kelahiran Yesus Kristus (Natal)", "Libur nasional"]
+        ],
+        2027: [
+          ["2027-01-01", "Tahun Baru Masehi", "Libur nasional"],
+          ["2027-01-05", "Isra Mikraj Nabi Muhammad SAW 1448 H", "Libur nasional / Hari besar Islam"],
+          ["2027-02-05", "Cuti Bersama Tahun Baru Imlek", "Cuti bersama"],
+          ["2027-02-06", "Tahun Baru Imlek 2578 Kongzili", "Libur nasional"],
+          ["2027-03-08", "Hari Raya Nyepi Tahun Baru Saka 1949", "Libur nasional"],
+          ["2027-03-09", "Cuti Bersama Hari Raya Idulfitri 1448 H", "Cuti bersama"],
+          ["2027-03-10", "Hari Raya Idulfitri 1448 H", "Libur nasional / Hari besar Islam"],
+          ["2027-03-11", "Hari Raya Idulfitri 1448 H", "Libur nasional / Hari besar Islam"],
+          ["2027-03-12", "Cuti Bersama Hari Raya Idulfitri 1448 H", "Cuti bersama"],
+          ["2027-03-15", "Cuti Bersama Hari Raya Idulfitri 1448 H", "Cuti bersama"],
+          ["2027-03-25", "Cuti Bersama Wafat Yesus Kristus", "Cuti bersama"],
+          ["2027-03-26", "Wafat Yesus Kristus", "Libur nasional"],
+          ["2027-03-28", "Kebangkitan Yesus Kristus (Paskah)", "Libur nasional"],
+          ["2027-05-01", "Hari Buruh Internasional", "Libur nasional"],
+          ["2027-05-06", "Kenaikan Yesus Kristus", "Libur nasional"],
+          ["2027-05-17", "Hari Raya Iduladha 1448 H", "Libur nasional / Hari besar Islam"],
+          ["2027-05-18", "Cuti Bersama Hari Raya Iduladha 1448 H", "Cuti bersama"],
+          ["2027-05-19", "Cuti Bersama Hari Raya Waisak 2571", "Cuti bersama"],
+          ["2027-05-20", "Hari Raya Waisak 2571 BE", "Libur nasional"],
+          ["2027-06-01", "Hari Lahir Pancasila", "Libur nasional"],
+          ["2027-06-06", "Tahun Baru Islam 1449 H", "Libur nasional / Hari besar Islam"],
+          ["2027-08-15", "Maulid Nabi Muhammad SAW 1449 H", "Libur nasional / Hari besar Islam"],
+          ["2027-08-17", "Proklamasi Kemerdekaan Republik Indonesia", "Libur nasional"],
+          ["2027-12-24", "Cuti Bersama Kelahiran Yesus Kristus (Natal)", "Cuti bersama"],
+          ["2027-12-25", "Kelahiran Yesus Kristus (Natal)", "Libur nasional"],
+          ["2027-12-26", "Isra Mikraj Nabi Muhammad SAW 1449 H", "Libur nasional / Hari besar Islam"]
+        ]
+      };
+      const events = calendars[year];
+      return events ? events.map((event, index) => ({
+        id: `AUTO-${year}-${index + 1}`,
+        tanggal: event[0],
+        nama: event[1],
+        jenis: event[2],
+        sumber: `SKB 3 Menteri ${year}`,
+        otomatis: true
+      })) : null;
+    }
+
+    async function loadAutomaticCalendarForYear(year) {
+      if (!Number.isInteger(year) || automaticCalendarYearsLoaded.has(year) || automaticCalendarYearsLoading.has(year)) return;
+      const lastAttempt = automaticCalendarLastAttempt.get(year) || 0;
+      if (Date.now() - lastAttempt < 30000) return;
+      automaticCalendarYearsLoading.add(year);
+      automaticCalendarLastAttempt.set(year, Date.now());
+      const status = document.getElementById('calendar-sync-status');
+      if (status) status.textContent = `Menyinkronkan kalender hari libur ${year}...`;
+
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=getAutomaticCalendar&year=${year}`);
+        if (!response.ok) throw new Error(`Server kalender mengembalikan HTTP ${response.status}.`);
+        const responseText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          throw new Error('Respons kalender tidak valid.');
+        }
+        if (!result || result.success !== true || !Array.isArray(result.events)) {
+          throw new Error(result && result.message ? result.message : 'Format kalender otomatis tidak sesuai.');
+        }
+
+        appState.hariKhususOtomatis = [
+          ...appState.hariKhususOtomatis.filter(item => Number(item.tanggal.slice(0, 4)) !== year),
+          ...result.events.map(normalizeCalendarEvent)
+        ];
+        automaticCalendarYearsLoaded.add(year);
+        const approximateCount = result.events.filter(item => item.perkiraan).length;
+        if (status) {
+          status.textContent = approximateCount
+            ? `Kalender ${year} tersinkron otomatis. Data tahun selain 2027 merupakan referensi/perkiraan; tanggal resmi dapat berubah.`
+            : `Kalender ${year} tersinkron otomatis dari SKB 3 Menteri.`;
+        }
+        renderCalendarEventTable();
+        renderBeranda();
+        renderYearlyCalendar();
+      } catch (error) {
+        const fallbackEvents = getBundledOfficialCalendar(year);
+        if (fallbackEvents) {
+          appState.hariKhususOtomatis = [
+            ...appState.hariKhususOtomatis.filter(item => Number(item.tanggal.slice(0, 4)) !== year),
+            ...fallbackEvents
+          ];
+          automaticCalendarYearsLoaded.add(year);
+          if (status) status.textContent = `Kalender ${year} dimuat dari data resmi SKB 3 Menteri.`;
+          renderCalendarEventTable();
+          renderBeranda();
+          renderYearlyCalendar();
+          console.warn(`Kalender ${year} menggunakan data resmi bawaan karena sinkronisasi server tidak tersedia.`);
+        } else {
+          console.error(`Gagal menyinkronkan kalender ${year}:`, error);
+          if (status) status.textContent = `Kalender ${year} belum dapat dimuat otomatis. Silakan coba kembali.`;
+        }
+      } finally {
+        automaticCalendarYearsLoading.delete(year);
+      }
     }
 
     function renderBeranda() {
+      loadAutomaticCalendarForYear(currentDate.getFullYear());
       const announcementBanner = document.getElementById('announcement-banner');
       announcementBanner.classList.toggle('hidden', !appState.pengumumanPublished || !appState.pengumuman.trim());
       document.getElementById('announcement-text').innerText = appState.pengumuman;
@@ -940,17 +1134,16 @@
 
       for(let day = 1; day <= daysInMonth; day++) {
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasAgenda = appState.agenda.some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+        const hasAgenda = getPublishedAgenda().some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
         const calendarEvents = getCalendarEventsForDate(dStr);
         const hasSpecialDay = calendarEvents.length > 0;
         const hasEvents = hasAgenda || hasSpecialDay;
         const isSelected = dStr === currentSelectedDateStr;
         const specialDayNames = calendarEvents.map(item => item.nama).join(', ');
 
-        let bgClass = "bg-slate-900/60 hover:bg-emerald-900/40 text-slate-200";
-        if(isSelected) bgClass = "bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-bold";
-        else if(hasSpecialDay) bgClass = "bg-red-950/60 border border-red-400/70 text-red-200 font-bold";
-        else if(hasAgenda) bgClass = "bg-emerald-900/80 border border-emerald-500 text-emerald-200 font-bold";
+        const bgClass = hasAgenda
+          ? `bg-emerald-500 hover:bg-emerald-400 text-white font-bold ${isSelected ? 'ring-2 ring-amber-300' : ''}`
+          : `bg-white hover:bg-slate-100 text-slate-900 ${isSelected ? 'ring-2 ring-amber-400' : ''}`;
 
         grid.innerHTML += `
           <button type="button" aria-label="Pilih ${formatDateIndonesia(dStr)}${hasAgenda ? ', ada agenda' : ''}${hasSpecialDay ? `, ${escapeHtml(specialDayNames)}` : ''}" onclick="selectDate('${dStr}')" class="h-11 sm:h-12 min-w-0 rounded-lg flex flex-col items-center justify-center relative transition-colors focus-visible:ring-2 focus-visible:ring-amber-400 ${bgClass}">
@@ -960,6 +1153,15 @@
         `;
       }
       renderDailyAgenda();
+    }
+
+    function getBookingsForRoomOnDate(roomName, date) {
+      const normalizedRoomName = String(roomName || '').trim().toLowerCase();
+      return getPublishedAgenda().filter(item =>
+        String(item.ruangan || '').trim().toLowerCase() === normalizedRoomName &&
+        normalizeDateValue(item.tglMulai) <= date &&
+        normalizeDateValue(item.tglSelesai || item.tglMulai) >= date
+      );
     }
 
     function changeMonth(delta) {
@@ -977,8 +1179,9 @@
       const list = document.getElementById('daily-agenda-list');
       document.getElementById('selected-date-title').innerText = `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
       
-      const filtered = appState.agenda.filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
+      const filtered = getPublishedAgenda().filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
       const specialDays = getCalendarEventsForDate(currentSelectedDateStr);
+      renderRoomAvailability(currentSelectedDateStr);
       if(filtered.length === 0 && specialDays.length === 0) {
         list.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada kegiatan terjadwal di tanggal ini.</p>`;
         return;
@@ -999,12 +1202,39 @@
       `).join('');
     }
 
+    function renderRoomAvailability(date) {
+      const list = document.getElementById('room-availability-list');
+      document.getElementById('room-availability-title').textContent =
+        `Ketersediaan Ruangan - ${formatDateIndonesia(date)}`;
+
+      if (!appState.ruangan.length) {
+        list.innerHTML = '<p class="text-xs text-slate-400 italic">Data ruangan belum tersedia.</p>';
+        return;
+      }
+
+      list.innerHTML = appState.ruangan.map(room => {
+        const bookings = getPublishedAgenda().filter(item =>
+          String(item.ruangan || '').trim().toLowerCase() === String(room.nama || '').trim().toLowerCase() &&
+          normalizeDateValue(item.tglMulai) <= date &&
+          normalizeDateValue(item.tglSelesai || item.tglMulai) >= date
+        );
+        return `
+          <div class="rounded-lg border ${bookings.length ? 'border-amber-500/30 bg-amber-950/30' : 'border-emerald-500/30 bg-emerald-950/30'} p-2.5">
+            <p class="text-xs font-semibold text-slate-100">${escapeHtml(room.nama)}</p>
+            ${bookings.length
+              ? bookings.map(booking => `<p class="mt-1 text-[10px] text-amber-200">Digunakan: ${escapeHtml(booking.nama || 'Kegiatan')} (${formatTimeIndonesia(booking.jamMulai)}-${formatTimeIndonesia(booking.jamSelesai)} WIB)</p>`).join('')
+              : '<p class="mt-1 text-[10px] font-medium text-emerald-300">Belum ada booking</p>'}
+          </div>
+        `;
+      }).join('');
+    }
+
     function bukaModalDetailTanggal(dStr) {
       const modal = document.getElementById('modal-detail-tanggal');
       document.getElementById('modal-date-header').innerText = `Detail Agenda - Tanggal ${formatDateIndonesia(dStr)}`;
       const body = document.getElementById('modal-date-body');
       
-      const filtered = appState.agenda.filter(a =>
+      const filtered = getPublishedAgenda().filter(a =>
         normalizeDateValue(a.tglMulai) <= dStr && normalizeDateValue(a.tglSelesai) >= dStr
       );
       const specialDays = getCalendarEventsForDate(dStr);
@@ -1036,14 +1266,23 @@
     // Backend Submission Handle (Collision & Insert)
     async function handleAdminFormSubmit(e) {
       e.preventDefault();
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk menyimpan booking.", "error");
+        return;
+      }
       const btn = document.getElementById('btn-submit-booking');
+      const editId = document.getElementById('booking-edit-id').value;
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Menyimpan...`;
+      btn.textContent = editId ? 'Memperbarui...' : 'Menyimpan...';
 
-      const newBooking = {
+      const fakultasSelect = document.getElementById('booking-fakultas');
+      const booking = {
         nama: document.getElementById('booking-nama').value,
         penyelenggara: document.getElementById('booking-penyelenggara').value,
-        fakultas: document.getElementById('booking-fakultas').value,
+        operatorAula: document.getElementById('booking-operator-aula').value.trim(),
+        fakultas: fakultasSelect.value === '__custom__'
+          ? document.getElementById('booking-fakultas-manual').value.trim()
+          : fakultasSelect.value,
         ruangan: document.getElementById('booking-ruangan').value,
         tglMulai: document.getElementById('booking-tgl-mulai').value,
         tglSelesai: document.getElementById('booking-tgl-selesai').value,
@@ -1052,41 +1291,178 @@
         status: "Approved"
       };
 
-      // Frontend Anti-Collision Check
-      const bentrok = appState.agenda.some(a => 
-        a.ruangan === newBooking.ruangan && 
-        !(newBooking.tglSelesai < a.tglMulai || newBooking.tglMulai > a.tglSelesai)
-      );
-
-      if(bentrok) {
-        showToast(`[BENTROK JADWAL] Ruangan "${newBooking.ruangan}" sudah terisi pada tanggal tersebut!`, "error");
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
-        lucide.createIcons();
-        return;
-      }
-
       try {
-        const result = await requestBackendAction('simpanAgendaAdmin', {
-          adminPassword,
-          data: JSON.stringify(newBooking)
-        });
-        newBooking.id = result.id || "E-" + Date.now().toString().slice(-4);
-        appState.agenda.push(newBooking);
+        const payload = {
+          ...booking,
+          namaKegiatan: booking.nama,
+          waktuMulai: booking.jamMulai,
+          waktuSelesai: booking.jamSelesai
+        };
+        const result = editId
+          ? await requestBackendAction('updateAgendaAdmin', {
+              adminPassword,
+              id: editId,
+              data: JSON.stringify(payload)
+            })
+          : await requestBackendAction('simpanAgendaAdmin', {
+              adminPassword,
+              data: JSON.stringify(payload)
+            });
+
+        if (editId) {
+          const previous = appState.agenda.find(item => String(item.id) === String(editId));
+          const updated = normalizeAgendaItem({
+            ...previous,
+            ...booking,
+            id: editId,
+            status: previous.status || 'Approved'
+          });
+          appState.agenda = appState.agenda.map(item =>
+            String(item.id) === String(editId) ? updated : item
+          );
+        } else {
+          appState.agenda.push(normalizeAgendaItem({ ...booking, id: result.id, status: 'Approved', backendRecord: true }));
+        }
+        cancelBookingEdit();
         renderAll();
         showToast(result.message || "Agenda baru berhasil disimpan.", "success");
       } catch(err) {
         showToast(`Agenda gagal disimpan: ${err.message}`, "error");
+      } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
-        lucide.createIcons();
+        updateBookingSubmitButton();
+      }
+    }
+
+    function toggleCustomFaculty() {
+      const selector = document.getElementById('booking-fakultas');
+      const manualInput = document.getElementById('booking-fakultas-manual');
+      const showManualInput = selector.value === '__custom__';
+      manualInput.classList.toggle('hidden', !showManualInput);
+      manualInput.required = showManualInput;
+      if (!showManualInput) manualInput.value = '';
+    }
+
+    function updateBookingSubmitButton() {
+      const isEditing = Boolean(document.getElementById('booking-edit-id').value);
+      document.getElementById('btn-submit-booking').innerHTML = isEditing
+        ? '<i data-lucide="save" class="w-5 h-5"></i> Simpan Perubahan Booking'
+        : '<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru';
+      document.getElementById('btn-cancel-booking-edit').classList.toggle('hidden', !isEditing);
+      lucide.createIcons();
+    }
+
+    function editBooking(id) {
+      if (!isAdminLoggedIn) {
+        showToast("Silakan masuk sebagai admin untuk mengedit booking.", "error");
+        return;
+      }
+      const booking = appState.agenda.find(item => String(item.id) === String(id));
+      if (!booking) {
+        showToast("Data booking tidak ditemukan. Muat ulang data lalu coba kembali.", "error");
+        return;
+      }
+      if (!id) {
+        showToast("Booking ini tidak memiliki ID server sehingga tidak dapat diedit dari sini.", "error");
         return;
       }
 
+      document.getElementById('booking-edit-id').value = String(id);
+      document.getElementById('booking-nama').value = booking.nama || booking.namaKegiatan || '';
+      document.getElementById('booking-penyelenggara').value = booking.penyelenggara || '';
+      document.getElementById('booking-operator-aula').value = booking.operatorAula || '';
+      const facultySelect = document.getElementById('booking-fakultas');
+      const hasFacultyOption = [...facultySelect.options].some(option => option.value === booking.fakultas);
+      facultySelect.value = hasFacultyOption ? booking.fakultas : '__custom__';
+      const manualFaculty = document.getElementById('booking-fakultas-manual');
+      if (!hasFacultyOption) manualFaculty.value = booking.fakultas || '';
+      toggleCustomFaculty();
+
+      const roomSelect = document.getElementById('booking-ruangan');
+      if (![...roomSelect.options].some(option => option.value === booking.ruangan)) {
+        roomSelect.add(new Option(booking.ruangan, booking.ruangan));
+      }
+      roomSelect.value = booking.ruangan || '';
+      document.getElementById('booking-tgl-mulai').value = normalizeDateValue(booking.tglMulai);
+      document.getElementById('booking-tgl-selesai').value = normalizeDateValue(booking.tglSelesai || booking.tglMulai);
+      document.getElementById('booking-jam-mulai').value = normalizeTimeValue(booking.jamMulai || booking.waktuMulai);
+      document.getElementById('booking-jam-selesai').value = normalizeTimeValue(booking.jamSelesai || booking.waktuSelesai);
+      updateBookingSubmitButton();
+      document.getElementById('form-booking-admin').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelBookingEdit() {
       document.getElementById('form-booking-admin').reset();
-      btn.disabled = false;
-      btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
-      lucide.createIcons();
+      document.getElementById('booking-edit-id').value = '';
+      toggleCustomFaculty();
+      updateBookingSubmitButton();
+    }
+
+    function renderAdminBookingTable() {
+      const body = document.getElementById('admin-booking-table-body');
+      if (!body) return;
+      const bookings = [...appState.agenda].sort((a, b) =>
+        normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai))
+      );
+      body.innerHTML = bookings.length ? bookings.map(booking => {
+        const published = isAgendaPublished(booking);
+        const canManage = Boolean(booking.id && (booking.rowId || booking.backendRecord));
+        return `
+          <tr>
+            <td class="p-3 font-semibold text-slate-100">${escapeHtml(booking.nama || booking.namaKegiatan || '-')}</td>
+            <td class="p-3 text-slate-300">${escapeHtml(booking.penyelenggara || '-')}<br><span class="text-[10px] text-slate-500">${escapeHtml(booking.fakultas || 'Umum')}</span></td>
+            <td class="p-3 text-slate-300">${escapeHtml(booking.operatorAula || '-')}</td>
+            <td class="p-3 text-slate-300">${escapeHtml(booking.ruangan || '-')}</td>
+            <td class="p-3 text-slate-300">${escapeHtml(formatDateIndonesia(booking.tglMulai))} – ${escapeHtml(formatDateIndonesia(booking.tglSelesai || booking.tglMulai))}<br><span class="text-[10px] text-amber-300">${escapeHtml(formatTimeIndonesia(booking.jamMulai || booking.waktuMulai))}–${escapeHtml(formatTimeIndonesia(booking.jamSelesai || booking.waktuSelesai))} WIB</span></td>
+            <td class="p-3 ${published ? 'text-emerald-300' : 'text-amber-300'}">${published ? 'Terbit' : 'Draf'}</td>
+            <td class="p-3 text-right">
+              <div class="flex flex-wrap justify-end gap-1">
+                <button type="button" ${canManage ? `onclick="editBooking('${escapeHtml(booking.id)}')"` : 'disabled title="ID booking tidak tersedia"'} class="rounded bg-amber-500/20 px-2 py-1 text-amber-200 disabled:opacity-40">Edit</button>
+                <button type="button" ${canManage ? `onclick="setBookingPublished('${escapeHtml(booking.id)}', ${!published})"` : 'disabled title="ID booking tidak tersedia"'} class="rounded bg-emerald-900/60 px-2 py-1 text-emerald-200 disabled:opacity-40">${published ? 'Cabut' : 'Publish'}</button>
+                <button type="button" ${canManage ? `onclick="deleteBooking('${escapeHtml(booking.id)}')"` : 'disabled title="ID booking tidak tersedia"'} class="rounded bg-red-900/50 px-2 py-1 text-red-200 disabled:opacity-40">Hapus</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data booking.</td></tr>';
+    }
+
+    async function setBookingPublished(id, published) {
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk mengubah status publikasi.", "error");
+        return;
+      }
+      try {
+        const result = await requestBackendAction('setAgendaPublishStatus', {
+          adminPassword,
+          id,
+          published: String(published)
+        });
+        appState.agenda = appState.agenda.map(item =>
+          String(item.id) === String(id) ? { ...item, status: result.status } : item
+        );
+        renderAll();
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(`Status booking gagal diubah: ${error.message}`, 'error');
+      }
+    }
+
+    async function deleteBooking(id) {
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk menghapus booking.", "error");
+        return;
+      }
+      if (!confirm("Hapus booking ini secara permanen dari spreadsheet?")) return;
+      try {
+        const result = await requestBackendAction('deleteAgendaAdmin', { adminPassword, id });
+        appState.agenda = appState.agenda.filter(item => String(item.id) !== String(id));
+        if (String(document.getElementById('booking-edit-id').value) === String(id)) cancelBookingEdit();
+        renderAll();
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(`Booking gagal dihapus: ${error.message}`, 'error');
+      }
     }
 
     // Excel Import Handle
@@ -1198,10 +1574,19 @@
       };
     }
 
+    function isAgendaPublished(item) {
+      const status = String(item.status || '').trim().toLowerCase();
+      return !['draft', 'unpublished', 'hidden', 'ditolak', 'rejected', 'dibatalkan', 'cancelled'].includes(status);
+    }
+
+    function getPublishedAgenda() {
+      return appState.agenda.filter(isAgendaPublished);
+    }
+
     function renderCalendarEventTable() {
       const body = document.getElementById('calendar-event-table-body');
       if (!body) return;
-      const events = [...appState.hariKhusus].sort((a, b) =>
+      const events = getAllCalendarEvents().sort((a, b) =>
         normalizeDateValue(a.tanggal).localeCompare(normalizeDateValue(b.tanggal))
       );
       body.innerHTML = events.length
@@ -1210,7 +1595,9 @@
               <td class="p-3 text-slate-200">${escapeHtml(formatDateIndonesia(item.tanggal))}</td>
               <td class="p-3 font-semibold text-amber-200">${escapeHtml(item.nama)}</td>
               <td class="p-3 text-slate-300">${escapeHtml(item.jenis)}</td>
-              <td class="p-3 text-right"><button type="button" onclick="deleteCalendarEvent('${escapeHtml(item.id)}')" class="rounded bg-red-900/40 px-2 py-1 text-red-300 hover:bg-red-900/70">Hapus</button></td>
+              <td class="p-3 text-right">${item.otomatis
+                ? `<span title="${escapeHtml(item.sumber || 'Kalender otomatis')}" class="text-[10px] text-emerald-300">${item.perkiraan ? 'Otomatis · perkiraan' : 'Otomatis · SKB'}</span>`
+                : `<button type="button" onclick="deleteCalendarEvent('${escapeHtml(item.id)}')" class="rounded bg-red-900/40 px-2 py-1 text-red-300 hover:bg-red-900/70">Hapus</button>`}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada tanggal khusus. Tambahkan tanggal resmi melalui formulir di atas.</td></tr>';
@@ -1444,6 +1831,7 @@
     function renderYearlyCalendar() {
       const grid = document.getElementById('yearly-grid');
       const year = Number(document.getElementById('year-filter').value);
+      loadAutomaticCalendarForYear(year);
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
       
       grid.innerHTML = monthNames.map((mName, idx) => {
@@ -1451,12 +1839,12 @@
         const daysInMonth = new Date(year, idx + 1, 0).getDate();
         const monthStart = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
         const monthEnd = `${year}-${String(idx + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
-        const monthEvents = appState.agenda.filter(a => {
+        const monthEvents = getPublishedAgenda().filter(a => {
           const start = normalizeDateValue(a.tglMulai);
           const end = normalizeDateValue(a.tglSelesai);
           return start <= monthEnd && end >= monthStart;
         });
-        const monthSpecialDays = appState.hariKhusus.filter(item =>
+        const monthSpecialDays = getAllCalendarEvents().filter(item =>
           normalizeDateValue(item.tanggal) >= monthStart && normalizeDateValue(item.tanggal) <= monthEnd
         );
         const dateCells = [];
@@ -1515,6 +1903,8 @@
       return {
         ...item,
         nama: item.nama || item.namaKegiatan || '',
+        operatorAula: item.operatorAula || item.petugasAula || item.operator || '',
+        backendRecord: Boolean(item.rowId || item.backendRecord),
         tglMulai: normalizeDateValue(item.tglMulai),
         tglSelesai: normalizeDateValue(item.tglSelesai || item.tglMulai),
         jamMulai: normalizeTimeValue(item.jamMulai || item.waktuMulai),
@@ -1555,6 +1945,11 @@
       }).format(date);
     }
 
+    function getLocalMonthValue() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
     function normalizeTimeValue(value) {
       if (value instanceof Date || (typeof value === 'string' && value.includes('T'))) {
         const date = value instanceof Date ? value : new Date(value);
@@ -1584,17 +1979,17 @@
       const query = document.getElementById('arsip-search').value.toLowerCase();
       const tbody = document.getElementById('arsip-table-body');
       
-      const filtered = appState.agenda.filter(a => 
-        a.nama.toLowerCase().includes(query) || a.penyelenggara.toLowerCase().includes(query)
+      const filtered = getPublishedAgenda().filter(a => 
+        String(a.nama || '').toLowerCase().includes(query) || String(a.penyelenggara || '').toLowerCase().includes(query)
       );
 
       tbody.innerHTML = filtered.map(a => `
         <tr class="hover:bg-emerald-900/30">
-          <td class="p-3 text-amber-300 font-medium">${formatDateIndonesia(a.tglMulai)}</td>
-          <td class="p-3 font-semibold text-slate-100">${a.nama}</td>
-          <td class="p-3 text-emerald-200">${a.penyelenggara}</td>
-          <td class="p-3 text-slate-300">${a.ruangan}</td>
-          <td class="p-3 text-amber-400">${formatTimeIndonesia(a.jamMulai)} WIB</td>
+          <td class="p-3 text-amber-300 font-medium">${escapeHtml(formatDateIndonesia(a.tglMulai))}${a.tglSelesai !== a.tglMulai ? ` – ${escapeHtml(formatDateIndonesia(a.tglSelesai))}` : ''}</td>
+          <td class="p-3 font-semibold text-slate-100">${escapeHtml(a.nama || '')}</td>
+          <td class="p-3 text-emerald-200">${escapeHtml(a.penyelenggara || '')}<br><span class="text-[10px]">${escapeHtml(a.fakultas || 'Umum')}</span></td>
+          <td class="p-3 text-slate-300">${escapeHtml(a.ruangan || '')}</td>
+          <td class="p-3 text-amber-400">${escapeHtml(formatTimeIndonesia(a.jamMulai))}–${escapeHtml(formatTimeIndonesia(a.jamSelesai))} WIB</td>
           <td class="p-3">
             ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="text-amber-400 underline font-bold">Drive</a>` : '<span class="text-slate-500">-</span>'}
           </td>
@@ -1605,30 +2000,73 @@
     function renderReports() {
       const fakultasGrid = document.getElementById('laporan-fakultas-grid');
       const bulananList = document.getElementById('laporan-bulanan-list');
+      const detailBody = document.getElementById('laporan-detail-table-body');
+      const monthValue = document.getElementById('report-month').value || getLocalMonthValue();
+      const [year, month] = monthValue.split('-').map(Number);
+      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+      const monthLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
+        .format(new Date(year, month - 1, 1));
+      const monthlyBookings = getPublishedAgenda().filter(item =>
+        normalizeDateValue(item.tglMulai) <= monthEnd &&
+        normalizeDateValue(item.tglSelesai || item.tglMulai) >= monthStart
+      ).sort((a, b) =>
+        normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
+        normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai))
+      );
+      document.getElementById('pdf-month-title').textContent = `Laporan Booking Kegiatan - ${monthLabel}`;
+      document.getElementById('report-month-summary').textContent =
+        `${monthlyBookings.length} booking diterbitkan pada rentang bulan ${monthLabel}.`;
 
       const fakMap = {};
-      appState.agenda.forEach(a => {
-        fakMap[a.fakultas] = (fakMap[a.fakultas] || 0) + 1;
+      const roomMap = {};
+      monthlyBookings.forEach(item => {
+        const faculty = item.fakultas || 'Umum';
+        const room = item.ruangan || 'Belum ditentukan';
+        fakMap[faculty] = (fakMap[faculty] || 0) + 1;
+        roomMap[room] = (roomMap[room] || 0) + 1;
       });
 
       fakultasGrid.innerHTML = Object.keys(fakMap).map(f => `
         <div class="bg-slate-900 p-3 rounded-lg border border-emerald-800 flex justify-between items-center">
-          <span class="text-xs font-semibold text-slate-200">${f}</span>
+          <span class="text-xs font-semibold text-slate-200">${escapeHtml(f)}</span>
           <span class="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400">${fakMap[f]} Kegiatan</span>
         </div>
-      `).join('');
+      `).join('') || '<p class="text-xs text-slate-400">Belum ada booking pada bulan ini.</p>';
 
-      bulananList.innerHTML = `<p class="text-xs text-slate-300">Total Keseluruhan Agenda Terdaftar: <strong>${appState.agenda.length} Kegiatan</strong></p>`;
+      bulananList.innerHTML = `
+        <p class="mb-2 text-xs text-slate-300">Total booking terbit: <strong>${monthlyBookings.length} kegiatan</strong></p>
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">${Object.keys(roomMap).map(room => `
+          <div class="flex items-center justify-between rounded-lg border border-emerald-800 bg-slate-900 p-3">
+            <span class="text-xs text-slate-200">${escapeHtml(room)}</span>
+            <span class="text-xs font-bold text-amber-300">${roomMap[room]} booking</span>
+          </div>
+        `).join('') || '<p class="text-xs text-slate-400">Belum ada penggunaan ruangan pada bulan ini.</p>'}</div>
+      `;
+      detailBody.innerHTML = monthlyBookings.length ? monthlyBookings.map((item, index) => `
+        <tr>
+          <td class="border border-emerald-700 p-2 text-center">${index + 1}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.nama || '')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.penyelenggara || '')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.fakultas || 'Umum')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.ruangan || '')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.operatorAula || '-')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? ` – ${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))} WIB</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.status || 'Terbit')}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="9" class="border border-emerald-700 p-3 text-center text-slate-400">Tidak ada booking terbit pada bulan ini.</td></tr>';
     }
 
     function exportLaporanPDF() {
       const element = document.getElementById('pdf-report-container');
+      const reportMonth = document.getElementById('report-month').value || getLocalMonthValue();
       const opt = {
         margin:       0.5,
-        filename:     'Laporan_Kegiatan_UINAR.pdf',
+        filename:     `Laporan_Booking_UINAR_${reportMonth}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
       html2pdf().set(opt).from(element).save();
     }
