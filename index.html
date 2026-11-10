@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#f8fafc">
+  <meta name="theme-color" content="#e2e8f0">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -29,6 +29,13 @@
       overflow-x: hidden;
       -webkit-tap-highlight-color: transparent;
     }
+    body.has-custom-background {
+      background-image: linear-gradient(rgb(248 250 252 / 84%), rgb(226 232 240 / 88%)), var(--custom-background-image);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-attachment: fixed;
+    }
     button, a, select, input, textarea {
       touch-action: manipulation;
     }
@@ -45,6 +52,11 @@
     .horizontal-touch-scroll {
       touch-action: pan-x;
       -webkit-overflow-scrolling: touch;
+    }
+    @media (pointer: coarse) {
+      body.has-custom-background {
+        background-attachment: scroll;
+      }
     }
     .bg-islamic-pattern {
       background-color: #064e3b;
@@ -71,7 +83,7 @@
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
     }
     body.bg-slate-950 {
-      background-color: #f8fafc !important;
+      background-color: #e2e8f0 !important;
       color: #1e293b !important;
     }
     [class*="bg-slate-900"],
@@ -177,21 +189,51 @@
       color: #111827;
     }
     .yearly-month-card {
+      position: relative;
+      overflow: hidden;
       border-top: 3px solid #16a34a !important;
+      border-radius: 1rem;
+      box-shadow: 0 3px 8px rgb(15 23 42 / 7%), 0 12px 24px rgb(15 23 42 / 5%);
       animation: calendar-arrive 420ms ease-out both;
       animation-delay: calc(var(--calendar-index, 0) * 35ms);
       transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
     }
     .yearly-month-card:hover {
-      border-color: #86efac !important;
-      box-shadow: 0 8px 20px rgb(22 163 74 / 12%);
+      border-top-color: #15803d !important;
+      box-shadow: 0 8px 18px rgb(22 101 52 / 14%), 0 18px 34px rgb(15 23 42 / 9%);
       transform: translateY(-2px);
     }
+    .yearly-calendar-header {
+      border-bottom: 1px solid #dcfce7;
+      margin: -0.75rem -0.75rem 0.75rem;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #f0fdf4, #ffffff 78%);
+    }
+    .yearly-calendar-header h4 {
+      color: #14532d !important;
+    }
+    .yearly-calendar-weekdays {
+      color: #475569 !important;
+      font-weight: 700;
+    }
+    .yearly-month-card button[title*="Klik untuk melihat agenda"] {
+      color: #334155 !important;
+      background-color: #f8fafc !important;
+      font-weight: 600;
+      transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+    .yearly-month-card button[title*="Klik untuk melihat agenda"]:hover,
+    .yearly-month-card button[title*="Klik untuk melihat agenda"]:focus-visible {
+      background-color: #f0fdf4 !important;
+      color: #14532d !important;
+      box-shadow: inset 0 0 0 1px #86efac;
+    }
     .yearly-month-card button[title*="kegiatan"] {
-      background-color: #dcfce7 !important;
+      background-color: #bbf7d0 !important;
       color: #14532d !important;
       font-weight: 700;
-      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+      box-shadow: inset 0 0 0 1px #86efac;
+      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
     }
     .yearly-month-card button[title*="kegiatan"]:hover,
     .yearly-month-card button[title*="kegiatan"]:focus-visible {
@@ -330,6 +372,7 @@
         </select>
       </div>
       <div id="yearly-grid" class="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"></div>
+      <p class="flex items-center gap-2 text-xs font-semibold text-slate-600"><span aria-hidden="true" class="h-3 w-3 rounded bg-green-200 ring-1 ring-green-300"></span>Tanggal berwarna hijau memiliki agenda. Pilih tanggal untuk melihat detail.</p>
     </section>
 
     <!-- 3. TAB ARSIP KEGIATAN -->
@@ -376,6 +419,7 @@
           <button onclick="switchAdminTab('import-excel')" id="admin-sub-import-excel" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Import Excel</button>
           <button onclick="switchAdminTab('kelola-ruangan')" id="admin-sub-kelola-ruangan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Ruangan</button>
           <button onclick="switchAdminTab('pengumuman')" id="admin-sub-pengumuman" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pengumuman</button>
+          <button onclick="switchAdminTab('latar-belakang')" id="admin-sub-latar-belakang" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Latar Belakang</button>
           <button onclick="switchAdminTab('laporan')" id="admin-sub-laporan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Laporan & Rekapan</button>
         </div>
 
@@ -510,6 +554,23 @@
           </form>
         </div>
 
+        <!-- SUB-TAB: LATAR BELAKANG -->
+        <div id="admin-panel-latar-belakang" class="hidden space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Gambar Latar Belakang</h3>
+            <p class="mt-1 text-sm text-slate-600">Pilih gambar JPG, PNG, atau WebP (maksimal 2 MB). Gambar akan disimpan di browser/perangkat ini dan diberi lapisan terang agar tulisan tetap mudah dibaca.</p>
+          </div>
+          <label for="background-image-input" class="block text-sm font-semibold text-slate-800">Pilih gambar latar</label>
+          <input type="file" id="background-image-input" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onchange="handleBackgroundImageChange(event)" class="block min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-emerald-100 file:px-3 file:font-semibold file:text-emerald-900">
+          <div id="background-image-preview" class="hidden min-h-40 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+            <img id="background-image-preview-img" alt="Pratinjau gambar latar belakang" class="max-h-72 w-full object-cover">
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button type="button" onclick="removeBackgroundImage()" class="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Hapus gambar latar</button>
+          </div>
+          <p id="background-image-status" aria-live="polite" class="text-sm text-slate-600">Belum ada gambar latar khusus.</p>
+        </div>
+
         <!-- SUB-TAB 5: LAPORAN & REKAPAN -->
         <div id="admin-panel-laporan" class="hidden space-y-6">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -598,6 +659,8 @@
   <script>
     // URL Web App Endpoint Google Apps Script
     const WEB_APP_URL = "https://script.google.com/a/macros/ar-raniry.ac.id/s/AKfycby8l8YBUZ4PJPWj3KmI4y6cjCPqYyttEVE2WBiyyvgrMVzFNnhBZ-UB0T2M2V7vsUBK/exec";
+    const BACKGROUND_IMAGE_STORAGE_KEY = 'agenda-uin-ar-raniry-background';
+    const MAX_BACKGROUND_IMAGE_SIZE = 2 * 1024 * 1024;
 
     // Dynamic Application State
     let currentDate = new Date();
@@ -617,6 +680,7 @@
     // Initialize App
     window.onload = function() {
       lucide.createIcons();
+      loadSavedBackgroundImage();
       loadDataFromBackend();
       renderAll();
       document.getElementById('pdf-date-now').innerText = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -709,7 +773,7 @@
 
     // Sub-Tab Admin Navigation
     function switchAdminTab(subTabId) {
-      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'pengumuman', 'laporan'];
+      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'pengumuman', 'latar-belakang', 'laporan'];
       subTabs.forEach(id => {
         const panel = document.getElementById(`admin-panel-${id}`);
         const btn = document.getElementById(`admin-sub-${id}`);
@@ -1032,6 +1096,98 @@
       showToast("Pengumuman Beranda Diberbarui!", "success");
     }
 
+    function loadSavedBackgroundImage() {
+      try {
+        const savedImage = localStorage.getItem(BACKGROUND_IMAGE_STORAGE_KEY);
+        if (savedImage && /^data:image\/(?:jpeg|png|webp);base64,/.test(savedImage)) {
+          applyBackgroundImage(savedImage);
+          updateBackgroundImagePreview(savedImage);
+          document.getElementById('background-image-status').textContent = 'Gambar latar tersimpan di browser/perangkat ini.';
+        }
+      } catch (error) {
+        console.error('Gagal memuat gambar latar tersimpan:', error);
+        document.getElementById('background-image-status').textContent = 'Penyimpanan gambar tidak tersedia di browser ini.';
+      }
+    }
+
+    function handleBackgroundImageChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!supportedTypes.includes(file.type)) {
+        showToast('Pilih gambar berformat JPG, PNG, atau WebP.', 'error');
+        event.target.value = '';
+        return;
+      }
+      if (file.size > MAX_BACKGROUND_IMAGE_SIZE) {
+        showToast('Ukuran gambar melebihi 2 MB. Pilih gambar yang lebih kecil.', 'error');
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(loadEvent) {
+        const imageData = loadEvent.target.result;
+        if (typeof imageData !== 'string' || !imageData.startsWith(`data:${file.type};base64,`)) {
+          showToast('Gambar tidak dapat dibaca. Coba pilih file gambar lain.', 'error');
+          return;
+        }
+
+        const previewImage = new Image();
+        previewImage.onload = function() {
+          try {
+            localStorage.setItem(BACKGROUND_IMAGE_STORAGE_KEY, imageData);
+          } catch (error) {
+            console.error('Gagal menyimpan gambar latar:', error);
+            showToast('Gambar tidak dapat disimpan di browser ini. Hapus data situs atau pilih gambar yang lebih kecil.', 'error');
+            return;
+          }
+
+          applyBackgroundImage(imageData);
+          updateBackgroundImagePreview(imageData);
+          document.getElementById('background-image-status').textContent = `${file.name} berhasil disimpan di browser/perangkat ini.`;
+          showToast('Gambar latar berhasil diperbarui.', 'success');
+        };
+        previewImage.onerror = function() {
+          showToast('File yang dipilih bukan gambar yang valid.', 'error');
+        };
+        previewImage.src = imageData;
+      };
+      reader.onerror = function() {
+        showToast('Gagal membaca file gambar. Silakan coba lagi.', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyBackgroundImage(imageData) {
+      document.body.style.setProperty('--custom-background-image', `url("${imageData}")`);
+      document.body.classList.add('has-custom-background');
+    }
+
+    function updateBackgroundImagePreview(imageData) {
+      document.getElementById('background-image-preview-img').src = imageData;
+      document.getElementById('background-image-preview').classList.remove('hidden');
+    }
+
+    function removeBackgroundImage() {
+      try {
+        localStorage.removeItem(BACKGROUND_IMAGE_STORAGE_KEY);
+      } catch (error) {
+        console.error('Gagal menghapus gambar latar:', error);
+        showToast('Gambar latar tidak dapat dihapus dari penyimpanan browser.', 'error');
+        return;
+      }
+
+      document.body.style.removeProperty('--custom-background-image');
+      document.body.classList.remove('has-custom-background');
+      document.getElementById('background-image-preview-img').removeAttribute('src');
+      document.getElementById('background-image-preview').classList.add('hidden');
+      document.getElementById('background-image-input').value = '';
+      document.getElementById('background-image-status').textContent = 'Gambar latar khusus telah dihapus.';
+      showToast('Gambar latar telah dihapus.', 'success');
+    }
+
     // Render Dropdowns
     function renderAllDropdowns() {
       const selectBooking = document.getElementById('booking-ruangan');
@@ -1074,10 +1230,10 @@
         }
 
         return `
-          <div class="yearly-month-card min-w-0 bg-emerald-950/50 border border-amber-500/20 p-3 sm:p-4 rounded-xl" style="--calendar-index: ${idx}">
-            <h4 class="font-bold text-amber-300 text-sm mb-3">${mName} ${year}</h4>
+          <div class="yearly-month-card min-w-0 bg-emerald-950/50 border border-amber-500/20 p-3 sm:p-4" style="--calendar-index: ${idx}">
+            <div class="yearly-calendar-header"><h4 class="font-bold text-sm">${mName} ${year}</h4></div>
             <div class="grid grid-cols-7 gap-1 text-center text-[10px]">
-              <span class="font-bold text-amber-400">Min</span><span class="font-bold text-amber-400">Sen</span><span class="font-bold text-amber-400">Sel</span><span class="font-bold text-amber-400">Rab</span><span class="font-bold text-amber-400">Kam</span><span class="font-bold text-amber-400">Jum</span><span class="font-bold text-amber-400">Sab</span>
+              <span class="yearly-calendar-weekdays">Min</span><span class="yearly-calendar-weekdays">Sen</span><span class="yearly-calendar-weekdays">Sel</span><span class="yearly-calendar-weekdays">Rab</span><span class="yearly-calendar-weekdays">Kam</span><span class="yearly-calendar-weekdays">Jum</span><span class="yearly-calendar-weekdays">Sab</span>
               ${dateCells.join('')}
             </div>
             <div class="mt-3 border-t border-amber-500/20 pt-2">
