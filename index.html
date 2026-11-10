@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- SheetJS untuk Parsing Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./agenda-data.js"></script>
   <!-- html2pdf untuk Cetak Laporan PDF Resmi -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
@@ -137,8 +138,8 @@
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold gold-gradient-text">Kalender Acara Setahun</h2>
         <select id="year-filter" onchange="renderYearlyCalendar()" class="bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg p-2.5">
-          <option value="2027" selected>Tahun 2027</option>
-          <option value="2026">Tahun 2026</option>
+          <option value="2026" selected>Tahun 2026</option>
+          <option value="2027">Tahun 2027</option>
         </select>
       </div>
       <div id="yearly-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -419,34 +420,7 @@
         { id: 3, nama: "Ruang Rapat Senat Kampus", keterangan: "Kapasitas 100 Orang, Oval Table" }
       ],
       pengumuman: "Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.",
-      agenda: [
-        {
-          id: "E-101",
-          nama: "Rapat Senat Terbuka Wisuda Gelombang I 2027",
-          penyelenggara: "Rektorat UINAR",
-          fakultas: "Rektorat / Unit Pusat",
-          ruangan: "Auditorium (Auditorium Spatial)",
-          tglMulai: "2027-05-15",
-          tglSelesai: "2027-05-15",
-          jamMulai: "08:00",
-          jamSelesai: "16:00",
-          driveLink: "#",
-          status: "Approved"
-        },
-        {
-          id: "E-102",
-          nama: "Kuliah Umum Kecerdasan Buatan & Syariah",
-          penyelenggara: "FST UINAR",
-          fakultas: "Fakultas Sains & Teknologi",
-          ruangan: "Aula Utama Gedung Rektorat",
-          tglMulai: "2027-05-20",
-          tglSelesai: "2027-05-20",
-          jamMulai: "09:00",
-          jamSelesai: "12:30",
-          driveLink: "#",
-          status: "Approved"
-        }
-      ]
+      agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
     };
 
     // Initialize App
@@ -473,11 +447,13 @@
         const resp = await fetch(WEB_APP_URL + "?action=getInitialData");
         if (resp.ok) {
           const data = await resp.json();
-          if (data && data.agenda) {
+          if (data && Array.isArray(data.agenda)) {
             appState = {
               ...appState,
               ...data,
-              agenda: data.agenda.map(normalizeAgendaItem),
+              agenda: data.agenda.length
+                ? data.agenda.map(normalizeAgendaItem)
+                : appState.agenda,
               ruangan: data.ruangan || appState.ruangan,
               pengumuman: data.pengumuman || appState.pengumuman
             };
