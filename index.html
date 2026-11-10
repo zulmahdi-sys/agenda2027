@@ -1130,17 +1130,22 @@
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const hasAgenda = getPublishedAgenda().some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
         const calendarEvents = getCalendarEventsForDate(dStr);
+        const hasNationalHoliday = calendarEvents.some(item =>
+          /libur nasional|cuti bersama/i.test(String(item.jenis || ''))
+        );
         const hasSpecialDay = calendarEvents.length > 0;
         const hasEvents = hasAgenda || hasSpecialDay;
         const isSelected = dStr === currentSelectedDateStr;
         const specialDayNames = calendarEvents.map(item => item.nama).join(', ');
 
-        const bgClass = hasAgenda
+        const bgClass = hasNationalHoliday
+          ? `bg-red-500 hover:bg-red-400 text-white font-bold ${isSelected ? 'ring-2 ring-amber-300' : ''}`
+          : hasAgenda
           ? `bg-emerald-500 hover:bg-emerald-400 text-white font-bold ${isSelected ? 'ring-2 ring-amber-300' : ''}`
           : `bg-white hover:bg-slate-100 text-slate-900 ${isSelected ? 'ring-2 ring-amber-400' : ''}`;
 
         grid.innerHTML += `
-          <button type="button" aria-label="Pilih ${formatDateIndonesia(dStr)}${hasAgenda ? ', ada agenda' : ''}${hasSpecialDay ? `, ${escapeHtml(specialDayNames)}` : ''}" onclick="selectDate('${dStr}')" class="h-11 sm:h-12 min-w-0 rounded-lg flex flex-col items-center justify-center relative transition-colors focus-visible:ring-2 focus-visible:ring-amber-400 ${bgClass}">
+          <button type="button" aria-label="Pilih ${formatDateIndonesia(dStr)}${hasAgenda ? ', ada agenda' : ''}${hasNationalHoliday ? ', libur nasional atau cuti bersama' : ''}${hasSpecialDay ? `, ${escapeHtml(specialDayNames)}` : ''}" onclick="selectDate('${dStr}')" class="h-11 sm:h-12 min-w-0 rounded-lg flex flex-col items-center justify-center relative transition-colors focus-visible:ring-2 focus-visible:ring-amber-400 ${bgClass}">
             <span>${day}</span>
             ${hasEvents ? `<span class="absolute bottom-1 flex gap-0.5">${hasAgenda ? '<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>' : ''}${hasSpecialDay ? '<span class="h-1.5 w-1.5 rounded-full bg-red-300"></span>' : ''}</span>` : ''}
           </button>
