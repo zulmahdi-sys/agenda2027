@@ -350,6 +350,10 @@
             <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
           </div>
           <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+          <div class="mt-4 flex flex-wrap gap-3 text-[10px] text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-emerald-500"></span>Agenda kegiatan</span>
+            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded bg-red-400"></span>Libur / cuti / hari besar</span>
+          </div>
         </div>
 
         <!-- Daily Agenda Detail Sidebar -->
@@ -403,7 +407,7 @@
             <h2 class="text-xl sm:text-2xl font-bold gold-gradient-text flex items-center gap-2">
               <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i> Dashboard Admin UIN Ar-Raniry
             </h2>
-            <p class="text-xs text-emerald-200">Input agenda, kelola ruangan/aula, pengumuman beranda, & unduh rekapan laporan.</p>
+            <p class="text-xs text-emerald-200">Kelola agenda, ruangan, hari khusus nasional, pengumuman beranda, dan laporan.</p>
           </div>
           <button type="button" onclick="logoutAdmin()" class="min-h-11 px-4 py-2 bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-500/40 rounded-lg text-xs font-bold transition-colors focus-visible:ring-2 focus-visible:ring-amber-400">
             Keluar Admin
@@ -910,6 +914,10 @@
     }
 
     // Render Beranda Calendar & Announcements
+    function getCalendarEventsForDate(date) {
+      return appState.hariKhusus.filter(item => normalizeDateValue(item.tanggal) === date);
+    }
+
     function renderBeranda() {
       const announcementBanner = document.getElementById('announcement-banner');
       announcementBanner.classList.toggle('hidden', !appState.pengumumanPublished || !appState.pengumuman.trim());
@@ -932,17 +940,22 @@
 
       for(let day = 1; day <= daysInMonth; day++) {
         const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasEvents = appState.agenda.some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+        const hasAgenda = appState.agenda.some(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+        const calendarEvents = getCalendarEventsForDate(dStr);
+        const hasSpecialDay = calendarEvents.length > 0;
+        const hasEvents = hasAgenda || hasSpecialDay;
         const isSelected = dStr === currentSelectedDateStr;
+        const specialDayNames = calendarEvents.map(item => item.nama).join(', ');
 
         let bgClass = "bg-slate-900/60 hover:bg-emerald-900/40 text-slate-200";
         if(isSelected) bgClass = "bg-amber-500/20 border-2 border-amber-400 text-amber-300 font-bold";
-        else if(hasEvents) bgClass = "bg-emerald-900/80 border border-emerald-500 text-emerald-200 font-bold";
+        else if(hasSpecialDay) bgClass = "bg-red-950/60 border border-red-400/70 text-red-200 font-bold";
+        else if(hasAgenda) bgClass = "bg-emerald-900/80 border border-emerald-500 text-emerald-200 font-bold";
 
         grid.innerHTML += `
-          <button type="button" aria-label="Pilih ${formatDateIndonesia(dStr)}${hasEvents ? ', ada kegiatan' : ''}" onclick="selectDate('${dStr}')" class="h-11 sm:h-12 min-w-0 rounded-lg flex flex-col items-center justify-center relative transition-colors focus-visible:ring-2 focus-visible:ring-amber-400 ${bgClass}">
+          <button type="button" aria-label="Pilih ${formatDateIndonesia(dStr)}${hasAgenda ? ', ada agenda' : ''}${hasSpecialDay ? `, ${escapeHtml(specialDayNames)}` : ''}" onclick="selectDate('${dStr}')" class="h-11 sm:h-12 min-w-0 rounded-lg flex flex-col items-center justify-center relative transition-colors focus-visible:ring-2 focus-visible:ring-amber-400 ${bgClass}">
             <span>${day}</span>
-            ${hasEvents ? `<span class="w-1.5 h-1.5 bg-amber-400 rounded-full absolute bottom-1"></span>` : ''}
+            ${hasEvents ? `<span class="absolute bottom-1 flex gap-0.5">${hasAgenda ? '<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>' : ''}${hasSpecialDay ? '<span class="h-1.5 w-1.5 rounded-full bg-red-300"></span>' : ''}</span>` : ''}
           </button>
         `;
       }
@@ -965,16 +978,22 @@
       document.getElementById('selected-date-title').innerText = `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
       
       const filtered = appState.agenda.filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
-      if(filtered.length === 0) {
+      const specialDays = getCalendarEventsForDate(currentSelectedDateStr);
+      if(filtered.length === 0 && specialDays.length === 0) {
         list.innerHTML = `<p class="text-xs text-slate-400 italic">Tidak ada kegiatan terjadwal di tanggal ini.</p>`;
         return;
       }
 
-      list.innerHTML = filtered.map(a => `
+      list.innerHTML = specialDays.map(item => `
+        <div class="rounded-xl border border-red-400/50 bg-red-950/40 p-3 space-y-1">
+          <p class="text-[10px] font-bold uppercase text-red-300">${escapeHtml(item.jenis)}</p>
+          <h4 class="text-xs font-bold text-amber-200">${escapeHtml(item.nama)}</h4>
+        </div>
+      `).join('') + filtered.map(a => `
         <div class="bg-emerald-900/40 border border-amber-500/30 p-3 rounded-xl space-y-1">
-          <h4 class="font-bold text-xs text-amber-300">${a.nama}</h4>
-          <p class="text-[11px] text-emerald-200">📌 ${a.ruangan}</p>
-          <p class="text-[11px] text-slate-300">👤 ${a.penyelenggara}</p>
+          <h4 class="font-bold text-xs text-amber-300">${escapeHtml(a.nama)}</h4>
+          <p class="text-[11px] text-emerald-200">📌 ${escapeHtml(a.ruangan || '-')}</p>
+          <p class="text-[11px] text-slate-300">👤 ${escapeHtml(a.penyelenggara || '-')}</p>
           <p class="text-[10px] text-amber-400 font-medium">🕒 ${formatTimeIndonesia(a.jamMulai)} - ${formatTimeIndonesia(a.jamSelesai)} WIB</p>
         </div>
       `).join('');
@@ -988,10 +1007,17 @@
       const filtered = appState.agenda.filter(a =>
         normalizeDateValue(a.tglMulai) <= dStr && normalizeDateValue(a.tglSelesai) >= dStr
       );
-      if(filtered.length === 0) {
+      const specialDays = getCalendarEventsForDate(dStr);
+      const specialDayMarkup = specialDays.map(item => `
+        <div class="rounded-xl border border-red-400/50 bg-red-950/40 p-4 space-y-1">
+          <p class="text-xs font-bold uppercase text-red-300">${escapeHtml(item.jenis)}</p>
+          <h4 class="text-sm font-bold text-amber-200">${escapeHtml(item.nama)}</h4>
+        </div>
+      `).join('');
+      if(filtered.length === 0 && specialDays.length === 0) {
         body.innerHTML = `<p class="text-xs text-slate-300 italic">Ruangan kosong / Tidak ada booking pada tanggal ini.</p>`;
       } else {
-        body.innerHTML = filtered.map(a => `
+        body.innerHTML = specialDayMarkup + filtered.map(a => `
           <div class="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-2">
             <h4 class="font-bold text-sm text-amber-300">${escapeHtml(a.nama)}</h4>
             <p class="text-xs text-emerald-200">🏛️ <strong>Lokasi:</strong> ${escapeHtml(a.ruangan || '-')}</p>
@@ -1040,21 +1066,21 @@
         return;
       }
 
-      // Add to Local State
-      newBooking.id = "E-" + Date.now().toString().slice(-4);
-      appState.agenda.push(newBooking);
-      renderAll();
-      showToast("Agenda Baru Berhasil Disimpan!", "success");
-
-      // Backend HTTP Sync
       try {
-        await fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ action: "simpanAgendaAdmin", data: JSON.stringify(newBooking) })
+        const result = await requestBackendAction('simpanAgendaAdmin', {
+          adminPassword,
+          data: JSON.stringify(newBooking)
         });
+        newBooking.id = result.id || "E-" + Date.now().toString().slice(-4);
+        appState.agenda.push(newBooking);
+        renderAll();
+        showToast(result.message || "Agenda baru berhasil disimpan.", "success");
       } catch(err) {
-        console.log("Local state updated.");
+        showToast(`Agenda gagal disimpan: ${err.message}`, "error");
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan Agenda Terbaru`;
+        lucide.createIcons();
+        return;
       }
 
       document.getElementById('form-booking-admin').reset();
@@ -1160,6 +1186,84 @@
     function resetRuanganForm() {
       document.getElementById('ruangan-edit-id').value = '';
       document.getElementById('form-ruangan').reset();
+    }
+
+    function normalizeCalendarEvent(item) {
+      return {
+        ...item,
+        id: String(item.id || ''),
+        tanggal: normalizeDateValue(item.tanggal),
+        nama: String(item.nama || ''),
+        jenis: String(item.jenis || '')
+      };
+    }
+
+    function renderCalendarEventTable() {
+      const body = document.getElementById('calendar-event-table-body');
+      if (!body) return;
+      const events = [...appState.hariKhusus].sort((a, b) =>
+        normalizeDateValue(a.tanggal).localeCompare(normalizeDateValue(b.tanggal))
+      );
+      body.innerHTML = events.length
+        ? events.map(item => `
+            <tr>
+              <td class="p-3 text-slate-200">${escapeHtml(formatDateIndonesia(item.tanggal))}</td>
+              <td class="p-3 font-semibold text-amber-200">${escapeHtml(item.nama)}</td>
+              <td class="p-3 text-slate-300">${escapeHtml(item.jenis)}</td>
+              <td class="p-3 text-right"><button type="button" onclick="deleteCalendarEvent('${escapeHtml(item.id)}')" class="rounded bg-red-900/40 px-2 py-1 text-red-300 hover:bg-red-900/70">Hapus</button></td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada tanggal khusus. Tambahkan tanggal resmi melalui formulir di atas.</td></tr>';
+    }
+
+    async function handleCalendarEventSubmit(e) {
+      e.preventDefault();
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk mengelola tanggal kalender.", "error");
+        return;
+      }
+      const item = {
+        tanggal: document.getElementById('calendar-event-date').value,
+        jenis: document.getElementById('calendar-event-type').value,
+        nama: document.getElementById('calendar-event-name').value.trim()
+      };
+      const button = document.getElementById('calendar-event-submit');
+      button.disabled = true;
+      try {
+        const result = await requestBackendAction('addCalendarEvent', {
+          adminPassword,
+          data: JSON.stringify(item)
+        });
+        appState.hariKhusus.push(normalizeCalendarEvent(result.item));
+        appState.hariKhusus.sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+        document.getElementById('form-calendar-event').reset();
+        renderCalendarEventTable();
+        renderBeranda();
+        renderYearlyCalendar();
+        showToast(result.message, "success");
+      } catch (error) {
+        showToast(`Tanggal kalender gagal disimpan: ${error.message}`, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function deleteCalendarEvent(id) {
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast("Silakan masuk sebagai admin untuk mengelola tanggal kalender.", "error");
+        return;
+      }
+      if (!confirm("Hapus tanggal khusus ini dari kalender?")) return;
+      try {
+        const result = await requestBackendAction('deleteCalendarEvent', { adminPassword, id });
+        appState.hariKhusus = appState.hariKhusus.filter(item => item.id !== id);
+        renderCalendarEventTable();
+        renderBeranda();
+        renderYearlyCalendar();
+        showToast(result.message, "success");
+      } catch (error) {
+        showToast(`Tanggal kalender gagal dihapus: ${error.message}`, "error");
+      }
     }
 
     // Manage Pengumuman
@@ -1328,6 +1432,15 @@
     }
 
     // Year Calendar & Reports & Archives
+    function populateYearFilter() {
+      const filter = document.getElementById('year-filter');
+      const currentYear = new Date().getFullYear();
+      filter.innerHTML = [currentYear, currentYear + 1]
+        .map(year => `<option value="${year}">Tahun ${year}</option>`)
+        .join('');
+      filter.value = String(currentYear);
+    }
+
     function renderYearlyCalendar() {
       const grid = document.getElementById('yearly-grid');
       const year = Number(document.getElementById('year-filter').value);
@@ -1343,6 +1456,9 @@
           const end = normalizeDateValue(a.tglSelesai);
           return start <= monthEnd && end >= monthStart;
         });
+        const monthSpecialDays = appState.hariKhusus.filter(item =>
+          normalizeDateValue(item.tanggal) >= monthStart && normalizeDateValue(item.tanggal) <= monthEnd
+        );
         const dateCells = [];
 
         for(let i = 0; i < firstDay; i++) {
@@ -1354,10 +1470,17 @@
           const events = monthEvents.filter(a =>
             normalizeDateValue(a.tglMulai) <= date && normalizeDateValue(a.tglSelesai) >= date
           );
-          const dayClass = events.length
-            ? 'bg-emerald-800 text-amber-200 font-bold'
-            : 'text-slate-300';
-          dateCells.push(`<button type="button" onclick="bukaModalDetailTanggal('${date}')" title="${events.length ? `${events.length} kegiatan — klik untuk detail` : 'Klik untuk melihat agenda'}" aria-label="${day}${events.length ? `, ${events.length} kegiatan` : ''}" class="relative flex h-9 sm:h-8 w-full items-center justify-center rounded cursor-pointer hover:bg-amber-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${dayClass}">${day}${events.length ? '<i aria-hidden="true" class="absolute bottom-0.5 h-1 w-1 rounded-full bg-amber-400"></i>' : ''}</button>`);
+          const specialDays = getCalendarEventsForDate(date);
+          const dayClass = specialDays.length
+            ? 'bg-red-950/70 text-red-200 font-bold'
+            : events.length
+              ? 'bg-emerald-800 text-amber-200 font-bold'
+              : 'text-slate-300';
+          const title = [
+            events.length ? `${events.length} kegiatan` : '',
+            ...specialDays.map(item => item.nama)
+          ].filter(Boolean).join(' — ');
+          dateCells.push(`<button type="button" onclick="bukaModalDetailTanggal('${date}')" title="${escapeHtml(title || 'Klik untuk melihat agenda')}" aria-label="${day}${events.length ? `, ${events.length} kegiatan` : ''}${specialDays.length ? `, ${escapeHtml(specialDays.map(item => item.nama).join(', '))}` : ''}" class="relative flex h-9 sm:h-8 w-full items-center justify-center rounded cursor-pointer hover:bg-amber-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${dayClass}">${day}${events.length || specialDays.length ? `<i aria-hidden="true" class="absolute bottom-0.5 h-1 w-1 rounded-full ${specialDays.length ? 'bg-red-300' : 'bg-amber-400'}"></i>` : ''}</button>`);
         }
 
         return `
@@ -1368,9 +1491,9 @@
               ${dateCells.join('')}
             </div>
             <div class="mt-3 border-t border-amber-500/20 pt-2">
-              <p class="text-[10px] text-slate-400 mb-1">${monthEvents.length} kegiatan</p>
-              ${monthEvents.length
-                ? `<ul class="space-y-1 break-words text-[10px] text-slate-300">${monthEvents.map(a => `<li><span class="text-amber-300">${escapeHtml(formatDateIndonesia(a.tglMulai))}</span> — ${escapeHtml(a.nama)}</li>`).join('')}</ul>`
+              <p class="text-[10px] text-slate-400 mb-1">${monthEvents.length} agenda · ${monthSpecialDays.length} hari khusus</p>
+              ${monthEvents.length || monthSpecialDays.length
+                ? `<ul class="space-y-1 break-words text-[10px] text-slate-300">${monthSpecialDays.map(item => `<li><span class="text-red-300">${escapeHtml(formatDateIndonesia(item.tanggal))}</span> — ${escapeHtml(item.nama)} (${escapeHtml(item.jenis)})</li>`).join('')}${monthEvents.map(a => `<li><span class="text-amber-300">${escapeHtml(formatDateIndonesia(a.tglMulai))}</span> — ${escapeHtml(a.nama)}</li>`).join('')}</ul>`
                 : '<p class="text-[10px] text-slate-500">Belum ada kegiatan.</p>'}
             </div>
           </div>

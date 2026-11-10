@@ -125,7 +125,10 @@ function addCalendarEvent_(event) {
   const tanggal = String(event.tanggal || "");
   const nama = String(event.nama || "").trim();
   const jenis = String(event.jenis || "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal) || isNaN(Date.parse(tanggal + "T00:00:00Z"))) {
+  const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(tanggal)
+    ? new Date(tanggal + "T00:00:00Z")
+    : null;
+  if (!parsedDate || isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== tanggal) {
     throw new Error("Tanggal harus diisi dengan format yang valid.");
   }
   if (!nama || nama.length > 150) throw new Error("Nama hari khusus wajib diisi (maksimal 150 karakter).");
@@ -315,7 +318,7 @@ function simpanAgendaAdmin(formObject, fileData) {
       timestamp
     ]);
 
-    return { success: true, message: "Agenda berhasil ditambahkan & disetujui!" };
+    return { success: true, id: newId, message: "Agenda berhasil ditambahkan & disetujui!" };
   } catch (error) {
     return { success: false, message: "Terjadi kesalahan: " + error.message };
   }
