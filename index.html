@@ -8,8 +8,6 @@
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Three.js untuk 3D Virtual Stage -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- SheetJS untuk Parsing Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- html2pdf untuk Cetak Laporan PDF Resmi -->
@@ -60,8 +58,8 @@
 
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center space-x-2">
-          <button onclick="switchTab('beranda')" id="nav-beranda" class="px-4 py-2 rounded-lg text-sm font-medium transition text-amber-400 bg-emerald-900/60 border border-amber-500/30">Beranda</button>
-          <button onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition">Kalender Setahun</button>
+          <button onclick="switchTab('beranda')" id="nav-beranda" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition">Beranda</button>
+          <button onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium transition text-amber-400 bg-emerald-900/60 border border-amber-500/30">Kalender Setahun</button>
           <button onclick="switchTab('arsip')" id="nav-arsip" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition">Arsip Kegiatan</button>
           <button onclick="bukaModalLoginAdmin()" id="nav-admin" class="px-4 py-2 rounded-lg text-sm font-medium gold-btn flex items-center gap-2">
             <i data-lucide="shield-check" class="w-4 h-4"></i> Dashboard Admin
@@ -93,33 +91,13 @@
   <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
     <!-- 1. TAB BERANDA -->
-    <section id="tab-beranda" class="space-y-6">
+    <section id="tab-beranda" class="hidden space-y-6">
       <!-- Announcement Banner -->
       <div id="announcement-banner" class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3 shadow-md">
         <i data-lucide="megaphone" class="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5"></i>
         <div>
           <h4 class="font-bold text-amber-300 text-sm">PENGUMUMAN RESMI</h4>
           <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
-        </div>
-      </div>
-
-      <!-- 3D Stage & Spatial Room Inspector -->
-      <div class="bg-emerald-950/70 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
-          <div>
-            <h2 class="text-xl font-bold gold-gradient-text flex items-center gap-2">
-              <i data-lucide="box" class="w-5 h-5 text-amber-400"></i> Panggung & Spatial Virtual Aula 3D
-            </h2>
-            <p class="text-xs text-slate-300">Visualisasi 3D tata letak panggung dan ketersediaan gedung secara interaktif.</p>
-          </div>
-          <select id="stage-room-select" onchange="render3DStage()" class="bg-slate-900 border border-amber-500/40 text-amber-200 text-xs rounded-lg p-2.5">
-            <!-- Populated dynamically -->
-          </select>
-        </div>
-        <div id="canvas-3d-container" class="w-full h-64 sm:h-80 bg-slate-900/90 rounded-xl overflow-hidden border border-emerald-800 relative cursor-grab active:cursor-grabbing">
-          <div class="absolute top-3 left-3 bg-slate-950/80 px-3 py-1 rounded-full text-[10px] text-amber-400 border border-amber-500/30">
-            Gunakan mouse/sentuhan untuk memutar tampilan 3D
-          </div>
         </div>
       </div>
 
@@ -155,7 +133,7 @@
     </section>
 
     <!-- 2. TAB KALENDER SETAHUN -->
-    <section id="tab-tahunan" class="hidden space-y-6">
+    <section id="tab-tahunan" class="space-y-6">
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-bold gold-gradient-text">Kalender Acara Setahun</h2>
         <select id="year-filter" onchange="renderYearlyCalendar()" class="bg-slate-900 border border-amber-500/40 text-amber-200 text-sm rounded-lg p-2.5">
@@ -431,7 +409,7 @@
 
     // Dynamic Application State
     let currentDate = new Date();
-    let currentSelectedDateStr = new Date().toISOString().split('T')[0];
+    let currentSelectedDateStr = normalizeDateValue(new Date());
     let isAdminLoggedIn = false;
 
     let appState = {
@@ -474,7 +452,6 @@
     // Initialize App
     window.onload = function() {
       lucide.createIcons();
-      init3DScene();
       loadDataFromBackend();
       renderAll();
       document.getElementById('pdf-date-now').innerText = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -497,7 +474,13 @@
         if (resp.ok) {
           const data = await resp.json();
           if (data && data.agenda) {
-            appState = data;
+            appState = {
+              ...appState,
+              ...data,
+              agenda: data.agenda.map(normalizeAgendaItem),
+              ruangan: data.ruangan || appState.ruangan,
+              pengumuman: data.pengumuman || appState.pengumuman
+            };
             renderAll();
             showToast("Data terbaru berhasil disinkronkan dari Google Sheets!", "success");
           }
@@ -639,7 +622,7 @@
 
     function renderDailyAgenda() {
       const list = document.getElementById('daily-agenda-list');
-      document.getElementById('selected-date-title').innerText = `Agenda: ${currentSelectedDateStr}`;
+      document.getElementById('selected-date-title').innerText = `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
       
       const filtered = appState.agenda.filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
       if(filtered.length === 0) {
@@ -652,26 +635,28 @@
           <h4 class="font-bold text-xs text-amber-300">${a.nama}</h4>
           <p class="text-[11px] text-emerald-200">📌 ${a.ruangan}</p>
           <p class="text-[11px] text-slate-300">👤 ${a.penyelenggara}</p>
-          <p class="text-[10px] text-amber-400 font-medium">🕒 ${a.jamMulai} - ${a.jamSelesai} WIB</p>
+          <p class="text-[10px] text-amber-400 font-medium">🕒 ${formatTimeIndonesia(a.jamMulai)} - ${formatTimeIndonesia(a.jamSelesai)} WIB</p>
         </div>
       `).join('');
     }
 
     function bukaModalDetailTanggal(dStr) {
       const modal = document.getElementById('modal-detail-tanggal');
-      document.getElementById('modal-date-header').innerText = `Detail Agenda - Tanggal ${dStr}`;
+      document.getElementById('modal-date-header').innerText = `Detail Agenda - Tanggal ${formatDateIndonesia(dStr)}`;
       const body = document.getElementById('modal-date-body');
       
-      const filtered = appState.agenda.filter(a => a.tglMulai <= dStr && a.tglSelesai >= dStr);
+      const filtered = appState.agenda.filter(a =>
+        normalizeDateValue(a.tglMulai) <= dStr && normalizeDateValue(a.tglSelesai) >= dStr
+      );
       if(filtered.length === 0) {
         body.innerHTML = `<p class="text-xs text-slate-300 italic">Ruangan kosong / Tidak ada booking pada tanggal ini.</p>`;
       } else {
         body.innerHTML = filtered.map(a => `
           <div class="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-2">
-            <h4 class="font-bold text-sm text-amber-300">${a.nama}</h4>
-            <p class="text-xs text-emerald-200">🏛️ <strong>Ruangan:</strong> ${a.ruangan}</p>
-            <p class="text-xs text-emerald-200">🏢 <strong>Penyelenggara:</strong> ${a.penyelenggara} (${a.fakultas})</p>
-            <p class="text-xs text-emerald-200">⏰ <strong>Waktu:</strong> ${a.jamMulai} - ${a.jamSelesai} WIB</p>
+            <h4 class="font-bold text-sm text-amber-300">${escapeHtml(a.nama)}</h4>
+            <p class="text-xs text-emerald-200">🏛️ <strong>Lokasi:</strong> ${escapeHtml(a.ruangan || '-')}</p>
+            <p class="text-xs text-emerald-200">🏢 <strong>Penyelenggara:</strong> ${escapeHtml(a.penyelenggara || '-')} (${escapeHtml(a.fakultas || 'Umum')})</p>
+            <p class="text-xs text-emerald-200">⏰ <strong>Waktu:</strong> ${formatTimeIndonesia(a.jamMulai)} - ${formatTimeIndonesia(a.jamSelesai)} WIB</p>
             ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="inline-block text-xs text-amber-400 underline font-bold">📄 Buka Proposal Google Drive</a>` : ''}
           </div>
         `).join('');
@@ -760,8 +745,8 @@
               penyelenggara: row['Penyelenggara'] || row['PENYELENGGARA'] || "Unit Kerja",
               fakultas: row['Fakultas'] || row['FAKULTAS'] || "Rektorat / Unit Pusat",
               ruangan: row['Ruangan'] || row['RUANGAN'] || appState.ruangan[0].nama,
-              tglMulai: row['Tanggal'] || row['TANGGAL'] || "2027-06-01",
-              tglSelesai: row['Tanggal'] || row['TANGGAL'] || "2027-06-01",
+              tglMulai: normalizeDateValue(row['Tanggal'] || row['TANGGAL'] || "2027-06-01"),
+              tglSelesai: normalizeDateValue(row['Tanggal'] || row['TANGGAL'] || "2027-06-01"),
               jamMulai: "08:00",
               jamSelesai: "16:00",
               status: "Approved"
@@ -848,34 +833,140 @@
 
     // Render Dropdowns
     function renderAllDropdowns() {
-      const selectStage = document.getElementById('stage-room-select');
       const selectBooking = document.getElementById('booking-ruangan');
 
       const opts = appState.ruangan.map(r => `<option value="${r.nama}">${r.nama}</option>`).join('');
-      selectStage.innerHTML = opts;
       selectBooking.innerHTML = opts;
     }
 
     // Year Calendar & Reports & Archives
     function renderYearlyCalendar() {
       const grid = document.getElementById('yearly-grid');
-      const year = document.getElementById('year-filter').value;
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+      const year = Number(document.getElementById('year-filter').value);
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
       
       grid.innerHTML = monthNames.map((mName, idx) => {
-        const count = appState.agenda.filter(a => {
-          const m = new Date(a.tglMulai).getMonth();
-          const y = new Date(a.tglMulai).getFullYear();
-          return m === idx && y == year;
-        }).length;
+        const firstDay = new Date(year, idx, 1).getDay();
+        const daysInMonth = new Date(year, idx + 1, 0).getDate();
+        const monthStart = `${year}-${String(idx + 1).padStart(2, '0')}-01`;
+        const monthEnd = `${year}-${String(idx + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+        const monthEvents = appState.agenda.filter(a => {
+          const start = normalizeDateValue(a.tglMulai);
+          const end = normalizeDateValue(a.tglSelesai);
+          return start <= monthEnd && end >= monthStart;
+        });
+        const dateCells = [];
+
+        for(let i = 0; i < firstDay; i++) {
+          dateCells.push('<span></span>');
+        }
+
+        for(let day = 1; day <= daysInMonth; day++) {
+          const date = `${year}-${String(idx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const events = monthEvents.filter(a =>
+            normalizeDateValue(a.tglMulai) <= date && normalizeDateValue(a.tglSelesai) >= date
+          );
+          const dayClass = events.length
+            ? 'bg-emerald-800 text-amber-200 font-bold'
+            : 'text-slate-300';
+          dateCells.push(`<button type="button" onclick="bukaModalDetailTanggal('${date}')" title="${events.length ? `${events.length} kegiatan — klik untuk detail` : 'Klik untuk melihat agenda'}" aria-label="${day}${events.length ? `, ${events.length} kegiatan` : ''}" class="relative flex h-7 w-full items-center justify-center rounded cursor-pointer hover:bg-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-400 ${dayClass}">${day}${events.length ? '<i class="absolute bottom-0.5 h-1 w-1 rounded-full bg-amber-400"></i>' : ''}</button>`);
+        }
 
         return `
-          <div class="bg-emerald-950/40 border border-amber-500/20 p-4 rounded-xl">
-            <h4 class="font-bold text-amber-300 text-sm mb-2">${mName} ${year}</h4>
-            <p class="text-xs text-slate-300">${count} Kegiatan Terjadwal</p>
+          <div class="bg-emerald-950/50 border border-amber-500/20 p-3 sm:p-4 rounded-xl">
+            <h4 class="font-bold text-amber-300 text-sm mb-3">${mName} ${year}</h4>
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px]">
+              <span class="font-bold text-amber-400">Min</span><span class="font-bold text-amber-400">Sen</span><span class="font-bold text-amber-400">Sel</span><span class="font-bold text-amber-400">Rab</span><span class="font-bold text-amber-400">Kam</span><span class="font-bold text-amber-400">Jum</span><span class="font-bold text-amber-400">Sab</span>
+              ${dateCells.join('')}
+            </div>
+            <div class="mt-3 border-t border-amber-500/20 pt-2">
+              <p class="text-[10px] text-slate-400 mb-1">${monthEvents.length} kegiatan</p>
+              ${monthEvents.length
+                ? `<ul class="space-y-1 text-[10px] text-slate-300">${monthEvents.map(a => `<li><span class="text-amber-300">${escapeHtml(formatDateIndonesia(a.tglMulai))}</span> — ${escapeHtml(a.nama)}</li>`).join('')}</ul>`
+                : '<p class="text-[10px] text-slate-500">Belum ada kegiatan.</p>'}
+            </div>
           </div>
         `;
       }).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[char]);
+    }
+
+    function normalizeAgendaItem(item) {
+      return {
+        ...item,
+        nama: item.nama || item.namaKegiatan || '',
+        tglMulai: normalizeDateValue(item.tglMulai),
+        tglSelesai: normalizeDateValue(item.tglSelesai || item.tglMulai),
+        jamMulai: normalizeTimeValue(item.jamMulai || item.waktuMulai),
+        jamSelesai: normalizeTimeValue(item.jamSelesai || item.waktuSelesai),
+        driveLink: item.driveLink || item.urlBerkas || ''
+      };
+    }
+
+    function normalizeDateValue(value) {
+      if (value instanceof Date || (typeof value === 'string' && value.includes('T'))) {
+        const date = value instanceof Date ? value : new Date(value);
+        if (!Number.isNaN(date.getTime())) {
+          const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+          return `${wibDate.getUTCFullYear()}-${String(wibDate.getUTCMonth() + 1).padStart(2, '0')}-${String(wibDate.getUTCDate()).padStart(2, '0')}`;
+        }
+      }
+
+      if (typeof value === 'number' && window.XLSX) {
+        const parts = XLSX.SSF.parse_date_code(value);
+        if (parts) {
+          return `${parts.y}-${String(parts.m).padStart(2, '0')}-${String(parts.d).padStart(2, '0')}`;
+        }
+      }
+
+      return String(value || '');
+    }
+
+    function formatDateIndonesia(value) {
+      const isoDate = normalizeDateValue(value);
+      const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return String(value || '');
+      const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+      return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC'
+      }).format(date);
+    }
+
+    function normalizeTimeValue(value) {
+      if (value instanceof Date || (typeof value === 'string' && value.includes('T'))) {
+        const date = value instanceof Date ? value : new Date(value);
+        if (!Number.isNaN(date.getTime())) {
+          const minutes = (date.getUTCHours() * 60 + date.getUTCMinutes() + 7 * 60) % (24 * 60);
+          return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+        }
+      }
+
+      if (typeof value === 'number' && window.XLSX) {
+        const parts = XLSX.SSF.parse_date_code(value);
+        if (parts) {
+          return `${String(parts.H).padStart(2, '0')}:${String(parts.M).padStart(2, '0')}`;
+        }
+      }
+
+      const time = String(value || '');
+      const match = time.match(/^(\d{1,2}):(\d{2})/);
+      return match ? `${match[1].padStart(2, '0')}:${match[2]}` : time;
+    }
+
+    function formatTimeIndonesia(value) {
+      return normalizeTimeValue(value);
     }
 
     function renderArsipTable() {
@@ -888,11 +979,11 @@
 
       tbody.innerHTML = filtered.map(a => `
         <tr class="hover:bg-emerald-900/30">
-          <td class="p-3 text-amber-300 font-medium">${a.tglMulai}</td>
+          <td class="p-3 text-amber-300 font-medium">${formatDateIndonesia(a.tglMulai)}</td>
           <td class="p-3 font-semibold text-slate-100">${a.nama}</td>
           <td class="p-3 text-emerald-200">${a.penyelenggara}</td>
           <td class="p-3 text-slate-300">${a.ruangan}</td>
-          <td class="p-3 text-amber-400">${a.jamMulai} WIB</td>
+          <td class="p-3 text-amber-400">${formatTimeIndonesia(a.jamMulai)} WIB</td>
           <td class="p-3">
             ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="text-amber-400 underline font-bold">Drive</a>` : '<span class="text-slate-500">-</span>'}
           </td>
@@ -933,42 +1024,6 @@
 
     function refreshDataSheet() {
       loadDataFromBackend();
-    }
-
-    // 3D Scene Initialization
-    function init3DScene() {
-      const container = document.getElementById('canvas-3d-container');
-      if(!container) return;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      container.appendChild(renderer.domElement);
-
-      const light = new THREE.DirectionalLight(0xf59e0b, 1);
-      light.position.set(5, 10, 7).normalize();
-      scene.add(light);
-      scene.add(new THREE.AmbientLight(0x064e3b, 1.5));
-
-      const geometry = new THREE.BoxGeometry(4, 0.4, 2.5);
-      const material = new THREE.MeshStandardMaterial({ color: 0x065f46, metalness: 0.3, roughness: 0.4 });
-      const stage = new THREE.Mesh(geometry, material);
-      scene.add(stage);
-
-      camera.position.set(0, 3, 6);
-      camera.lookAt(0, 0, 0);
-
-      function animate() {
-        requestAnimationFrame(animate);
-        stage.rotation.y += 0.005;
-        renderer.render(scene, camera);
-      }
-      animate();
-    }
-
-    function render3DStage() {
-      showToast(`Visualisasi 3D Ruangan Diperbarui`, "info");
     }
 
     // Utility Toast Notification
