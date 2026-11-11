@@ -364,6 +364,14 @@
           <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
         </div>
       </div>
+
+      <section class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-4 sm:p-6" aria-labelledby="home-rooms-title">
+        <div class="mb-4 border-b border-amber-500/20 pb-2">
+          <h3 id="home-rooms-title" class="text-lg font-bold text-amber-300">Daftar Ruangan & Aula</h3>
+          <p class="mt-1 text-xs text-emerald-200">Informasi ruangan dan fasilitas yang tersedia.</p>
+        </div>
+        <div id="home-rooms-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </section>
     </section>
 
     <!-- 2. TAB KALENDER SETAHUN -->
@@ -383,6 +391,13 @@
         <h2 class="text-xl sm:text-2xl font-bold gold-gradient-text">Arsip Kegiatan & Dokumentasi</h2>
         <input type="search" id="arsip-search" oninput="renderArsipTable()" placeholder="Cari kegiatan atau penyelenggara…" aria-label="Cari agenda arsip" class="min-h-11 bg-slate-900 border border-amber-500/40 text-slate-100 text-sm rounded-lg px-4 py-2.5 w-full sm:w-64">
       </div>
+      <section class="space-y-3" aria-labelledby="archive-stats-title">
+        <div>
+          <h3 id="archive-stats-title" class="text-lg font-bold text-amber-300">Statistik Penggunaan Aula/Gedung</h3>
+          <p class="mt-1 text-xs text-slate-400">Frekuensi dihitung berdasarkan jumlah agenda yang tercatat.</p>
+        </div>
+        <div id="arsip-statistik" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      </section>
       <div class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead class="bg-emerald-900/80 text-amber-300 font-bold uppercase border-b border-amber-500/30">
@@ -796,6 +811,7 @@
     function renderAll() {
       renderAllDropdowns();
       renderBeranda();
+      renderRuanganBeranda();
       renderYearlyCalendar();
       renderArsipTable();
       renderReports();
@@ -1220,6 +1236,7 @@
           <div class="bg-slate-900 p-4 rounded-xl border border-amber-500/30 space-y-2">
             <h4 class="font-bold text-sm text-amber-300">${escapeHtml(a.nama)}</h4>
             <p class="text-xs text-emerald-200">🏛️ <strong>Lokasi:</strong> ${escapeHtml(a.ruangan || '-')}</p>
+            <p class="text-xs text-emerald-200">👤 <strong>Nama Petugas / Operator Aula/Gedung:</strong> ${escapeHtml(a.operatorAula || '-')}</p>
             <p class="text-xs text-emerald-200">🏢 <strong>Penyelenggara:</strong> ${escapeHtml(a.penyelenggara || '-')} (${escapeHtml(a.fakultas || 'Umum')})</p>
             <p class="text-xs text-emerald-200">⏰ <strong>Waktu:</strong> ${formatTimeIndonesia(a.jamMulai)} - ${formatTimeIndonesia(a.jamSelesai)} WIB</p>
             ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="inline-block text-xs text-amber-400 underline font-bold">📄 Buka Proposal Google Drive</a>` : ''}
@@ -1520,6 +1537,19 @@
           </td>
         </tr>
       `).join('');
+    }
+
+    function renderRuanganBeranda() {
+      const list = document.getElementById('home-rooms-list');
+      if (!list) return;
+      list.innerHTML = appState.ruangan.length
+        ? appState.ruangan.map(room => `
+          <article class="rounded-xl border border-amber-500/20 bg-emerald-900/40 p-4">
+            <h4 class="font-semibold text-sm text-slate-100">${escapeHtml(room.nama || 'Ruangan')}</h4>
+            <p class="mt-2 text-xs leading-relaxed text-slate-300">${escapeHtml(room.keterangan || 'Informasi fasilitas belum tersedia.')}</p>
+          </article>
+        `).join('')
+        : '<p class="col-span-full text-xs italic text-slate-400">Belum ada data ruangan dan aula.</p>';
     }
 
     function handleRuanganSubmit(e) {
@@ -1978,25 +2008,137 @@
     }
 
     function renderArsipTable() {
-      const query = document.getElementById('arsip-search').value.toLowerCase();
+      const query = document.getElementById('arsip-search').value.trim().toLowerCase();
       const tbody = document.getElementById('arsip-table-body');
       
       const filtered = getPublishedAgenda().filter(a => 
         String(a.nama || '').toLowerCase().includes(query) || String(a.penyelenggara || '').toLowerCase().includes(query)
-      );
+      ).sort((a, b) => String(b.tglMulai || '').localeCompare(String(a.tglMulai || '')));
+      renderArsipStatistics(filtered);
 
-      tbody.innerHTML = filtered.map(a => `
-        <tr class="hover:bg-emerald-900/30">
-          <td class="p-3 text-amber-300 font-medium">${escapeHtml(formatDateIndonesia(a.tglMulai))}${a.tglSelesai !== a.tglMulai ? ` – ${escapeHtml(formatDateIndonesia(a.tglSelesai))}` : ''}</td>
-          <td class="p-3 font-semibold text-slate-100">${escapeHtml(a.nama || '')}</td>
-          <td class="p-3 text-emerald-200">${escapeHtml(a.penyelenggara || '')}<br><span class="text-[10px]">${escapeHtml(a.fakultas || 'Umum')}</span></td>
-          <td class="p-3 text-slate-300">${escapeHtml(a.ruangan || '')}</td>
-          <td class="p-3 text-amber-400">${escapeHtml(formatTimeIndonesia(a.jamMulai))}–${escapeHtml(formatTimeIndonesia(a.jamSelesai))} WIB</td>
-          <td class="p-3">
-            ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="text-amber-400 underline font-bold">Drive</a>` : '<span class="text-slate-500">-</span>'}
-          </td>
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada arsip kegiatan yang cocok.</td></tr>';
+        return;
+      }
+
+      const groupedByYear = new Map();
+      filtered.forEach(agenda => {
+        const date = String(agenda.tglMulai || '');
+        const year = date.slice(0, 4) || 'Tanggal tidak diketahui';
+        const month = date.slice(5, 7) || '00';
+        const day = date.slice(8, 10) || '00';
+        if (!groupedByYear.has(year)) groupedByYear.set(year, new Map());
+        const groupedByMonth = groupedByYear.get(year);
+        const monthKey = `${year}-${month}`;
+        if (!groupedByMonth.has(monthKey)) groupedByMonth.set(monthKey, new Map());
+        const groupedByDate = groupedByMonth.get(monthKey);
+        const dateKey = `${year}-${month}-${day}`;
+        if (!groupedByDate.has(dateKey)) groupedByDate.set(dateKey, []);
+        groupedByDate.get(dateKey).push(agenda);
+      });
+
+      const monthFormatter = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+      tbody.innerHTML = Array.from(groupedByYear.entries()).map(([year, months]) => `
+        <tr class="bg-emerald-800/80">
+          <th colspan="6" scope="rowgroup" class="p-3 text-left text-sm font-bold text-amber-300">Tahun ${escapeHtml(year)}</th>
         </tr>
+        ${Array.from(months.entries()).map(([monthKey, dates]) => {
+          const [monthYear, month] = monthKey.split('-').map(Number);
+          const monthLabel = month
+            ? monthFormatter.format(new Date(monthYear, month - 1, 1))
+            : 'Bulan tidak diketahui';
+          const monthAgendaCount = Array.from(dates.values()).reduce((count, agendas) => count + agendas.length, 0);
+          return `
+            <tr class="bg-emerald-900/70">
+              <th colspan="6" scope="rowgroup" class="p-0 text-left">
+                <button type="button" aria-expanded="false" onclick="toggleArsipMonth('${monthKey}', this)" class="flex min-h-11 w-full items-center justify-between gap-3 p-3 pl-5 text-left font-semibold text-emerald-100 hover:bg-emerald-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400">
+                  <span>${escapeHtml(monthLabel)}</span>
+                  <span class="flex items-center gap-2 text-xs text-emerald-200"><span>${monthAgendaCount} kegiatan</span><span aria-hidden="true">+</span></span>
+                </button>
+              </th>
+            </tr>
+            ${Array.from(dates.entries()).map(([dateKey, agendas]) => `
+              <tr data-arsip-month="${monthKey}" class="hidden bg-slate-800/80">
+                <th colspan="6" scope="rowgroup" class="p-2 pl-8 text-left font-medium text-amber-200">
+                  ${escapeHtml(dateKey.endsWith('-00') ? 'Tanggal tidak diketahui' : formatDateIndonesia(dateKey))}
+                  <span class="ml-2 text-[10px] font-normal text-slate-400">${agendas.length} kegiatan</span>
+                </th>
+              </tr>
+              ${agendas.map(a => `
+                <tr data-arsip-month="${monthKey}" class="hidden hover:bg-emerald-900/30">
+                  <td class="p-3 text-amber-300 font-medium">${escapeHtml(formatDateIndonesia(a.tglMulai))}${a.tglSelesai !== a.tglMulai ? ` – ${escapeHtml(formatDateIndonesia(a.tglSelesai))}` : ''}</td>
+                  <td class="p-3 font-semibold text-slate-100">${escapeHtml(a.nama || '')}</td>
+                  <td class="p-3 text-emerald-200">${escapeHtml(a.penyelenggara || '')}<br><span class="text-[10px]">${escapeHtml(a.fakultas || 'Umum')}</span></td>
+                  <td class="p-3 text-slate-300">${escapeHtml(a.ruangan || '')}</td>
+                  <td class="p-3 text-amber-400">${escapeHtml(formatTimeIndonesia(a.jamMulai))}–${escapeHtml(formatTimeIndonesia(a.jamSelesai))} WIB</td>
+                  <td class="p-3">
+                    ${a.driveLink && a.driveLink !== '#' ? `<a href="${a.driveLink}" target="_blank" class="text-amber-400 underline font-bold">Drive</a>` : '<span class="text-slate-500">-</span>'}
+                  </td>
+                </tr>
+              `).join('')}
+            `).join('')}
+          `;
+        }).join('')}
       `).join('');
+    }
+
+    function toggleArsipMonth(monthKey, button) {
+      const monthRows = document.getElementById('arsip-table-body')
+        .querySelectorAll(`[data-arsip-month="${monthKey}"]`);
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      monthRows.forEach(row => row.classList.toggle('hidden', isExpanded));
+      button.setAttribute('aria-expanded', String(!isExpanded));
+      button.lastElementChild.lastElementChild.textContent = isExpanded ? '+' : '−';
+    }
+
+    function renderArsipStatistics(agendas) {
+      const container = document.getElementById('arsip-statistik');
+      if (!container) return;
+      if (!agendas.length) {
+        container.innerHTML = '<p class="lg:col-span-2 rounded-xl border border-amber-500/20 bg-emerald-950/50 p-4 text-sm text-slate-400">Belum ada data untuk ditampilkan.</p>';
+        return;
+      }
+
+      const countBy = (getLabel) => {
+        const counts = new Map();
+        agendas.forEach(agenda => {
+          const label = String(getLabel(agenda) || '').trim() || 'Tidak disebutkan';
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+        return Array.from(counts.entries())
+          .map(([label, count]) => ({ label, count }))
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'id'))
+          .slice(0, 5);
+      };
+
+      const charts = [
+        { title: 'Ruangan paling sering digunakan', items: countBy(agenda => agenda.ruangan) },
+        { title: 'Unit kerja paling aktif', items: countBy(agenda => agenda.penyelenggara) }
+      ];
+      container.innerHTML = charts.map(chart => {
+        const maxCount = chart.items[0].count;
+        return `
+          <section class="rounded-xl border border-amber-500/25 bg-emerald-950/50 p-4" aria-label="${escapeHtml(chart.title)}">
+            <h4 class="mb-4 text-sm font-bold text-emerald-100">${escapeHtml(chart.title)}</h4>
+            <div class="space-y-3">
+              ${chart.items.map(item => {
+                const percentage = Math.max(8, Math.round(item.count / maxCount * 100));
+                return `
+                  <div>
+                    <div class="mb-1 flex items-start justify-between gap-3 text-xs">
+                      <span class="break-words text-slate-200">${escapeHtml(item.label)}</span>
+                      <span class="shrink-0 font-bold text-amber-300">${item.count} agenda</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-label="${escapeHtml(`${item.label}: ${item.count} agenda`)}" aria-valuemin="0" aria-valuemax="${maxCount}" aria-valuenow="${item.count}">
+                      <div class="h-full rounded-full bg-amber-400" style="width: ${percentage}%"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </section>
+        `;
+      }).join('');
     }
 
     function renderReports() {
