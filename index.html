@@ -263,6 +263,7 @@
       border: 0 !important;
       border-radius: 0 !important;
       font-family: Arial, sans-serif;
+      padding: 0.12in !important;
     }
     #pdf-report-container h2,
     #pdf-report-container h3,
@@ -287,11 +288,21 @@
     }
     #pdf-report-container table { width: 100% !important; min-width: 0 !important; }
     #pdf-report-container tr { break-inside: avoid; page-break-inside: avoid; }
+    #pdf-report-container .report-detail-table { table-layout: fixed; font-size: 8px !important; }
+    #pdf-report-container .report-detail-table th,
+    #pdf-report-container .report-detail-table td { padding: 4px !important; overflow-wrap: anywhere; }
+    #pdf-report-container .report-detail-table th:nth-child(1) { width: 5%; }
+    #pdf-report-container .report-detail-table th:nth-child(2) { width: 20%; }
+    #pdf-report-container .report-detail-table th:nth-child(3) { width: 27%; }
+    #pdf-report-container .report-detail-table th:nth-child(4) { width: 20%; }
+    #pdf-report-container .report-detail-table th:nth-child(5) { width: 20%; }
+    #pdf-report-container .report-detail-table th:nth-child(6) { width: 8%; }
+    #pdf-report-container .report-faculty-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     #pdf-report-container .report-letterhead {
-      grid-template-columns: 5rem minmax(0, 1fr) 5rem !important;
+      grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem !important;
       border-color: #111827 !important;
     }
-    #pdf-report-container .report-letterhead img { width: 4.5rem !important; height: 4.5rem !important; }
+    #pdf-report-container .report-letterhead img { width: 3.25rem !important; height: 3.25rem !important; }
     #pdf-report-container .report-letterhead h2,
     #pdf-report-container .report-letterhead h3 { color: #111827 !important; }
     #pdf-report-container .report-letterhead p,
@@ -751,7 +762,7 @@
             <!-- Rekapan Per-Fakultas / Unit Kerja -->
             <div>
               <h4 id="report-faculty-heading" class="font-bold text-amber-300 text-sm mb-3">Rekapan Kegiatan Per-Fakultas / Unit Kerja</h4>
-              <div id="laporan-fakultas-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+              <div id="laporan-fakultas-grid" class="report-faculty-grid grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
 
             <!-- Rekapan Kegiatan Bulanan -->
@@ -762,9 +773,9 @@
             <div>
               <h4 class="mb-3 text-sm font-bold text-amber-300">Rincian Kegiatan dan Booking</h4>
               <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px] border-collapse text-left text-[10px]">
+                <table class="report-detail-table w-full border-collapse text-left text-[10px]">
                   <thead class="bg-emerald-900/80 text-amber-300">
-                    <tr><th class="border border-emerald-700 p-2">No.</th><th class="border border-emerald-700 p-2">Kegiatan</th><th class="border border-emerald-700 p-2">Penyelenggara</th><th class="border border-emerald-700 p-2">Fakultas / Unit</th><th class="border border-emerald-700 p-2">Ruangan</th><th class="border border-emerald-700 p-2">Petugas / Operator</th><th class="border border-emerald-700 p-2">Tanggal</th><th class="border border-emerald-700 p-2">Pukul</th><th class="border border-emerald-700 p-2">Status</th></tr>
+                    <tr><th class="border border-emerald-700 p-2">No.</th><th class="border border-emerald-700 p-2">Tanggal / Waktu</th><th class="border border-emerald-700 p-2">Kegiatan / Penyelenggara</th><th class="border border-emerald-700 p-2">Fakultas / Unit</th><th class="border border-emerald-700 p-2">Ruangan / Petugas</th><th class="border border-emerald-700 p-2">Status</th></tr>
                   </thead>
                   <tbody id="laporan-detail-table-body" class="text-slate-100"></tbody>
                 </table>
@@ -2330,16 +2341,13 @@
       detailBody.innerHTML = reportBookings.length ? reportBookings.map((item, index) => `
         <tr>
           <td class="border border-emerald-700 p-2 text-center">${index + 1}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(item.nama || '')}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(item.penyelenggara || '')}</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? ` – ${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}<br>${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))} WIB</td>
+          <td class="border border-emerald-700 p-2"><strong>${escapeHtml(item.nama || '')}</strong><br>${escapeHtml(item.penyelenggara || '')}</td>
           <td class="border border-emerald-700 p-2">${escapeHtml(item.fakultas || 'Umum')}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(item.ruangan || '')}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(item.operatorAula || '-')}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? ` – ${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}</td>
-          <td class="border border-emerald-700 p-2">${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))} WIB</td>
+          <td class="border border-emerald-700 p-2">${escapeHtml(item.ruangan || '')}<br><span>Petugas: ${escapeHtml(item.operatorAula || '-')}</span></td>
           <td class="border border-emerald-700 p-2">${escapeHtml(item.status || 'Terbit')}</td>
         </tr>
-      `).join('') : '<tr><td colspan="9" class="border border-emerald-700 p-3 text-center text-slate-400">Tidak ada booking terbit pada periode ini.</td></tr>';
+      `).join('') : '<tr><td colspan="6" class="border border-emerald-700 p-3 text-center text-slate-400">Tidak ada booking terbit pada periode ini.</td></tr>';
     }
 
     function exportLaporanPDF() {
@@ -2351,11 +2359,11 @@
         return;
       }
       const opt = {
-        margin:       [0.35, 0.35, 0.45, 0.35],
+        margin:       [0.3, 0.3, 0.4, 0.3],
         filename:     `Laporan_Rekap_Kegiatan_${reportPeriod === 'yearly' ? reportMonth.slice(0, 4) : reportMonth}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, backgroundColor: '#ffffff', useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
         pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr'] }
       };
       html2pdf().set(opt).from(element).save()
