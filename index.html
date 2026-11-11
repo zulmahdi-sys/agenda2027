@@ -917,6 +917,7 @@
     window.onload = function() {
       lucide.createIcons();
       switchTab('beranda');
+      showToast('Selamat datang di Aplikasi Agenda & Booking Aula UIN Ar-Raniry.', 'info');
       populateYearFilter();
       loadSavedBackgroundImage();
       loadDataFromBackend();
@@ -962,7 +963,6 @@
         document.getElementById('input-pengumuman-text').value = appState.pengumuman;
         renderAnnouncementAdminState();
         renderAll();
-        showToast("Data terbaru berhasil disinkronkan dari Google Sheets!", "success");
       } catch (err) {
         console.error("Gagal menyinkronkan data dari server:", err);
         showToast(`Data gagal dimuat dari server: ${err.message}`, "error");
