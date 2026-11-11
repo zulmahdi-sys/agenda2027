@@ -257,6 +257,56 @@
       color: #ffffff !important;
       font-weight: 600;
     }
+    #pdf-report-container {
+      background: #fff !important;
+      color: #111827 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      font-family: Arial, sans-serif;
+    }
+    #pdf-report-container h2,
+    #pdf-report-container h3,
+    #pdf-report-container h4,
+    #pdf-report-container p,
+    #pdf-report-container span,
+    #pdf-report-container td {
+      color: #111827 !important;
+    }
+    #pdf-report-container h2 { font-size: 15px !important; }
+    #pdf-report-container h3 { font-size: 14px !important; }
+    #pdf-report-container h4 { font-size: 11px !important; }
+    #pdf-report-container thead {
+      display: table-header-group;
+      background: #065f46 !important;
+      color: #fff !important;
+    }
+    #pdf-report-container thead th {
+      background: #065f46 !important;
+      color: #fff !important;
+      border: 1px solid #064e3b !important;
+    }
+    #pdf-report-container table { width: 100% !important; min-width: 0 !important; }
+    #pdf-report-container tr { break-inside: avoid; page-break-inside: avoid; }
+    #pdf-report-container .report-letterhead {
+      grid-template-columns: 5rem minmax(0, 1fr) 5rem !important;
+      border-color: #111827 !important;
+    }
+    #pdf-report-container .report-letterhead img { width: 4.5rem !important; height: 4.5rem !important; }
+    #pdf-report-container .report-letterhead h2,
+    #pdf-report-container .report-letterhead h3 { color: #111827 !important; }
+    #pdf-report-container .report-letterhead p,
+    #pdf-report-container .report-signature { color: #374151 !important; }
+    #pdf-report-container .report-summary-card {
+      background: #fff !important;
+      border-color: #64748b !important;
+    }
+    #pdf-report-container .report-summary-card p:first-child { color: #374151 !important; }
+    #pdf-report-container .report-summary-card p:last-child { color: #111827 !important; }
+    #pdf-report-container .report-faculty-card {
+      background: #fff !important;
+      border-color: #94a3b8 !important;
+    }
+    #pdf-report-container .report-room-table tbody { color: #111827 !important; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -666,22 +716,29 @@
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
             <h3 class="text-lg font-bold text-amber-300">Laporan Rekapan Kegiatan</h3>
             <button type="button" onclick="exportLaporanPDF()" class="min-h-11 px-4 py-2 bg-red-900/80 hover:bg-red-800 text-red-100 border border-red-400 rounded-lg text-xs font-bold flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-amber-400">
-              <i data-lucide="file-text" class="w-4 h-4"></i> Export PDF Laporan Resmi
+              <i data-lucide="file-text" class="w-4 h-4"></i> Cetak / Unduh PDF A4
             </button>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div>
-              <label for="report-month" class="mb-1 block text-xs font-bold text-amber-300">BULAN LAPORAN</label>
+              <label for="report-period" class="mb-1 block text-xs font-bold text-amber-300">PERIODE LAPORAN</label>
+              <select id="report-period" onchange="renderReports()" class="min-h-11 rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-sm text-amber-200">
+                <option value="monthly">Bulanan</option>
+                <option value="yearly">Tahunan</option>
+              </select>
+            </div>
+            <div>
+              <label for="report-month" class="mb-1 block text-xs font-bold text-amber-300">PILIH BULAN / TAHUN</label>
               <input id="report-month" type="month" onchange="renderReports()" class="min-h-11 rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-sm text-amber-200">
             </div>
-            <p id="report-month-summary" class="pb-2 text-xs text-emerald-200"></p>
+            <p id="report-period-summary" class="pb-2 text-xs text-emerald-200"></p>
           </div>
 
           <!-- Print Preview Wrapper for PDF Export -->
           <div id="pdf-report-container" class="bg-emerald-950 p-6 rounded-xl border border-amber-500/30 space-y-6">
-            <h3 id="pdf-month-title" class="text-center text-base font-bold text-amber-300">Laporan Booking Bulanan</h3>
+            <h3 id="pdf-report-title" class="text-center text-base font-bold text-amber-300">Laporan Rekap Kegiatan</h3>
             <!-- Kop Surat Resmi Instansi (Hanya Tampil saat Cetak PDF) -->
-            <div class="grid grid-cols-1 sm:grid-cols-[6rem_minmax(0,1fr)_6rem] items-center gap-2 pb-4 border-b-4 border-double border-amber-500 text-slate-100">
+            <div class="report-letterhead grid grid-cols-1 sm:grid-cols-[6rem_minmax(0,1fr)_6rem] items-center gap-2 pb-4 border-b-4 border-double border-amber-500 text-slate-100">
               <img src="./uin-ar-raniry-logo.png" alt="Logo UIN Ar-Raniry Banda Aceh" width="96" height="103" class="mx-auto mb-2 h-16 w-16 object-contain sm:mb-0 sm:h-24 sm:w-24">
               <div class="text-center">
                 <h2 class="font-bold text-sm sm:text-lg uppercase tracking-wider text-amber-300">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
@@ -693,13 +750,13 @@
 
             <!-- Rekapan Per-Fakultas / Unit Kerja -->
             <div>
-              <h4 class="font-bold text-amber-300 text-sm mb-3">Rekapan Kegiatan Per-Fakultas / Unit Kerja</h4>
+              <h4 id="report-faculty-heading" class="font-bold text-amber-300 text-sm mb-3">Rekapan Kegiatan Per-Fakultas / Unit Kerja</h4>
               <div id="laporan-fakultas-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
 
             <!-- Rekapan Kegiatan Bulanan -->
             <div>
-              <h4 class="font-bold text-amber-300 text-sm mb-3">Statistik Penggunaan Ruangan Bulanan</h4>
+              <h4 id="report-room-heading" class="font-bold text-amber-300 text-sm mb-3">Statistik Penggunaan Ruangan</h4>
               <div id="laporan-bulanan-list" class="space-y-3"></div>
             </div>
             <div>
@@ -715,7 +772,7 @@
             </div>
             
             <!-- Tanda Tangan Penanggung Jawab -->
-            <div class="pt-8 grid grid-cols-2 text-center text-xs text-emerald-200">
+            <div class="report-signature pt-8 grid grid-cols-2 text-center text-xs text-emerald-200">
               <div></div>
               <div>
                 <p>Banda Aceh, <span id="pdf-date-now"></span></p>
@@ -2146,36 +2203,46 @@
       const bulananList = document.getElementById('laporan-bulanan-list');
       const detailBody = document.getElementById('laporan-detail-table-body');
       const monthValue = document.getElementById('report-month').value || getLocalMonthValue();
+      const reportPeriod = document.getElementById('report-period').value;
       const [year, month] = monthValue.split('-').map(Number);
-      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
-      const monthLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
+      const reportStart = reportPeriod === 'yearly'
+        ? `${year}-01-01`
+        : `${year}-${String(month).padStart(2, '0')}-01`;
+      const reportEnd = reportPeriod === 'yearly'
+        ? `${year}-12-31`
+        : `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+      const periodLabel = reportPeriod === 'yearly'
+        ? String(year)
+        : new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
         .format(new Date(year, month - 1, 1));
-      const monthlyBookings = getPublishedAgenda().filter(item =>
-        normalizeDateValue(item.tglMulai) <= monthEnd &&
-        normalizeDateValue(item.tglSelesai || item.tglMulai) >= monthStart
+      const reportBookings = getPublishedAgenda().filter(item =>
+        normalizeDateValue(item.tglMulai) <= reportEnd &&
+        normalizeDateValue(item.tglSelesai || item.tglMulai) >= reportStart
       ).sort((a, b) =>
         normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
         normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai))
       );
-      document.getElementById('pdf-month-title').textContent = `Laporan Booking Kegiatan - ${monthLabel}`;
-      document.getElementById('report-month-summary').textContent =
-        `${monthlyBookings.length} booking diterbitkan pada rentang bulan ${monthLabel}.`;
+      const periodTypeLabel = reportPeriod === 'yearly' ? 'Tahunan' : 'Bulanan';
+      document.getElementById('pdf-report-title').textContent = `Laporan Rekap Kegiatan ${periodTypeLabel} - ${periodLabel}`;
+      document.getElementById('report-period-summary').textContent =
+        `${reportBookings.length} booking diterbitkan pada periode ${periodLabel}.`;
+      document.getElementById('report-faculty-heading').textContent = `Rekapan Kegiatan Per-Fakultas / Unit Kerja (${periodTypeLabel})`;
+      document.getElementById('report-room-heading').textContent = `Statistik Penggunaan Ruangan ${periodTypeLabel}`;
 
       const fakMap = {};
       const roomStats = new Map();
       const numberFormat = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
       let totalRoomDays = 0;
       let totalScheduledHours = 0;
-      monthlyBookings.forEach(item => {
+      reportBookings.forEach(item => {
         const faculty = item.fakultas || 'Umum';
         const room = item.ruangan || 'Belum ditentukan';
         fakMap[faculty] = (fakMap[faculty] || 0) + 1;
         const stats = roomStats.get(room) || { bookings: 0, roomDays: 0, scheduledHours: 0 };
         const bookingStart = normalizeDateValue(item.tglMulai);
         const bookingEnd = normalizeDateValue(item.tglSelesai || item.tglMulai);
-        const clippedStart = bookingStart < monthStart ? monthStart : bookingStart;
-        const clippedEnd = bookingEnd > monthEnd ? monthEnd : bookingEnd;
+        const clippedStart = bookingStart < reportStart ? reportStart : bookingStart;
+        const clippedEnd = bookingEnd > reportEnd ? reportEnd : bookingEnd;
         const startDate = new Date(`${clippedStart}T00:00:00Z`);
         const endDate = new Date(`${clippedEnd}T00:00:00Z`);
         const bookingDays = Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())
@@ -2198,34 +2265,34 @@
       });
 
       fakultasGrid.innerHTML = Object.keys(fakMap).map(f => `
-        <div class="bg-slate-900 p-3 rounded-lg border border-emerald-800 flex justify-between items-center">
+        <div class="report-faculty-card bg-slate-900 p-3 rounded-lg border border-emerald-800 flex justify-between items-center">
           <span class="text-xs font-semibold text-slate-200">${escapeHtml(f)}</span>
           <span class="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400">${fakMap[f]} Kegiatan</span>
         </div>
-      `).join('') || '<p class="text-xs text-slate-400">Belum ada booking pada bulan ini.</p>';
+      `).join('') || '<p class="text-xs text-slate-400">Belum ada booking pada periode ini.</p>';
 
       const sortedRoomStats = [...roomStats.entries()].sort((a, b) => a[0].localeCompare(b[0], 'id'));
       bulananList.innerHTML = `
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+          <div class="report-summary-card rounded-lg border border-emerald-700 bg-white p-3">
             <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Booking terbit</p>
-            <p class="mt-1 text-lg font-bold text-emerald-800">${monthlyBookings.length}</p>
+            <p class="mt-1 text-lg font-bold text-emerald-800">${reportBookings.length}</p>
           </div>
-          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+          <div class="report-summary-card rounded-lg border border-emerald-700 bg-white p-3">
             <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Ruangan digunakan</p>
             <p class="mt-1 text-lg font-bold text-emerald-800">${roomStats.size}</p>
           </div>
-          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+          <div class="report-summary-card rounded-lg border border-emerald-700 bg-white p-3">
             <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Hari-pemakaian</p>
             <p class="mt-1 text-lg font-bold text-emerald-800">${totalRoomDays}</p>
           </div>
-          <div class="rounded-lg border border-emerald-700 bg-white p-3">
+          <div class="report-summary-card rounded-lg border border-emerald-700 bg-white p-3">
             <p class="text-[9px] font-bold uppercase tracking-wide text-slate-500">Jam terjadwal</p>
             <p class="mt-1 text-lg font-bold text-emerald-800">${numberFormat.format(totalScheduledHours)} jam</p>
           </div>
         </div>
         <div class="overflow-x-auto rounded-lg border border-emerald-700 bg-white">
-          <table class="w-full min-w-[560px] border-collapse text-left text-[10px]">
+          <table class="report-room-table w-full min-w-[560px] border-collapse text-left text-[10px]">
             <thead class="bg-emerald-900 text-white">
               <tr>
                 <th class="border border-emerald-700 px-3 py-2 text-center">No.</th>
@@ -2244,13 +2311,13 @@
                   <td class="border border-slate-300 px-3 py-2 text-center">${stats.roomDays}</td>
                   <td class="border border-slate-300 px-3 py-2 text-right">${numberFormat.format(stats.scheduledHours)} jam</td>
                 </tr>
-              `).join('') || '<tr><td colspan="5" class="border border-slate-300 px-3 py-4 text-center text-slate-500">Belum ada penggunaan ruangan pada bulan ini.</td></tr>'}
+              `).join('') || '<tr><td colspan="5" class="border border-slate-300 px-3 py-4 text-center text-slate-500">Belum ada penggunaan ruangan pada periode ini.</td></tr>'}
             </tbody>
             ${sortedRoomStats.length ? `
               <tfoot class="bg-emerald-50 font-bold text-emerald-900">
                 <tr>
                   <td colspan="2" class="border border-emerald-700 px-3 py-2 text-right">Total</td>
-                  <td class="border border-emerald-700 px-3 py-2 text-center">${monthlyBookings.length}</td>
+                  <td class="border border-emerald-700 px-3 py-2 text-center">${reportBookings.length}</td>
                   <td class="border border-emerald-700 px-3 py-2 text-center">${totalRoomDays}</td>
                   <td class="border border-emerald-700 px-3 py-2 text-right">${numberFormat.format(totalScheduledHours)} jam</td>
                 </tr>
@@ -2258,9 +2325,9 @@
             ` : ''}
           </table>
         </div>
-        <p class="text-[9px] text-slate-500">Jam terjadwal dihitung dari pukul booking setiap hari dalam rentang tanggal yang masuk pada bulan laporan, bukan catatan realisasi penggunaan.</p>
+        <p class="text-[9px] text-slate-500">Jam terjadwal dihitung dari pukul booking setiap hari dalam rentang periode laporan, bukan catatan realisasi penggunaan.</p>
       `;
-      detailBody.innerHTML = monthlyBookings.length ? monthlyBookings.map((item, index) => `
+      detailBody.innerHTML = reportBookings.length ? reportBookings.map((item, index) => `
         <tr>
           <td class="border border-emerald-700 p-2 text-center">${index + 1}</td>
           <td class="border border-emerald-700 p-2">${escapeHtml(item.nama || '')}</td>
@@ -2272,20 +2339,31 @@
           <td class="border border-emerald-700 p-2">${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))} WIB</td>
           <td class="border border-emerald-700 p-2">${escapeHtml(item.status || 'Terbit')}</td>
         </tr>
-      `).join('') : '<tr><td colspan="9" class="border border-emerald-700 p-3 text-center text-slate-400">Tidak ada booking terbit pada bulan ini.</td></tr>';
+      `).join('') : '<tr><td colspan="9" class="border border-emerald-700 p-3 text-center text-slate-400">Tidak ada booking terbit pada periode ini.</td></tr>';
     }
 
     function exportLaporanPDF() {
       const element = document.getElementById('pdf-report-container');
       const reportMonth = document.getElementById('report-month').value || getLocalMonthValue();
+      const reportPeriod = document.getElementById('report-period').value;
+      if (typeof html2pdf !== 'function') {
+        showToast('Fitur ekspor PDF belum tersedia. Periksa koneksi internet lalu coba lagi.', 'error');
+        return;
+      }
       const opt = {
-        margin:       0.5,
-        filename:     `Laporan_Booking_UINAR_${reportMonth}.pdf`,
+        margin:       [0.35, 0.35, 0.45, 0.35],
+        filename:     `Laporan_Rekap_Kegiatan_${reportPeriod === 'yearly' ? reportMonth.slice(0, 4) : reportMonth}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+        html2canvas:  { scale: 2, backgroundColor: '#ffffff', useCORS: true },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr'] }
       };
-      html2pdf().set(opt).from(element).save();
+      html2pdf().set(opt).from(element).save()
+        .then(() => showToast('PDF laporan berhasil dibuat.', 'success'))
+        .catch(error => {
+          console.error('Gagal membuat PDF laporan:', error);
+          showToast('PDF laporan gagal dibuat. Silakan coba kembali.', 'error');
+        });
     }
 
     function refreshDataSheet() {
