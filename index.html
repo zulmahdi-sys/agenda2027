@@ -408,6 +408,14 @@
 
     <!-- 1. TAB BERANDA -->
     <section id="tab-beranda" class="space-y-6">
+      <section class="rounded-2xl border border-amber-500/30 bg-emerald-950/50 p-4 sm:p-5" aria-labelledby="home-agenda-search-title">
+        <h2 id="home-agenda-search-title" class="text-lg font-bold text-amber-300">Cari Agenda Booking</h2>
+        <p class="mt-1 text-xs text-emerald-200">Cari nama kegiatan atau unit kerja dari semua bulan.</p>
+        <label for="home-agenda-search" class="sr-only">Cari nama kegiatan atau unit kerja</label>
+        <input id="home-agenda-search" type="search" oninput="renderHomeAgendaSearch()" placeholder="Contoh: seminar, Fakultas Tarbiyah..." autocomplete="off" class="mt-3 min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-4 py-2.5 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+        <div id="home-agenda-search-results" class="mt-3 hidden space-y-2" aria-live="polite"></div>
+      </section>
+
       <!-- Main Calendar & Daily Agenda Section -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Monthly Calendar View -->
@@ -520,6 +528,7 @@
         <!-- Sub-Navigasi Dashboard Admin -->
         <div class="horizontal-touch-scroll -mx-4 mb-6 flex gap-2 overflow-x-auto border-b border-amber-500/20 px-4 pb-3 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           <button onclick="switchAdminTab('input-booking')" id="admin-sub-input-booking" class="min-h-11 shrink-0 rounded-lg border border-amber-400 bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300 focus-visible:ring-2 focus-visible:ring-amber-400" aria-current="page">Input Booking</button>
+          <button onclick="switchAdminTab('kelola-booking')" id="admin-sub-kelola-booking" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Booking</button>
           <button onclick="switchAdminTab('import-excel')" id="admin-sub-import-excel" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Import Excel</button>
           <button onclick="switchAdminTab('kelola-ruangan')" id="admin-sub-kelola-ruangan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Ruangan</button>
           <button onclick="switchAdminTab('kalender-nasional')" id="admin-sub-kalender-nasional" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kalender Nasional</button>
@@ -595,26 +604,28 @@
               <button type="button" id="btn-cancel-booking-edit" onclick="cancelBookingEdit()" class="hidden mt-2 w-full rounded-xl border border-slate-500 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-slate-800">Batalkan Edit</button>
             </div>
           </form>
-          <div class="mt-6 space-y-3">
-            <div>
-              <h4 class="text-sm font-bold text-amber-300">Kelola Booking Kegiatan</h4>
-              <p class="mt-1 text-[10px] text-slate-400">Admin dapat mengubah data, menghapus booking, atau menerbitkan kembali booking yang masih berupa draf.</p>
-            </div>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <label for="admin-booking-month-filter" class="text-xs font-semibold text-slate-300">Filter bulan:</label>
-              <select id="admin-booking-month-filter" onchange="renderAdminBookingTable()" class="rounded-lg border border-emerald-700 bg-slate-900 px-3 py-2 text-xs text-slate-100">
-                <option value="all">Semua bulan</option>
-              </select>
-              <span class="text-[10px] text-slate-400">Bulan berjalan di atas; tanggal terbaru ditampilkan lebih dahulu.</span>
-            </div>
-            <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
-              <table class="w-full min-w-[1050px] text-left text-xs">
-                <thead class="bg-emerald-900/80 font-bold text-amber-300">
-                  <tr><th class="p-3">Kegiatan</th><th class="p-3">Penyelenggara / Unit</th><th class="p-3">Petugas / Operator</th><th class="p-3">Ruangan</th><th class="p-3">Tanggal & Waktu</th><th class="p-3">Status</th><th class="p-3 text-right">Aksi</th></tr>
-                </thead>
-                <tbody id="admin-booking-table-body" class="divide-y divide-emerald-900/40"></tbody>
-              </table>
-            </div>
+        </div>
+
+        <!-- SUB-TAB: KELOLA BOOKING -->
+        <div id="admin-panel-kelola-booking" class="hidden space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Kelola Booking Kegiatan</h3>
+            <p class="mt-1 text-xs text-slate-400">Admin dapat mengubah data, menghapus booking, atau menerbitkan kembali booking yang masih berupa draf.</p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label for="admin-booking-month-filter" class="text-xs font-semibold text-slate-300">Filter bulan:</label>
+            <select id="admin-booking-month-filter" onchange="renderAdminBookingTable()" class="min-h-10 rounded-lg border border-emerald-700 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+              <option value="all">Semua bulan</option>
+            </select>
+            <span class="text-[10px] text-slate-400">Bulan berjalan di atas; tanggal terbaru ditampilkan lebih dahulu.</span>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
+            <table class="w-full min-w-[1050px] text-left text-xs">
+              <thead class="bg-emerald-900/80 font-bold text-amber-300">
+                <tr><th class="p-3">Kegiatan</th><th class="p-3">Penyelenggara / Unit</th><th class="p-3">Petugas / Operator</th><th class="p-3">Ruangan</th><th class="p-3">Tanggal & Waktu</th><th class="p-3">Status</th><th class="p-3 text-right">Aksi</th></tr>
+              </thead>
+              <tbody id="admin-booking-table-body" class="divide-y divide-emerald-900/40"></tbody>
+            </table>
           </div>
         </div>
 
@@ -858,6 +869,20 @@
     </div>
   </div>
 
+  <div id="modal-booking-action" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="booking-action-title" aria-describedby="booking-action-message">
+    <form onsubmit="confirmBookingAction(event)" class="w-full max-w-md space-y-4 rounded-2xl border border-amber-500/50 bg-emerald-950 p-6 shadow-2xl">
+      <div>
+        <h3 id="booking-action-title" class="text-lg font-bold text-amber-300">Konfirmasi Aksi Booking</h3>
+        <p id="booking-action-message" class="mt-2 text-sm text-slate-200"></p>
+        <p id="booking-action-name" class="mt-2 rounded-lg bg-slate-900 p-3 text-sm font-semibold text-amber-200"></p>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeBookingActionDialog()" class="min-h-11 rounded-lg border border-slate-500 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-amber-400">Batal</button>
+        <button id="booking-action-confirm" type="submit" class="min-h-11 rounded-lg bg-red-800 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-amber-400">Konfirmasi</button>
+      </div>
+    </form>
+  </div>
+
   <!-- JAVASCRIPT APP LOGIC -->
   <script>
     // URL Web App Endpoint Google Apps Script
@@ -870,6 +895,7 @@
     let currentSelectedDateStr = getTodayDateString();
     let isAdminLoggedIn = false;
     let adminPassword = '';
+    let pendingBookingAction = null;
     const automaticCalendarYearsLoaded = new Set();
     const automaticCalendarYearsLoading = new Set();
     const automaticCalendarLastAttempt = new Map();
@@ -904,6 +930,7 @@
     // Render All Views
     function renderAll() {
       renderAllDropdowns();
+      renderHomeAgendaSearch();
       renderBeranda();
       renderRuanganBeranda();
       renderYearlyCalendar();
@@ -1008,7 +1035,7 @@
 
     // Sub-Tab Admin Navigation
     function switchAdminTab(subTabId) {
-      const subTabs = ['input-booking', 'import-excel', 'kelola-ruangan', 'kalender-nasional', 'pengumuman', 'latar-belakang', 'laporan'];
+      const subTabs = ['input-booking', 'kelola-booking', 'import-excel', 'kelola-ruangan', 'kalender-nasional', 'pengumuman', 'latar-belakang', 'laporan'];
       subTabs.forEach(id => {
         const panel = document.getElementById(`admin-panel-${id}`);
         const btn = document.getElementById(`admin-sub-${id}`);
@@ -1283,6 +1310,61 @@
       bukaModalDetailTanggal(dStr);
     }
 
+    function renderHomeAgendaSearch() {
+      const input = document.getElementById('home-agenda-search');
+      const results = document.getElementById('home-agenda-search-results');
+      if (!input || !results) return;
+      const query = input.value.trim().toLocaleLowerCase('id');
+      if (!query) {
+        results.classList.add('hidden');
+        results.replaceChildren();
+        return;
+      }
+
+      const matches = getPublishedAgenda().filter(agenda =>
+        [agenda.nama, agenda.penyelenggara, agenda.fakultas]
+          .some(value => String(value || '').toLocaleLowerCase('id').includes(query))
+      ).sort((a, b) =>
+        normalizeDateValue(b.tglMulai).localeCompare(normalizeDateValue(a.tglMulai)) ||
+        normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai))
+      );
+
+      results.classList.remove('hidden');
+      if (!matches.length) {
+        results.innerHTML = '<p class="rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300">Tidak ada agenda yang cocok dengan pencarian.</p>';
+        return;
+      }
+
+      results.innerHTML = `<p class="text-xs text-slate-400">${matches.length} agenda ditemukan</p>` + matches.map(agenda => `
+        <button type="button" data-agenda-id="${escapeHtml(agenda.id)}" class="block w-full rounded-xl border border-emerald-700 bg-slate-900/80 p-3 text-left hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+          <span class="block text-sm font-bold text-amber-300">${escapeHtml(agenda.nama || agenda.namaKegiatan || 'Agenda tanpa nama')}</span>
+          <span class="mt-1 block text-xs text-emerald-200">${escapeHtml(agenda.penyelenggara || 'Unit kerja tidak dicantumkan')}${agenda.fakultas ? ` · ${escapeHtml(agenda.fakultas)}` : ''}</span>
+          <span class="mt-1 block text-xs text-slate-300">${escapeHtml(formatDateIndonesia(agenda.tglMulai))}${normalizeDateValue(agenda.tglSelesai || agenda.tglMulai) !== normalizeDateValue(agenda.tglMulai) ? ` – ${escapeHtml(formatDateIndonesia(agenda.tglSelesai))}` : ''} · ${escapeHtml(agenda.ruangan || 'Ruangan belum ditentukan')} · ${escapeHtml(formatTimeIndonesia(agenda.jamMulai))}–${escapeHtml(formatTimeIndonesia(agenda.jamSelesai))} WIB</span>
+        </button>
+      `).join('');
+      results.querySelectorAll('[data-agenda-id]').forEach(button => {
+        button.addEventListener('click', () => openHomeAgendaSearchResult(button.dataset.agendaId));
+      });
+    }
+
+    function openHomeAgendaSearchResult(id) {
+      const agenda = getPublishedAgenda().find(item => String(item.id) === String(id));
+      if (!agenda) {
+        showToast('Agenda tidak ditemukan. Muat ulang data lalu coba kembali.', 'error');
+        return;
+      }
+      const agendaDate = normalizeDateValue(agenda.tglMulai);
+      const dateParts = agendaDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!dateParts) {
+        showToast('Tanggal agenda tidak valid sehingga detail tidak dapat dibuka.', 'error');
+        return;
+      }
+      currentDate = new Date(Number(dateParts[1]), Number(dateParts[2]) - 1, 1, 12);
+      currentSelectedDateStr = agendaDate;
+      renderBeranda();
+      bukaModalDetailTanggal(agendaDate);
+    }
+
     function renderDailyAgenda() {
       const list = document.getElementById('daily-agenda-list');
       document.getElementById('selected-date-title').innerText = `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
@@ -1469,6 +1551,7 @@
       document.getElementById('booking-jam-mulai').value = normalizeTimeValue(booking.jamMulai || booking.waktuMulai);
       document.getElementById('booking-jam-selesai').value = normalizeTimeValue(booking.jamSelesai || booking.waktuSelesai);
       updateBookingSubmitButton();
+      switchAdminTab('input-booking');
       document.getElementById('form-booking-admin').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1541,9 +1624,54 @@
       }).join('') : `<tr><td colspan="7" class="p-4 text-center text-slate-400">${appState.agenda.length ? 'Tidak ada booking pada bulan yang dipilih.' : 'Belum ada data booking.'}</td></tr>`;
     }
 
-    async function setBookingPublished(id, published) {
+    function showBookingActionDialog(id, action) {
+      const booking = appState.agenda.find(item => String(item.id) === String(id));
+      if (!booking) {
+        showToast("Data booking tidak ditemukan. Muat ulang data lalu coba kembali.", "error");
+        return;
+      }
+      pendingBookingAction = { id, action };
+      const isDelete = action === 'delete';
+      document.getElementById('booking-action-title').textContent = isDelete
+        ? 'Konfirmasi Hapus Booking'
+        : 'Konfirmasi Cabut Booking';
+      document.getElementById('booking-action-message').textContent = isDelete
+        ? 'Booking ini akan dihapus permanen dari spreadsheet. Tindakan ini tidak dapat dibatalkan.'
+        : 'Booking ini akan dicabut dari Beranda dan tidak lagi ditampilkan sebagai agenda terbit.';
+      document.getElementById('booking-action-name').textContent = booking.nama || booking.namaKegiatan || 'Agenda tanpa nama';
+      document.getElementById('booking-action-confirm').textContent = isDelete ? 'Hapus Permanen' : 'Cabut Booking';
+      const modal = document.getElementById('modal-booking-action');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('booking-action-confirm').focus();
+    }
+
+    function closeBookingActionDialog() {
+      const modal = document.getElementById('modal-booking-action');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingBookingAction = null;
+    }
+
+    function confirmBookingAction(event) {
+      event.preventDefault();
+      const pendingAction = pendingBookingAction;
+      if (!pendingAction) return;
+      closeBookingActionDialog();
+      if (pendingAction.action === 'delete') {
+        deleteBooking(pendingAction.id, true);
+      } else {
+        setBookingPublished(pendingAction.id, false, true);
+      }
+    }
+
+    async function setBookingPublished(id, published, confirmed = false) {
       if (!isAdminLoggedIn || !adminPassword) {
         showToast("Silakan masuk sebagai admin untuk mengubah status publikasi.", "error");
+        return;
+      }
+      if (!published && !confirmed) {
+        showBookingActionDialog(id, 'unpublish');
         return;
       }
       try {
@@ -1562,12 +1690,15 @@
       }
     }
 
-    async function deleteBooking(id) {
+    async function deleteBooking(id, confirmed = false) {
       if (!isAdminLoggedIn || !adminPassword) {
         showToast("Silakan masuk sebagai admin untuk menghapus booking.", "error");
         return;
       }
-      if (!confirm("Hapus booking ini secara permanen dari spreadsheet?")) return;
+      if (!confirmed) {
+        showBookingActionDialog(id, 'delete');
+        return;
+      }
       try {
         const result = await requestBackendAction('deleteAgendaAdmin', { adminPassword, id });
         appState.agenda = appState.agenda.filter(item => String(item.id) !== String(id));
