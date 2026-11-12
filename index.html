@@ -467,6 +467,14 @@
         </div>
         <div id="home-rooms-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       </section>
+
+      <section class="rounded-2xl border border-amber-500/30 bg-emerald-950/50 p-4 sm:p-6" aria-labelledby="upcoming-agenda-title">
+        <div class="mb-4 border-b border-amber-500/20 pb-2">
+          <h2 id="upcoming-agenda-title" class="text-lg font-bold text-amber-300">Kegiatan 3 Hari ke Depan</h2>
+          <p class="mt-1 text-xs text-emerald-200">Agenda terbit mulai besok hingga tiga hari ke depan.</p>
+        </div>
+        <div id="upcoming-agenda-list" class="grid grid-cols-1 gap-3 md:grid-cols-3" aria-live="polite"></div>
+      </section>
     </section>
 
     <!-- 2. TAB KALENDER SETAHUN -->
@@ -1297,6 +1305,50 @@
         `;
       }
       renderDailyAgenda();
+      renderUpcomingAgenda();
+    }
+
+    function renderUpcomingAgenda() {
+      const list = document.getElementById('upcoming-agenda-list');
+      if (!list) return;
+
+      const todayParts = getTodayDateString().split('-').map(Number);
+      const upcomingDates = Array.from({ length: 3 }, (_, index) => {
+        const date = new Date(Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2] + index + 1));
+        return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+      });
+      const weekdayFormatter = new Intl.DateTimeFormat('id-ID', {
+        weekday: 'long',
+        timeZone: 'UTC'
+      });
+
+      list.innerHTML = upcomingDates.map(date => {
+        const dateParts = date.split('-').map(Number);
+        const weekday = weekdayFormatter.format(new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])));
+        const activities = getPublishedAgenda()
+          .filter(agenda =>
+            normalizeDateValue(agenda.tglMulai) <= date &&
+            normalizeDateValue(agenda.tglSelesai || agenda.tglMulai) >= date
+          )
+          .sort((a, b) =>
+            normalizeTimeValue(a.jamMulai || a.waktuMulai).localeCompare(normalizeTimeValue(b.jamMulai || b.waktuMulai)) ||
+            String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
+          );
+
+        return `
+          <article class="rounded-xl border border-amber-500/20 bg-white/70 p-3 sm:p-4">
+            <h3 class="mb-3 border-b border-slate-200 pb-2 text-sm font-bold capitalize text-emerald-800">${escapeHtml(weekday)}, ${escapeHtml(formatDateIndonesia(date))}</h3>
+            ${activities.length ? `<div class="space-y-2">${activities.map(agenda => `
+              <div class="rounded-lg border border-slate-200 bg-white p-3">
+                <h4 class="text-sm font-bold text-slate-900">${escapeHtml(agenda.nama || agenda.namaKegiatan || 'Agenda tanpa nama')}</h4>
+                <p class="mt-1 text-xs text-slate-700">📌 ${escapeHtml(agenda.ruangan || 'Lokasi belum ditentukan')}</p>
+                <p class="mt-1 text-xs text-slate-700">👤 ${escapeHtml(agenda.penyelenggara || 'Penyelenggara belum dicantumkan')}</p>
+                <p class="mt-1 text-xs font-medium text-amber-800">🕒 ${escapeHtml(formatTimeIndonesia(agenda.jamMulai || agenda.waktuMulai))}–${escapeHtml(formatTimeIndonesia(agenda.jamSelesai || agenda.waktuSelesai))} WIB</p>
+              </div>
+            `).join('')}</div>` : '<p class="text-xs italic text-slate-500">Belum ada kegiatan terjadwal.</p>'}
+          </article>
+        `;
+      }).join('');
     }
 
     function changeMonth(delta) {
