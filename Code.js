@@ -60,14 +60,30 @@ function doPost(e) {
     if (params.action === "setAgendaPublishStatus") {
       return jsonResponse_(setAgendaPublishStatus_(params.id, params.published === "true"));
     }
+    if (params.action === "saveAnnouncementAdmin") {
+      return jsonResponse_(saveAnnouncementRecord_(
+        params.id || "",
+        params.text,
+        params.published === "true"
+      ));
+    }
+    if (params.action === "setAnnouncementPublishStatus") {
+      return jsonResponse_(setAnnouncementPublishStatus_(params.id, params.published === "true"));
+    }
+    if (params.action === "deleteAnnouncementAdmin") {
+      return jsonResponse_(deleteAnnouncementRecord_(params.id));
+    }
     if (params.action === "publishAnnouncement") {
       const text = String(params.text || "").trim();
       if (!text) throw new Error("Teks pengumuman tidak boleh kosong.");
       if (text.length > 5000) throw new Error("Teks pengumuman maksimal 5.000 karakter.");
-      return jsonResponse_(saveAnnouncement_(text, true));
+      const existing = getAnnouncementData().items[0];
+      return jsonResponse_(saveAnnouncementRecord_(existing ? existing.id : "", text, true));
     }
     if (params.action === "unpublishAnnouncement") {
-      return jsonResponse_(saveAnnouncement_(null, false));
+      const existing = getAnnouncementData().items.find(item => item.isPublished);
+      if (!existing) return jsonResponse_({ success: true, message: "Tidak ada pengumuman yang sedang diterbitkan." });
+      return jsonResponse_(setAnnouncementPublishStatus_(existing.id, false));
     }
     if (params.action === "addCalendarEvent") {
       if (!params.data) throw new Error("Data hari khusus tidak ditemukan.");
@@ -105,11 +121,13 @@ function getInitialData() {
   try {
     const agenda = getAgendaData();
     const pengumuman = getAnnouncementData();
+    const pengumumanUtama = pengumuman.items.find(item => item.isPublished) || pengumuman.items[0];
     const ruangan = getRuanganData();
     return {
       agenda: agenda,
-      pengumuman: pengumuman.text,
-      pengumumanPublished: pengumuman.isPublished,
+      pengumumanItems: pengumuman.items,
+      pengumuman: pengumumanUtama ? pengumumanUtama.text : "",
+      pengumumanPublished: pengumumanUtama ? pengumumanUtama.isPublished : false,
       hariKhusus: getCalendarEvents_(),
       ruangan: ruangan
     };
@@ -401,33 +419,134 @@ function getAnnouncementSheet_() {
   if (!sheet) {
     sheet = ss.insertSheet("Pengumuman");
     sheet.appendRow(["Teks Pengumuman", "Status Terbit", "Waktu Pembaruan"]);
-    sheet.getRange("A1:C1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
   }
+  const headers = sheet.getRange(1, 1, 1, 4).getValues()[0];
+  if (!headers[0]) sheet.getRange(1, 1, 1, 3).setValues([["Teks Pengumuman", "Status Terbit", "Waktu Pembaruan"]]);
+  if (String(headers[3] || "").trim() !== "ID") sheet.getRange(1, 4).setValue("ID");
+  sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
   return sheet;
 }
 
 function getAnnouncementData() {
-  const sheet = getAnnouncementSheet_();
-  if (sheet.getLastRow() < 2) return { text: "", isPublished: false };
-  const row = sheet.getRange(2, 1, 1, 3).getValues()[0];
-  return {
-    text: row[0] ? String(row[0]) : "",
-    isPublished: row[1] === true || String(row[1]).toLowerCase() === "true"
-  };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getAnnouncementSheet_();
+    if (sheet.getLastRow() < 2) return { items: [] };
+    const range = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4);
+    const rows = range.getValues();
+    let hasMissingIds = false;
+    const items = rows.map((row, index) => {
+      const text = row[0] ? String(row[0]).trim() : "";
+      if (!text) return null;
+      let id = String(row[3] || "").trim();
+      if (!id) {
+        id = Utilities.getUuid();
+        row[3] = id;
+        hasMissingIds = true;
+      }
+      const updatedAt = row[2] instanceof Date
+        ? row[2].toISOString()
+        : String(row[2] || "");
+      return {
+        id: id,
+        text: text,
+        isPublished: row[1] === true || String(row[1]).toLowerCase() === "true",
+        updatedAt: updatedAt,
+        rowNumber: index + 2
+      };
+    }).filter(Boolean);
+    if (hasMissingIds) range.setValues(rows);
+    return { items: items };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
-function saveAnnouncement_(text, isPublished) {
-  const sheet = getAnnouncementSheet_();
-  const existing = getAnnouncementData();
-  const savedText = text === null ? existing.text : text;
-  const values = [[savedText, isPublished, new Date()]];
-  sheet.getRange(2, 1, 1, 3).setValues(values);
-  return {
-    success: true,
-    pengumuman: savedText,
-    pengumumanPublished: isPublished,
-    message: isPublished ? "Pengumuman berhasil diterbitkan." : "Pengumuman berhasil dicabut."
-  };
+function findAnnouncementRow_(sheet, id) {
+  if (!id || sheet.getLastRow() < 2) return -1;
+  const ids = sheet.getRange(2, 4, sheet.getLastRow() - 1, 1).getValues();
+  for (let index = 0; index < ids.length; index++) {
+    if (String(ids[index][0]) === String(id)) return index + 2;
+  }
+  return -1;
+}
+
+function saveAnnouncementRecord_(id, text, isPublished) {
+  const savedText = String(text || "").trim();
+  if (!savedText) throw new Error("Teks pengumuman tidak boleh kosong.");
+  if (savedText.length > 5000) throw new Error("Teks pengumuman maksimal 5.000 karakter.");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getAnnouncementSheet_();
+    const recordId = id || Utilities.getUuid();
+    let rowNumber = id ? findAnnouncementRow_(sheet, id) : -1;
+    if (id && rowNumber < 0) throw new Error("Pengumuman tidak ditemukan. Muat ulang data lalu coba kembali.");
+    if (rowNumber < 0) rowNumber = sheet.getLastRow() + 1;
+    const updatedAt = new Date();
+    sheet.getRange(rowNumber, 1, 1, 4).setValues([[
+      savedText,
+      isPublished,
+      updatedAt,
+      recordId
+    ]]);
+    return {
+      success: true,
+      item: {
+        id: recordId,
+        text: savedText,
+        isPublished: isPublished,
+        updatedAt: updatedAt.toISOString()
+      },
+      message: isPublished
+        ? "Pengumuman berhasil disimpan dan diterbitkan."
+        : "Pengumuman berhasil disimpan sebagai draf."
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function setAnnouncementPublishStatus_(id, isPublished) {
+  if (!id) throw new Error("ID pengumuman tidak ditemukan.");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getAnnouncementSheet_();
+    const rowNumber = findAnnouncementRow_(sheet, id);
+    if (rowNumber < 0) throw new Error("Pengumuman tidak ditemukan. Muat ulang data lalu coba kembali.");
+    const updatedAt = new Date();
+    sheet.getRange(rowNumber, 2, 1, 2).setValues([[isPublished, updatedAt]]);
+    const row = sheet.getRange(rowNumber, 1, 1, 4).getValues()[0];
+    return {
+      success: true,
+      item: {
+        id: String(row[3]),
+        text: String(row[0]),
+        isPublished: isPublished,
+        updatedAt: updatedAt.toISOString()
+      },
+      message: isPublished ? "Pengumuman berhasil diterbitkan." : "Pengumuman berhasil dicabut."
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteAnnouncementRecord_(id) {
+  if (!id) throw new Error("ID pengumuman tidak ditemukan.");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getAnnouncementSheet_();
+    const rowNumber = findAnnouncementRow_(sheet, id);
+    if (rowNumber < 0) throw new Error("Pengumuman tidak ditemukan. Muat ulang data lalu coba kembali.");
+    sheet.deleteRow(rowNumber);
+    return { success: true, message: "Pengumuman berhasil dihapus." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**

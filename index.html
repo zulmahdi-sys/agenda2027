@@ -70,6 +70,13 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+    @keyframes announcement-pop {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .announcement-pop {
+      animation: announcement-pop 220ms ease-out both;
+    }
     .gold-border {
       border: 1px solid rgba(245, 158, 11, 0.4);
     }
@@ -452,11 +459,11 @@
         </div>
       </div>
 
-      <div id="announcement-banner" class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3 shadow-md">
+      <div id="announcement-banner" class="hidden bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 items-start gap-3 shadow-md">
         <i data-lucide="megaphone" class="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5"></i>
         <div>
           <h4 class="font-bold text-amber-300 text-sm">PENGUMUMAN RESMI</h4>
-          <p id="announcement-text" class="text-xs text-amber-100">Selamat Datang di Sistem Booking Aula UIN Ar-Raniry Banda Aceh.</p>
+          <div id="announcement-items" class="mt-2 space-y-3"></div>
         </div>
       </div>
 
@@ -468,10 +475,10 @@
         <div id="upcoming-agenda-list" class="grid grid-cols-1 gap-3 md:grid-cols-3" aria-live="polite"></div>
       </section>
 
-      <section class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-4 sm:p-6" aria-labelledby="home-rooms-title">
-        <div class="mb-4 border-b border-amber-500/20 pb-2">
-          <h3 id="home-rooms-title" class="text-lg font-bold text-amber-300">Daftar Ruangan & Aula</h3>
-          <p class="mt-1 text-xs text-emerald-200">Informasi ruangan dan fasilitas yang tersedia.</p>
+      <section class="rounded-2xl border-2 border-cyan-300 bg-gradient-to-br from-cyan-200 via-teal-200 to-emerald-100 p-4 shadow-xl ring-2 ring-cyan-400/40 sm:p-6" aria-labelledby="home-rooms-title">
+        <div class="mb-4 border-b-2 border-emerald-900/20 pb-2">
+          <h3 id="home-rooms-title" class="text-lg font-extrabold text-emerald-950">Daftar Ruangan & Aula</h3>
+          <p class="mt-1 text-xs font-semibold text-emerald-900">Informasi ruangan dan fasilitas yang tersedia.</p>
         </div>
         <div id="home-rooms-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       </section>
@@ -732,22 +739,31 @@
 
         <!-- SUB-TAB 4: PENGUMUMAN -->
         <div id="admin-panel-pengumuman" class="hidden space-y-4">
-          <h3 class="text-lg font-bold text-amber-300">Pengumuman Running Banner Beranda</h3>
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Kelola Pengumuman Beranda</h3>
+            <p class="mt-1 text-xs text-emerald-200">Buat beberapa pengumuman, simpan sebagai draf, lalu terbitkan atau terbitkan ulang kapan saja.</p>
+          </div>
           <form onsubmit="handlePengumumanSubmit(event)" class="space-y-3">
+            <input id="announcement-edit-id" type="hidden">
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">TEKS PENGUMUMAN</label>
               <textarea id="input-pengumuman-text" rows="3" maxlength="5000" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3"></textarea>
             </div>
-            <p id="announcement-admin-status" aria-live="polite" class="text-xs text-emerald-200">Status pengumuman akan dimuat dari spreadsheet.</p>
+            <label class="flex items-center gap-2 text-xs text-emerald-100">
+              <input id="announcement-publish-after-save" type="checkbox" class="h-4 w-4 accent-amber-500">
+              Terbitkan setelah disimpan (atau terbitkan ulang perubahan)
+            </label>
             <div class="flex flex-wrap gap-3">
               <button id="publish-announcement-button" type="submit" class="px-6 py-2.5 gold-btn text-xs font-bold rounded-xl flex items-center gap-2">
-                <i data-lucide="send" class="w-4 h-4"></i> Terbitkan ke Beranda
+                <i data-lucide="save" class="w-4 h-4"></i> Simpan Pengumuman
               </button>
-              <button id="unpublish-announcement-button" type="button" onclick="unpublishAnnouncement()" class="px-6 py-2.5 rounded-xl border border-red-400/50 text-xs font-bold text-red-300 hover:bg-red-950/50">
-                Cabut Pengumuman
+              <button id="cancel-announcement-edit-button" type="button" onclick="cancelAnnouncementEdit()" class="hidden px-6 py-2.5 rounded-xl border border-slate-400/50 text-xs font-bold text-slate-200 hover:bg-slate-800">
+                Batal Edit
               </button>
             </div>
           </form>
+          <p id="announcement-admin-status" aria-live="polite" class="text-xs text-emerald-200">Status pengumuman akan dimuat dari spreadsheet.</p>
+          <div id="announcement-admin-list" class="space-y-3" onclick="handleAnnouncementListAction(event)"></div>
         </div>
 
         <!-- SUB-TAB: LATAR BELAKANG -->
@@ -891,6 +907,20 @@
     </form>
   </div>
 
+  <div id="announcement-popup" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="announcement-popup-title" onclick="handleAnnouncementPopupBackdrop(event)">
+    <div class="announcement-pop relative max-h-[85svh] w-full max-w-xl overflow-y-auto rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 p-5 shadow-2xl sm:p-7">
+      <button type="button" aria-label="Tutup pengumuman" onclick="closeAnnouncementPopup()" class="absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-amber-200 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-amber-300">
+        <i data-lucide="x" class="h-5 w-5"></i>
+      </button>
+      <div class="mb-4 flex items-center gap-3 border-b border-amber-300/30 pb-3 pr-10">
+        <i data-lucide="megaphone" class="h-7 w-7 text-amber-300"></i>
+        <h2 id="announcement-popup-title" class="text-lg font-extrabold text-amber-200">Pengumuman Terbaru</h2>
+      </div>
+      <div id="announcement-popup-items" class="space-y-4"></div>
+      <button type="button" onclick="closeAnnouncementPopup()" class="mt-5 min-h-11 w-full rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-emerald-950 hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-white">Saya Mengerti</button>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT APP LOGIC -->
   <script>
     // URL Web App Endpoint Google Apps Script
@@ -907,6 +937,10 @@
     const automaticCalendarYearsLoaded = new Set();
     const automaticCalendarYearsLoading = new Set();
     const automaticCalendarLastAttempt = new Map();
+    const ANNOUNCEMENT_SEEN_STORAGE_KEY = 'agenda-uin-ar-raniry-announcement-seen';
+    let announcementSeenVersions = null;
+    let announcementPopupPending = [];
+    let announcementPopupShownThisSession = false;
 
     let appState = {
       ruangan: [
@@ -914,8 +948,7 @@
         { id: 2, nama: "Aula Utama Gedung Rektorat", keterangan: "Kapasitas 300 Orang, VIP Executive" },
         { id: 3, nama: "Ruang Rapat Senat Kampus", keterangan: "Kapasitas 100 Orang, Oval Table" }
       ],
-      pengumuman: "",
-      pengumumanPublished: false,
+      pengumumanItems: [],
       hariKhusus: [],
       hariKhususOtomatis: [],
       agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
@@ -948,6 +981,7 @@
       renderAdminBookingTable();
       renderRuanganTable();
       renderCalendarEventTable();
+      renderAnnouncementAdminState();
     }
 
     // Backend HTTP Fetch Data Loading
@@ -964,12 +998,18 @@
             ? data.agenda.map(normalizeAgendaItem)
             : appState.agenda,
           ruangan: Array.isArray(data.ruangan) && data.ruangan.length ? data.ruangan : appState.ruangan,
-          pengumuman: typeof data.pengumuman === 'string' ? data.pengumuman : '',
-          pengumumanPublished: data.pengumumanPublished === true,
+          pengumumanItems: Array.isArray(data.pengumumanItems)
+            ? data.pengumumanItems.map(normalizeAnnouncementItem).filter(item => item.text)
+            : (typeof data.pengumuman === 'string' && data.pengumuman.trim()
+              ? [normalizeAnnouncementItem({
+                id: 'legacy-announcement',
+                text: data.pengumuman,
+                isPublished: data.pengumumanPublished === true,
+                updatedAt: ''
+              })]
+              : []),
           hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : []
         };
-        document.getElementById('input-pengumuman-text').value = appState.pengumuman;
-        renderAnnouncementAdminState();
         renderAll();
       } catch (err) {
         console.error("Gagal menyinkronkan data dari server:", err);
@@ -986,7 +1026,14 @@
       if (!response.ok) throw new Error(`Server mengembalikan HTTP ${response.status}.`);
       const result = await response.json();
       if (!result || result.success !== true) {
-        throw new Error(result && result.message ? result.message : "Permintaan gagal diproses server.");
+        const message = result && result.message ? result.message : "Permintaan gagal diproses server.";
+        if (
+          message === "Aksi tidak dikenali." &&
+          ["saveAnnouncementAdmin", "setAnnouncementPublishStatus", "deleteAnnouncementAdmin"].includes(action)
+        ) {
+          throw new Error("Web App Apps Script belum diperbarui. Deploy versi terbaru dari Code.js, lalu coba lagi.");
+        }
+        throw new Error(message);
       }
       return result;
     }
@@ -1259,9 +1306,16 @@
 
     function renderBeranda() {
       loadAutomaticCalendarForYear(currentDate.getFullYear());
+      const publishedAnnouncements = appState.pengumumanItems.filter(item => item.isPublished && item.text.trim());
       const announcementBanner = document.getElementById('announcement-banner');
-      announcementBanner.classList.toggle('hidden', !appState.pengumumanPublished || !appState.pengumuman.trim());
-      document.getElementById('announcement-text').innerText = appState.pengumuman;
+      announcementBanner.classList.toggle('hidden', publishedAnnouncements.length === 0);
+      announcementBanner.classList.toggle('flex', publishedAnnouncements.length > 0);
+      document.getElementById('announcement-items').innerHTML = publishedAnnouncements.map(item => `
+        <article class="border-t border-amber-500/20 pt-2 first:border-0 first:pt-0">
+          <p class="whitespace-pre-line text-xs leading-relaxed text-amber-100">${escapeHtml(item.text)}</p>
+        </article>
+      `).join('');
+      maybeShowAnnouncementPopup(publishedAnnouncements);
 
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
@@ -1836,12 +1890,12 @@
       if (!list) return;
       list.innerHTML = appState.ruangan.length
         ? appState.ruangan.map(room => `
-          <article class="rounded-xl border border-amber-500/20 bg-emerald-900/40 p-4">
-            <h4 class="font-semibold text-sm text-slate-100">${escapeHtml(room.nama || 'Ruangan')}</h4>
-            <p class="mt-2 text-xs leading-relaxed text-slate-300">${escapeHtml(room.keterangan || 'Informasi fasilitas belum tersedia.')}</p>
+          <article class="rounded-xl border-2 border-white bg-white p-4 shadow-md">
+            <h4 class="font-bold text-sm text-emerald-950">${escapeHtml(room.nama || 'Ruangan')}</h4>
+            <p class="mt-2 text-xs font-medium leading-relaxed text-slate-800">${escapeHtml(room.keterangan || 'Informasi fasilitas belum tersedia.')}</p>
           </article>
         `).join('')
-        : '<p class="col-span-full text-xs italic text-slate-400">Belum ada data ruangan dan aula.</p>';
+        : '<p class="col-span-full text-xs font-semibold italic text-emerald-950">Belum ada data ruangan dan aula.</p>';
     }
 
     function handleRuanganSubmit(e) {
@@ -1977,69 +2031,205 @@
       }
     }
 
-    // Manage Pengumuman
-    function renderAnnouncementAdminState() {
-      const status = document.getElementById('announcement-admin-status');
-      const unpublishButton = document.getElementById('unpublish-announcement-button');
-      if (!status || !unpublishButton) return;
-      status.textContent = appState.pengumumanPublished
-        ? 'Status: sedang diterbitkan dan terlihat oleh semua pengguna.'
-        : 'Status: tidak diterbitkan. Teks tersimpan sebagai draf jika pernah diterbitkan.';
-      unpublishButton.disabled = !appState.pengumumanPublished;
-      unpublishButton.classList.toggle('opacity-50', !appState.pengumumanPublished);
-      unpublishButton.classList.toggle('cursor-not-allowed', !appState.pengumumanPublished);
+    // Manage multiple announcements
+    function normalizeAnnouncementItem(item) {
+      return {
+        id: String(item.id || ''),
+        text: String(item.text || item.pengumuman || '').trim(),
+        isPublished: item.isPublished === true || item.published === true || item.published === 'true',
+        updatedAt: String(item.updatedAt || '')
+      };
     }
 
-    async function handlePengumumanSubmit(e) {
-      e.preventDefault();
+    function renderAnnouncementAdminState() {
+      const status = document.getElementById('announcement-admin-status');
+      const list = document.getElementById('announcement-admin-list');
+      if (!status || !list) return;
+      const publishedCount = appState.pengumumanItems.filter(item => item.isPublished).length;
+      status.textContent = `${appState.pengumumanItems.length} pengumuman tersimpan; ${publishedCount} sedang diterbitkan.`;
+      list.innerHTML = appState.pengumumanItems.length
+        ? appState.pengumumanItems.map(item => {
+          const updatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
+          const updatedLabel = updatedAt && !Number.isNaN(updatedAt.getTime())
+            ? updatedAt.toLocaleString('id-ID')
+            : 'Waktu pembaruan tidak tersedia';
+          return `
+            <article class="rounded-xl border ${item.isPublished ? 'border-amber-400/50 bg-amber-950/20' : 'border-slate-600 bg-slate-900/60'} p-3">
+              <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span class="rounded-full px-2 py-1 text-[10px] font-bold ${item.isPublished ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-700 text-slate-200'}">${item.isPublished ? 'TERBIT' : 'DRAF'}</span>
+                <span class="text-[10px] text-slate-400">${escapeHtml(updatedLabel)}</span>
+              </div>
+              <p class="whitespace-pre-line break-words text-xs leading-relaxed text-slate-100">${escapeHtml(item.text)}</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button type="button" data-announcement-action="edit" data-announcement-id="${escapeHtml(item.id)}" class="min-h-10 rounded-lg border border-amber-400/50 px-3 text-xs font-semibold text-amber-200 hover:bg-amber-900/40">Edit</button>
+                <button type="button" data-announcement-action="toggle" data-announcement-id="${escapeHtml(item.id)}" class="min-h-10 rounded-lg border border-emerald-400/50 px-3 text-xs font-semibold text-emerald-200 hover:bg-emerald-900/40">${item.isPublished ? 'Cabut' : 'Terbitkan ulang'}</button>
+                <button type="button" data-announcement-action="delete" data-announcement-id="${escapeHtml(item.id)}" class="min-h-10 rounded-lg border border-red-400/50 px-3 text-xs font-semibold text-red-200 hover:bg-red-900/40">Hapus</button>
+              </div>
+            </article>
+          `;
+        }).join('')
+        : '<p class="rounded-xl border border-dashed border-amber-500/30 p-4 text-center text-xs text-slate-400">Belum ada pengumuman. Buat pengumuman pertama melalui formulir di atas.</p>';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function cancelAnnouncementEdit() {
+      document.getElementById('input-pengumuman-text').value = '';
+      document.getElementById('announcement-edit-id').value = '';
+      document.getElementById('announcement-publish-after-save').checked = false;
+      document.getElementById('cancel-announcement-edit-button').classList.add('hidden');
+      document.getElementById('publish-announcement-button').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Simpan Pengumuman';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function handleAnnouncementListAction(event) {
+      const button = event.target.closest('[data-announcement-action]');
+      if (!button) return;
+      const item = appState.pengumumanItems.find(entry => entry.id === button.dataset.announcementId);
+      if (!item) {
+        showToast('Pengumuman tidak ditemukan. Muat ulang halaman lalu coba kembali.', 'error');
+        return;
+      }
+      if (button.dataset.announcementAction === 'edit') {
+        document.getElementById('announcement-edit-id').value = item.id;
+        document.getElementById('input-pengumuman-text').value = item.text;
+        document.getElementById('announcement-publish-after-save').checked = item.isPublished;
+        document.getElementById('cancel-announcement-edit-button').classList.remove('hidden');
+        document.getElementById('publish-announcement-button').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Simpan Perubahan';
+        document.getElementById('input-pengumuman-text').focus();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      } else if (button.dataset.announcementAction === 'toggle') {
+        setAnnouncementPublished(item.id, !item.isPublished);
+      } else if (button.dataset.announcementAction === 'delete') {
+        deleteAnnouncement(item.id);
+      }
+    }
+
+    async function handlePengumumanSubmit(event) {
+      event.preventDefault();
       if (!isAdminLoggedIn || !adminPassword) {
-        showToast("Silakan masuk sebagai admin untuk menerbitkan pengumuman.", "error");
+        showToast('Silakan masuk sebagai admin untuk mengelola pengumuman.', 'error');
         return;
       }
       const text = document.getElementById('input-pengumuman-text').value.trim();
       if (!text) {
-        showToast("Teks pengumuman tidak boleh kosong.", "error");
+        showToast('Teks pengumuman tidak boleh kosong.', 'error');
         return;
       }
       const button = document.getElementById('publish-announcement-button');
       button.disabled = true;
       try {
-        const result = await requestBackendAction('publishAnnouncement', {
+        const id = document.getElementById('announcement-edit-id').value;
+        const published = document.getElementById('announcement-publish-after-save').checked;
+        const result = await requestBackendAction('saveAnnouncementAdmin', {
           adminPassword,
-          text
+          id,
+          text,
+          published: String(published)
         });
-        appState.pengumuman = result.pengumuman;
-        appState.pengumumanPublished = result.pengumumanPublished === true;
-        renderBeranda();
+        const savedItem = normalizeAnnouncementItem(result.item);
+        const existingIndex = appState.pengumumanItems.findIndex(item => item.id === savedItem.id);
+        if (existingIndex < 0) appState.pengumumanItems.push(savedItem);
+        else appState.pengumumanItems[existingIndex] = savedItem;
+        cancelAnnouncementEdit();
         renderAnnouncementAdminState();
-        showToast(result.message, "success");
+        renderBeranda();
+        showToast(result.message, 'success');
       } catch (error) {
-        showToast(`Pengumuman gagal diterbitkan: ${error.message}`, "error");
+        showToast(`Pengumuman gagal disimpan: ${error.message}`, 'error');
       } finally {
         button.disabled = false;
       }
     }
 
-    async function unpublishAnnouncement() {
+    async function setAnnouncementPublished(id, published) {
       if (!isAdminLoggedIn || !adminPassword) {
-        showToast("Silakan masuk sebagai admin untuk mencabut pengumuman.", "error");
+        showToast('Silakan masuk sebagai admin untuk mengelola pengumuman.', 'error');
         return;
       }
-      if (!appState.pengumumanPublished || !confirm("Cabut pengumuman dari halaman Beranda?")) return;
-      const button = document.getElementById('unpublish-announcement-button');
-      button.disabled = true;
       try {
-        const result = await requestBackendAction('unpublishAnnouncement', { adminPassword });
-        appState.pengumuman = result.pengumuman;
-        appState.pengumumanPublished = false;
-        renderBeranda();
+        const result = await requestBackendAction('setAnnouncementPublishStatus', {
+          adminPassword,
+          id,
+          published: String(published)
+        });
+        const updatedItem = normalizeAnnouncementItem(result.item);
+        appState.pengumumanItems = appState.pengumumanItems.map(item => item.id === id ? updatedItem : item);
         renderAnnouncementAdminState();
-        showToast(result.message, "success");
+        renderBeranda();
+        showToast(result.message, 'success');
       } catch (error) {
-        showToast(`Pengumuman gagal dicabut: ${error.message}`, "error");
-      } finally {
-        button.disabled = false;
+        showToast(`Status pengumuman gagal diubah: ${error.message}`, 'error');
       }
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!isAdminLoggedIn || !adminPassword) {
+        showToast('Silakan masuk sebagai admin untuk mengelola pengumuman.', 'error');
+        return;
+      }
+      if (!confirm('Hapus pengumuman ini secara permanen?')) return;
+      try {
+        const result = await requestBackendAction('deleteAnnouncementAdmin', { adminPassword, id });
+        appState.pengumumanItems = appState.pengumumanItems.filter(item => item.id !== id);
+        if (document.getElementById('announcement-edit-id').value === id) cancelAnnouncementEdit();
+        renderAnnouncementAdminState();
+        renderBeranda();
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(`Pengumuman gagal dihapus: ${error.message}`, 'error');
+      }
+    }
+
+    function getAnnouncementSeenVersions() {
+      if (announcementSeenVersions) return announcementSeenVersions;
+      try {
+        const stored = JSON.parse(localStorage.getItem(ANNOUNCEMENT_SEEN_STORAGE_KEY) || '{}');
+        announcementSeenVersions = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+      } catch (error) {
+        console.error('Gagal membaca status pengumuman yang telah dilihat:', error);
+        announcementSeenVersions = {};
+      }
+      return announcementSeenVersions;
+    }
+
+    function getAnnouncementVersion(item) {
+      return `${item.updatedAt}|${item.text}`;
+    }
+
+    function maybeShowAnnouncementPopup(publishedItems) {
+      if (announcementPopupShownThisSession || !publishedItems.length) return;
+      const seen = getAnnouncementSeenVersions();
+      announcementPopupPending = publishedItems.filter(item => seen[item.id] !== getAnnouncementVersion(item));
+      if (!announcementPopupPending.length) return;
+      announcementPopupShownThisSession = true;
+      document.getElementById('announcement-popup-items').innerHTML = announcementPopupPending.map(item => `
+        <article class="rounded-xl border border-amber-300/25 bg-black/20 p-3">
+          <p class="whitespace-pre-line break-words text-sm leading-relaxed text-white">${escapeHtml(item.text)}</p>
+        </article>
+      `).join('');
+      const popup = document.getElementById('announcement-popup');
+      popup.classList.remove('hidden');
+      popup.classList.add('flex');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      popup.querySelector('button').focus();
+    }
+
+    function closeAnnouncementPopup() {
+      const popup = document.getElementById('announcement-popup');
+      popup.classList.add('hidden');
+      popup.classList.remove('flex');
+      const seen = getAnnouncementSeenVersions();
+      announcementPopupPending.forEach(item => { seen[item.id] = getAnnouncementVersion(item); });
+      try {
+        localStorage.setItem(ANNOUNCEMENT_SEEN_STORAGE_KEY, JSON.stringify(seen));
+      } catch (error) {
+        console.error('Gagal menyimpan status pengumuman yang telah dilihat:', error);
+      }
+      announcementPopupPending = [];
+    }
+
+    function handleAnnouncementPopupBackdrop(event) {
+      if (event.target.id === 'announcement-popup') closeAnnouncementPopup();
     }
 
     function loadSavedBackgroundImage() {
