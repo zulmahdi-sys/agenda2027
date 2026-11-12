@@ -444,7 +444,7 @@
         </div>
 
         <!-- Daily Agenda Detail Sidebar -->
-        <div class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-4 sm:p-6 flex flex-col">
+        <div id="daily-agenda-panel" class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-4 sm:p-6 flex flex-col">
           <h3 id="selected-date-title" class="text-lg font-bold text-amber-300 mb-4 border-b border-amber-500/20 pb-2">
             Agenda Terjadwal
           </h3>
@@ -1419,7 +1419,21 @@
 
     function renderDailyAgenda() {
       const list = document.getElementById('daily-agenda-list');
-      document.getElementById('selected-date-title').innerText = `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
+      const panel = document.getElementById('daily-agenda-panel');
+      const title = document.getElementById('selected-date-title');
+      const isToday = currentSelectedDateStr === getTodayDateString();
+      title.innerText = isToday
+        ? `Agenda Hari Ini · ${formatDateIndonesia(currentSelectedDateStr)}`
+        : `Agenda: ${formatDateIndonesia(currentSelectedDateStr)}`;
+      panel.classList.toggle('border-2', isToday);
+      panel.classList.toggle('border-amber-300', isToday);
+      panel.classList.toggle('shadow-xl', isToday);
+      title.classList.toggle('bg-amber-400', isToday);
+      title.classList.toggle('text-emerald-950', isToday);
+      title.classList.toggle('px-3', isToday);
+      title.classList.toggle('py-2', isToday);
+      title.classList.toggle('rounded-lg', isToday);
+      title.classList.toggle('border-b-0', isToday);
       
       const filtered = getPublishedAgenda().filter(a => a.tglMulai <= currentSelectedDateStr && a.tglSelesai >= currentSelectedDateStr);
       const specialDays = getCalendarEventsForDate(currentSelectedDateStr);
