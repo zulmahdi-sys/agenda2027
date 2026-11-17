@@ -613,7 +613,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">TANGGAL MULAI *</label>
-              <input type="date" id="booking-tgl-mulai" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+              <input type="date" id="booking-tgl-mulai" required onchange="syncBookingEndDateWithStart()" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
             </div>
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">TANGGAL SELESAI *</label>
@@ -945,18 +945,18 @@
       <header class="availability-chat-header flex items-start justify-between gap-3 bg-emerald-950 p-4 sm:p-5">
         <div>
           <h2 id="availability-chat-title" class="text-lg font-extrabold text-amber-300">Tanya Ketersediaan Ruangan</h2>
-          <p id="availability-chat-description" class="mt-1 text-xs leading-relaxed text-white">Periksa jadwal hari ini sampai 6 bulan ke depan. Jika ada agenda terbit pada tanggal tersebut, ruangan dianggap terpakai (jam tidak dibedakan).</p>
+          <p id="availability-chat-description" class="mt-1 text-xs leading-relaxed text-white">Periksa jadwal ruangan hingga 6 bulan ke depan serta tanggal libur nasional dan hari besar Islam.</p>
         </div>
         <button type="button" onclick="closeAvailabilityChat()" aria-label="Tutup chat ketersediaan ruangan" class="availability-chat-close flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
           <i data-lucide="x" class="h-5 w-5"></i>
         </button>
       </header>
       <div id="availability-chat-messages" class="min-h-48 flex-1 space-y-3 overflow-y-auto bg-slate-100 p-4" role="log" aria-live="polite" aria-relevant="additions">
-        <p class="whitespace-pre-line rounded-xl rounded-tl-sm border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 shadow-sm">Halo! Saya dapat membantu mencari tanggal yang kosong. Contoh: “Tanggal kosong untuk Auditorium bulan depan?” atau “Ruangan apa yang tersedia pada 20/02/2027?”</p>
+        <p class="whitespace-pre-line rounded-xl rounded-tl-sm border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 shadow-sm">Halo! Saya dapat membantu mencari jadwal ruangan yang kosong/terpakai serta tanggal libur nasional dan hari besar Islam. Contoh: “Jadwal yang sudah dibooking di Aula bulan ini?” atau “Hari libur nasional dan hari besar Islam tahun 2027?”</p>
       </div>
       <form class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row sm:p-4" onsubmit="handleAvailabilityChatSubmit(event)">
         <label for="availability-chat-input" class="sr-only">Tulis pertanyaan ketersediaan ruangan</label>
-        <input id="availability-chat-input" type="text" maxlength="300" required autocomplete="off" placeholder="Contoh: Kapan Auditorium kosong bulan depan?" class="min-h-11 flex-1 rounded-lg border border-slate-400 bg-white px-4 py-2.5 text-sm text-slate-950 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
+        <input id="availability-chat-input" type="text" maxlength="300" required autocomplete="off" placeholder="Contoh: Libur nasional dan hari besar Islam tahun 2027?" class="min-h-11 flex-1 rounded-lg border border-slate-400 bg-white px-4 py-2.5 text-sm text-slate-950 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
         <button type="submit" class="availability-chat-submit flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
           <i data-lucide="send" class="h-4 w-4"></i><span>Kirim</span>
         </button>
@@ -981,6 +981,7 @@
     const automaticCalendarYearsLoaded = new Set();
     const automaticCalendarYearsLoading = new Set();
     const automaticCalendarLastAttempt = new Map();
+    const automaticCalendarYearLoadPromises = new Map();
     const ANNOUNCEMENT_SEEN_STORAGE_KEY = 'agenda-uin-ar-raniry-announcement-seen';
     let announcementSeenVersions = null;
     let announcementPopupPending = [];
@@ -1324,61 +1325,72 @@
     }
 
     async function loadAutomaticCalendarForYear(year) {
-      if (!Number.isInteger(year) || automaticCalendarYearsLoaded.has(year) || automaticCalendarYearsLoading.has(year)) return;
+      if (!Number.isInteger(year) || automaticCalendarYearsLoaded.has(year)) return;
+      const activeLoad = automaticCalendarYearLoadPromises.get(year);
+      if (activeLoad) return activeLoad;
       const lastAttempt = automaticCalendarLastAttempt.get(year) || 0;
       if (Date.now() - lastAttempt < 30000) return;
-      automaticCalendarYearsLoading.add(year);
-      automaticCalendarLastAttempt.set(year, Date.now());
-      const status = document.getElementById('calendar-sync-status');
-      if (status) status.textContent = `Menyinkronkan kalender hari libur ${year}...`;
 
-      try {
-        const response = await fetch(`${WEB_APP_URL}?action=getAutomaticCalendar&year=${year}`);
-        if (!response.ok) throw new Error(`Server kalender mengembalikan HTTP ${response.status}.`);
-        const responseText = await response.text();
-        let result;
+      const loadPromise = (async () => {
+        automaticCalendarYearsLoading.add(year);
+        automaticCalendarLastAttempt.set(year, Date.now());
+        const status = document.getElementById('calendar-sync-status');
+        if (status) status.textContent = `Menyinkronkan kalender hari libur ${year}...`;
+
         try {
-          result = JSON.parse(responseText);
-        } catch {
-          throw new Error('Respons kalender tidak valid.');
-        }
-        if (!result || result.success !== true || !Array.isArray(result.events)) {
-          throw new Error(result && result.message ? result.message : 'Format kalender otomatis tidak sesuai.');
-        }
+          const response = await fetch(`${WEB_APP_URL}?action=getAutomaticCalendar&year=${year}`);
+          if (!response.ok) throw new Error(`Server kalender mengembalikan HTTP ${response.status}.`);
+          const responseText = await response.text();
+          let result;
+          try {
+            result = JSON.parse(responseText);
+          } catch {
+            throw new Error('Respons kalender tidak valid.');
+          }
+          if (!result || result.success !== true || !Array.isArray(result.events)) {
+            throw new Error(result && result.message ? result.message : 'Format kalender otomatis tidak sesuai.');
+          }
 
-        appState.hariKhususOtomatis = [
-          ...appState.hariKhususOtomatis.filter(item => Number(item.tanggal.slice(0, 4)) !== year),
-          ...result.events.map(normalizeCalendarEvent)
-        ];
-        automaticCalendarYearsLoaded.add(year);
-        const approximateCount = result.events.filter(item => item.perkiraan).length;
-        if (status) {
-          status.textContent = approximateCount
-            ? `Kalender ${year} tersinkron otomatis. Data tahun selain 2027 merupakan referensi/perkiraan; tanggal resmi dapat berubah.`
-            : `Kalender ${year} tersinkron otomatis dari SKB 3 Menteri.`;
-        }
-        renderCalendarEventTable();
-        renderBeranda();
-        renderYearlyCalendar();
-      } catch (error) {
-        const fallbackEvents = getBundledOfficialCalendar(year);
-        if (fallbackEvents) {
           appState.hariKhususOtomatis = [
             ...appState.hariKhususOtomatis.filter(item => Number(item.tanggal.slice(0, 4)) !== year),
-            ...fallbackEvents
+            ...result.events.map(normalizeCalendarEvent)
           ];
           automaticCalendarYearsLoaded.add(year);
-          if (status) status.textContent = `Kalender ${year} dimuat dari data resmi SKB 3 Menteri.`;
+          const approximateCount = result.events.filter(item => item.perkiraan).length;
+          if (status) {
+            status.textContent = approximateCount
+              ? `Kalender ${year} tersinkron otomatis. Data tahun selain 2027 merupakan referensi/perkiraan; tanggal resmi dapat berubah.`
+              : `Kalender ${year} tersinkron otomatis dari SKB 3 Menteri.`;
+          }
           renderCalendarEventTable();
           renderBeranda();
           renderYearlyCalendar();
-          console.warn(`Kalender ${year} menggunakan data resmi bawaan karena sinkronisasi server tidak tersedia.`);
-        } else {
-          console.error(`Gagal menyinkronkan kalender ${year}:`, error);
-          if (status) status.textContent = `Kalender ${year} belum dapat dimuat otomatis. Silakan coba kembali.`;
+        } catch (error) {
+          const fallbackEvents = getBundledOfficialCalendar(year);
+          if (fallbackEvents) {
+            appState.hariKhususOtomatis = [
+              ...appState.hariKhususOtomatis.filter(item => Number(item.tanggal.slice(0, 4)) !== year),
+              ...fallbackEvents
+            ];
+            automaticCalendarYearsLoaded.add(year);
+            if (status) status.textContent = `Kalender ${year} dimuat dari data resmi SKB 3 Menteri.`;
+            renderCalendarEventTable();
+            renderBeranda();
+            renderYearlyCalendar();
+            console.warn(`Kalender ${year} menggunakan data resmi bawaan karena sinkronisasi server tidak tersedia.`);
+          } else {
+            console.error(`Gagal menyinkronkan kalender ${year}:`, error);
+            if (status) status.textContent = `Kalender ${year} belum dapat dimuat otomatis. Silakan coba kembali.`;
+          }
+        } finally {
+          automaticCalendarYearsLoading.delete(year);
         }
+      })();
+      automaticCalendarYearLoadPromises.set(year, loadPromise);
+      try {
+        await loadPromise;
       } finally {
-        automaticCalendarYearsLoading.delete(year);
+        automaticCalendarYearLoadPromises.delete(year);
       }
     }
 
@@ -1624,6 +1636,16 @@
       document.getElementById('modal-detail-tanggal').classList.add('hidden');
     }
 
+    function syncBookingEndDateWithStart() {
+      const startInput = document.getElementById('booking-tgl-mulai');
+      const endInput = document.getElementById('booking-tgl-selesai');
+      const previousStart = startInput.dataset.previousValue || '';
+      if (!endInput.value || endInput.value === previousStart) {
+        endInput.value = startInput.value;
+      }
+      startInput.dataset.previousValue = startInput.value;
+    }
+
     // Backend Submission Handle (Collision & Insert)
     async function handleAdminFormSubmit(e) {
       e.preventDefault();
@@ -1744,7 +1766,9 @@
         roomSelect.add(new Option(booking.ruangan, booking.ruangan));
       }
       roomSelect.value = booking.ruangan || '';
-      document.getElementById('booking-tgl-mulai').value = normalizeDateValue(booking.tglMulai);
+      const startDateInput = document.getElementById('booking-tgl-mulai');
+      startDateInput.value = normalizeDateValue(booking.tglMulai);
+      startDateInput.dataset.previousValue = startDateInput.value;
       document.getElementById('booking-tgl-selesai').value = normalizeDateValue(booking.tglSelesai || booking.tglMulai);
       document.getElementById('booking-jam-mulai').value = normalizeTimeValue(booking.jamMulai || booking.waktuMulai);
       document.getElementById('booking-jam-selesai').value = normalizeTimeValue(booking.jamSelesai || booking.waktuSelesai);
@@ -1756,6 +1780,7 @@
     function cancelBookingEdit() {
       document.getElementById('form-booking-admin').reset();
       document.getElementById('booking-edit-id').value = '';
+      document.getElementById('booking-tgl-mulai').dataset.previousValue = '';
       toggleCustomFaculty();
       updateBookingSubmitButton();
     }
@@ -2180,7 +2205,7 @@
           if (offset > 6) return { tooFar: true };
           start = today;
           end = shiftAvailabilityDate(today, offset);
-        } else if (asksUpcoming || /\bkapan\b|\bke depan\b|\bkedepan(nya)?\b|\bselanjutnya\b|\bkosong\b|\btersedia\b/.test(normalizedText)) {
+        } else if (asksUpcoming || /\bkapan\b|\bke depan\b|\bkedepan(nya)?\b|\bselanjutnya\b|\bkosong\b|\btersedia\b|\bterpakai\b|\bdipakai\b|\bdigunakan\b|\bbooking\b|\bdibooking\b|\bdipesan\b|\bterbooking\b|\bterisi\b|\bagenda\b|\bjadwal\b|\blibur\b|\bnasional\b|\bcuti\b|\bislam\b|\bhari besar\b|\btanggal merah\b/.test(normalizedText)) {
           start = today;
           end = getAvailabilityBounds().lastDate;
         } else {
@@ -2229,21 +2254,134 @@
         normalizeDateValue(agenda.tglSelesai || agenda.tglMulai) >= date;
     }
 
-    function getAvailableDatesForRoom(room, start, end) {
-      const availableDates = [];
+    function getRoomScheduleForRange(room, start, end) {
+      const schedule = { booked: [], available: [] };
+      const publishedAgenda = getPublishedAgenda();
       const cursor = new Date(`${start}T00:00:00Z`);
       const last = new Date(`${end}T00:00:00Z`);
       while (cursor <= last) {
         const date = availabilityDateString(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, cursor.getUTCDate());
-        const isUsed = getPublishedAgenda().some(agenda => isAgendaForRoomOnDate(agenda, room, date));
-        if (!isUsed) availableDates.push(date);
+        const bookings = publishedAgenda.filter(agenda => isAgendaForRoomOnDate(agenda, room, date));
+        if (bookings.length) schedule.booked.push({ date, bookings });
+        else schedule.available.push(date);
         cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
-      return availableDates;
+      return schedule;
+    }
+
+    function formatBookedScheduleEntries(bookedDates, limit = 12) {
+      const shown = bookedDates.slice(0, limit).map(item => {
+        const activities = [...new Set(item.bookings.map(agenda =>
+          agenda.nama || agenda.namaKegiatan || 'Agenda tanpa nama'
+        ))];
+        return `• ${formatDateIndonesia(item.date)}: ${activities.join(', ')}`;
+      });
+      const remaining = bookedDates.length - shown.length;
+      if (remaining) shown.push(`... dan ${remaining} tanggal terpakai lainnya.`);
+      return shown.join('\n');
+    }
+
+    function isHolidayCalendarQuestion(question) {
+      const text = normalizeChatText(question);
+      return /\b(libur|nasional|cuti bersama|tanggal merah|hari besar|islam|islamiyah|islamiah|isra|mikraj|idul|maulid|muharram|hari raya)\b/.test(text);
+    }
+
+    function getHolidayCalendarRange(question, today) {
+      const parsedDate = parseAvailabilityDate(question, today);
+      if (parsedDate) return parsedDate.invalid ? parsedDate : { start: parsedDate.date, end: parsedDate.date };
+
+      const text = normalizeChatText(question);
+      const explicitYear = text.match(/\b(20\d{2})\b/);
+      const month = findAvailabilityMonth(text);
+      if (month) {
+        const year = explicitYear
+          ? Number(explicitYear[1])
+          : (month < Number(today.slice(5, 7)) ? Number(today.slice(0, 4)) + 1 : Number(today.slice(0, 4)));
+        const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        return {
+          start: availabilityDateString(year, month, 1),
+          end: availabilityDateString(year, month, lastDay)
+        };
+      }
+
+      const currentYear = Number(today.slice(0, 4));
+      const year = explicitYear
+        ? Number(explicitYear[1])
+        : /\btahun depan\b/.test(text)
+          ? currentYear + 1
+          : /\btahun ini\b/.test(text)
+            ? currentYear
+            : null;
+      if (year) return { start: `${year}-01-01`, end: `${year}-12-31` };
+
+      const range = getAvailabilityRange(question, today);
+      return range || { start: today, end: getAvailabilityBounds().lastDate };
+    }
+
+    function getHolidayCalendarReply(question, today) {
+      if (!isHolidayCalendarQuestion(question)) return null;
+
+      const range = getHolidayCalendarRange(question, today);
+      if (range.invalid) {
+        return 'Tanggal tersebut tidak valid. Coba gunakan format tanggal/bulan/tahun, misalnya 20/02/2027.';
+      }
+      if (range.tooFar || range.outOfRange) {
+        return `Pemeriksaan kalender dibatasi sampai 6 bulan ke depan (${formatDateIndonesia(getAvailabilityBounds().lastDate)}), kecuali jika tahun tertentu disebutkan.`;
+      }
+      const startYear = Number(range.start.slice(0, 4));
+      const endYear = Number(range.end.slice(0, 4));
+      for (let year = startYear; year <= endYear; year += 1) {
+        if (!automaticCalendarYearsLoaded.has(year) && !getBundledOfficialCalendar(year)) {
+          return `Data kalender hari libur tahun ${year} belum berhasil dimuat. Silakan coba kembali beberapa saat lagi.`;
+        }
+      }
+
+      const text = normalizeChatText(question);
+      const asksIslamic = /\b(islam|islamiyah|islamiah|isra|mikraj|idul|maulid|muharram)\b/.test(text);
+      const asksNational = /\b(nasional|libur|cuti bersama|tanggal merah)\b/.test(text);
+      const calendarEvents = new Map();
+      [
+        ...getAllCalendarEvents(),
+        ...Array.from({ length: endYear - startYear + 1 }, (_, index) =>
+          getBundledOfficialCalendar(startYear + index) || []
+        ).flat()
+      ].forEach(item => {
+        const key = `${item.tanggal}|${String(item.nama || '').trim().toLowerCase()}`;
+        if (!calendarEvents.has(key)) calendarEvents.set(key, item);
+      });
+      const events = [...calendarEvents.values()]
+        .filter(item => item.tanggal >= range.start && item.tanggal <= range.end)
+        .filter(item => {
+          const type = normalizeChatText(item.jenis);
+          const name = normalizeChatText(item.nama);
+          const isIslamic = type.includes('hari besar islam') ||
+            /\b(islam|isra|mikraj|idul|maulid|muharram)\b/.test(name);
+          const isNational = type.includes('libur nasional') || type.includes('cuti bersama');
+          return (asksIslamic && isIslamic) ||
+            (asksNational && isNational) ||
+            (!asksIslamic && !asksNational && (isIslamic || isNational));
+        })
+        .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.nama.localeCompare(b.nama));
+
+      const periodLabel = range.start === range.end
+        ? formatDateIndonesia(range.start)
+        : `${formatDateIndonesia(range.start)} sampai ${formatDateIndonesia(range.end)}`;
+      if (!events.length) return `Tidak ditemukan data libur nasional atau hari besar Islam pada ${periodLabel}.`;
+
+      const shownEvents = events.slice(0, 30).map(item =>
+        `• ${formatDateIndonesia(item.tanggal)} — ${item.nama} (${item.jenis})`
+      );
+      if (events.length > shownEvents.length) {
+        shownEvents.push(`... dan ${events.length - shownEvents.length} tanggal lainnya.`);
+      }
+      const hasEstimatedDate = events.some(item => item.perkiraan);
+      return `Hari libur / hari besar pada ${periodLabel} (${events.length} tanggal):\n${shownEvents.join('\n')}${hasEstimatedDate ? '\n\nSebagian tanggal hari besar Islam merupakan perkiraan; ikuti pengumuman resmi.' : ''}`;
     }
 
     function getAvailabilityChatReply(question) {
       const { today, lastDate } = getAvailabilityBounds();
+      const holidayReply = getHolidayCalendarReply(question, today);
+      if (holidayReply) return holidayReply;
       const dateResult = parseAvailabilityDate(question, today);
       if (dateResult && dateResult.invalid) {
         return 'Tanggal tersebut tidak valid. Coba gunakan format tanggal/bulan/tahun, misalnya 20/02/2027.';
@@ -2251,6 +2389,10 @@
 
       const room = findAvailabilityRoom(question);
       const roomCategories = findAvailabilityRoomCategories(question);
+      const normalizedQuestion = normalizeChatText(question);
+      const asksBooked = /\b(terpakai|dipakai|digunakan|booking|dibooking|di booking|dipesan|terbooking|terisi|agenda|kegiatan)\b/.test(normalizedQuestion);
+      const asksAvailable = /\b(kosong|tersedia|belum terpakai|belum dibooking|bebas)\b/.test(normalizedQuestion);
+      const asksBoth = asksBooked && asksAvailable;
       const range = getAvailabilityRange(question, today);
       if (range && range.tooFar) {
         return `Pemeriksaan dibatasi sampai 6 bulan ke depan (${formatDateIndonesia(lastDate)}). Silakan tanyakan rentang yang lebih dekat.`;
@@ -2282,9 +2424,9 @@
           if (!matchingRooms.length) {
             return `Belum ada lokasi dengan kategori ${roomCategories.map(category => category.name).join(', ')} di sistem. Lokasi yang tersedia: ${appState.ruangan.map(item => item.nama).join(', ')}.`;
           }
-          return `Lokasi yang cocok di sistem:\n• ${matchingRooms.map(item => item.nama).join('\n• ')}\n\nUntuk mengecek tanggal kosong, tanyakan misalnya “Aula apa yang kosong bulan ini?” atau “Teater yang tersedia bulan depan?”.`;
+          return `Lokasi yang cocok di sistem:\n• ${matchingRooms.map(item => item.nama).join('\n• ')}\n\nTanyakan misalnya “Aula apa yang kosong bulan ini?” atau “Ruangan mana yang sudah dibooking bulan depan?”.`;
         }
-        return `Saya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}. Tanyakan misalnya “Kapan Auditorium kosong bulan depan?” atau “Ruangan apa yang tersedia pada 20/02/2027?”`;
+        return `Saya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}. Tanyakan misalnya “Kapan Auditorium kosong bulan depan?” atau “Jadwal yang terpakai di Aula bulan ini?”.`;
       }
       if (!appState.ruangan.length) return 'Daftar ruangan belum tersedia saat ini. Silakan coba kembali setelah data ruangan dimuat.';
       if (!matchingRooms.length) {
@@ -2296,28 +2438,76 @@
         : `${formatDateIndonesia(range.start)} sampai ${formatDateIndonesia(range.end)}`;
 
       if (room) {
-        const dates = getAvailableDatesForRoom(room, range.start, range.end);
+        const schedule = getRoomScheduleForRange(room, range.start, range.end);
         if (range.start === range.end) {
-          return dates.length
-            ? `${room.nama} belum memiliki agenda terbit pada ${periodLabel}. Ketersediaan ini berdasarkan jadwal harian; silakan konfirmasi ke admin sebelum memesan.`
-            : `${room.nama} sudah memiliki agenda terbit pada ${periodLabel}.`;
+          if (schedule.booked.length) {
+            const bookings = schedule.booked[0].bookings.map(agenda =>
+              `• ${agenda.nama || agenda.namaKegiatan || 'Agenda tanpa nama'}`
+            ).join('\n');
+            return `${room.nama} sudah terpakai / dibooking pada ${periodLabel}:\n${bookings}`;
+          }
+          return asksBooked && !asksAvailable
+            ? `Tidak ada agenda terbit yang menggunakan ${room.nama} pada ${periodLabel}.`
+            : `${room.nama} belum memiliki agenda terbit pada ${periodLabel}. Ketersediaan ini berdasarkan jadwal harian; silakan konfirmasi ke admin sebelum memesan.`;
         }
-        if (!dates.length) return `Tidak ditemukan tanggal kosong untuk ${room.nama} pada ${periodLabel}.`;
-        const shownDates = dates.slice(0, 12).map(formatDateIndonesia);
-        const remainingCount = dates.length - shownDates.length;
-        return `Tanggal kosong untuk ${room.nama} pada ${periodLabel} (${dates.length} hari):\n• ${shownDates.join('\n• ')}${remainingCount ? `\n... dan ${remainingCount} hari lainnya.` : ''}\n\nPemeriksaan harian tidak membedakan jam kegiatan.`;
+        if (asksBooked) {
+          const used = schedule.booked.length
+            ? formatBookedScheduleEntries(schedule.booked)
+            : 'Tidak ada tanggal yang terpakai.';
+          if (!asksBoth) {
+            return `Jadwal terpakai / dibooking untuk ${room.nama} pada ${periodLabel} (${schedule.booked.length} tanggal):\n${used}\n\nPemeriksaan harian tidak membedakan jam kegiatan.`;
+          }
+          const available = schedule.available.length
+            ? `• ${schedule.available.slice(0, 12).map(formatDateIndonesia).join('\n• ')}${schedule.available.length > 12 ? `\n... dan ${schedule.available.length - 12} tanggal kosong lainnya.` : ''}`
+            : 'Tidak ada tanggal kosong.';
+          return `Jadwal ${room.nama} pada ${periodLabel}:\nTerpakai / dibooking (${schedule.booked.length} tanggal):\n${used}\nTanggal kosong (${schedule.available.length}):\n${available}\n\nPemeriksaan harian tidak membedakan jam kegiatan.`;
+        }
+        if (!schedule.available.length) return `Tidak ditemukan tanggal kosong untuk ${room.nama} pada ${periodLabel}.`;
+        const shownDates = schedule.available.slice(0, 12).map(formatDateIndonesia);
+        const remainingCount = schedule.available.length - shownDates.length;
+        return `Tanggal kosong untuk ${room.nama} pada ${periodLabel} (${schedule.available.length} hari):\n• ${shownDates.join('\n• ')}${remainingCount ? `\n... dan ${remainingCount} hari lainnya.` : ''}\n\nPemeriksaan harian tidak membedakan jam kegiatan.`;
       }
 
-      const availabilityByRoom = matchingRooms.map(item => ({
+      const scheduleByRoom = matchingRooms.map(item => ({
         room: item,
-        dates: getAvailableDatesForRoom(item, range.start, range.end)
-      })).filter(item => item.dates.length);
-      if (!availabilityByRoom.length) return `Tidak ditemukan ruangan kosong pada ${periodLabel}.`;
+        schedule: getRoomScheduleForRange(item, range.start, range.end)
+      }));
       if (range.start === range.end) {
-        return `Ruangan yang belum memiliki agenda terbit pada ${periodLabel}:\n• ${availabilityByRoom.map(item => item.room.nama).join('\n• ')}\n\nSilakan konfirmasi ke admin sebelum memesan.`;
+        const bookedRooms = scheduleByRoom.filter(item => item.schedule.booked.length);
+        const availableRooms = scheduleByRoom.filter(item => !item.schedule.booked.length);
+        if (asksBooked && !asksAvailable) {
+          return bookedRooms.length
+            ? `Ruangan yang sudah terpakai / dibooking pada ${periodLabel}:\n${bookedRooms.map(item => `• ${item.room.nama}: ${[...new Set(item.schedule.booked[0].bookings.map(agenda => agenda.nama || agenda.namaKegiatan || 'Agenda tanpa nama'))].join(', ')}`).join('\n')}`
+            : `Tidak ada agenda terbit yang menggunakan ruangan pada ${periodLabel}.`;
+        }
+        if (asksBoth) {
+          return `Jadwal ruangan pada ${periodLabel}:\nTerpakai / dibooking:\n${bookedRooms.length ? bookedRooms.map(item => `• ${item.room.nama}`).join('\n') : 'Tidak ada ruangan yang terpakai.'}\nKosong:\n${availableRooms.length ? availableRooms.map(item => `• ${item.room.nama}`).join('\n') : 'Tidak ada ruangan kosong.'}`;
+        }
+        if (!availableRooms.length) return `Tidak ditemukan ruangan kosong pada ${periodLabel}.`;
+        return `Ruangan yang belum memiliki agenda terbit pada ${periodLabel}:\n• ${availableRooms.map(item => item.room.nama).join('\n• ')}\n\nSilakan konfirmasi ke admin sebelum memesan.`;
       }
-      const suggestions = availabilityByRoom.map(item =>
-        `• ${item.room.nama}: ${item.dates.slice(0, 3).map(formatDateIndonesia).join(', ')}${item.dates.length > 3 ? `, dan ${item.dates.length - 3} hari lainnya` : ''}`
+      if (asksBooked) {
+        const roomsWithBookings = scheduleByRoom.filter(item => item.schedule.booked.length);
+        const bookedRoomsText = roomsWithBookings.length
+          ? roomsWithBookings.slice(0, 8).map(item =>
+            `• ${item.room.nama}:\n${formatBookedScheduleEntries(item.schedule.booked, 5)}`
+          ).join('\n')
+          : 'Tidak ada ruangan yang terpakai / dibooking.';
+        if (!asksBoth) {
+          return `Jadwal terpakai / dibooking pada ${periodLabel}:\n${bookedRoomsText}\n\nSebutkan nama ruangan untuk melihat jadwal lebih lengkap.`;
+        }
+        const roomsWithAvailability = scheduleByRoom.filter(item => item.schedule.available.length);
+        const availableRoomsText = roomsWithAvailability.length
+          ? roomsWithAvailability.slice(0, 8).map(item =>
+            `• ${item.room.nama}: ${item.schedule.available.slice(0, 3).map(formatDateIndonesia).join(', ')}${item.schedule.available.length > 3 ? `, dan ${item.schedule.available.length - 3} tanggal kosong lainnya` : ''}`
+          ).join('\n')
+          : 'Tidak ada tanggal kosong.';
+        return `Jadwal ruangan pada ${periodLabel}:\nTerpakai / dibooking:\n${bookedRoomsText}\nTanggal kosong:\n${availableRoomsText}`;
+      }
+      const roomsWithAvailability = scheduleByRoom.filter(item => item.schedule.available.length);
+      if (!roomsWithAvailability.length) return `Tidak ditemukan ruangan kosong pada ${periodLabel}.`;
+      const suggestions = roomsWithAvailability.map(item =>
+        `• ${item.room.nama}: ${item.schedule.available.slice(0, 3).map(formatDateIndonesia).join(', ')}${item.schedule.available.length > 3 ? `, dan ${item.schedule.available.length - 3} hari lainnya` : ''}`
       );
       return `Ruangan yang memiliki tanggal kosong pada ${periodLabel}:\n${suggestions.join('\n')}\n\nSebutkan nama ruangan untuk melihat tanggal kosong lebih lengkap.`;
     }
@@ -2353,15 +2543,35 @@
       if (event.target === event.currentTarget) closeAvailabilityChat();
     }
 
-    function handleAvailabilityChatSubmit(event) {
+    async function handleAvailabilityChatSubmit(event) {
       event.preventDefault();
       const input = document.getElementById('availability-chat-input');
       const question = input.value.trim();
       if (!question) return;
       appendAvailabilityChatMessage(question, 'user');
-      appendAvailabilityChatMessage(getAvailabilityChatReply(question), 'assistant');
       input.value = '';
-      input.focus();
+      const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+      try {
+        if (isHolidayCalendarQuestion(question)) {
+          const range = getHolidayCalendarRange(question, getTodayDateString());
+          if (!range.invalid) {
+            const firstYear = Number(range.start.slice(0, 4));
+            const lastYear = Number(range.end.slice(0, 4));
+            await Promise.all(Array.from(
+              { length: lastYear - firstYear + 1 },
+              (_, index) => loadAutomaticCalendarForYear(firstYear + index)
+            ));
+          }
+        }
+        appendAvailabilityChatMessage(getAvailabilityChatReply(question), 'assistant');
+      } catch (error) {
+        console.error('Gagal memuat kalender untuk Tanya Ruangan:', error);
+        appendAvailabilityChatMessage('Data kalender belum dapat dimuat. Silakan coba kembali.', 'assistant');
+      } finally {
+        submitButton.disabled = false;
+        input.focus();
+      }
     }
 
     function renderCalendarEventTable() {
