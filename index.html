@@ -350,6 +350,21 @@
       pointer-events: none;
       animation: today-date-pulse 1.8s ease-out infinite;
     }
+    #availability-chat-dialog .availability-chat-header {
+      background-color: #064e3b !important;
+    }
+    #availability-chat-dialog #availability-chat-title {
+      color: #fcd34d !important;
+    }
+    #availability-chat-dialog #availability-chat-description,
+    #availability-chat-dialog .availability-chat-close {
+      color: #ffffff !important;
+    }
+    #availability-chat-dialog .availability-chat-user-message,
+    #availability-chat-dialog .availability-chat-submit {
+      background-color: #166534 !important;
+      color: #ffffff !important;
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -452,6 +467,10 @@
 
         <!-- Daily Agenda Detail Sidebar -->
         <div id="daily-agenda-panel" class="bg-emerald-950/50 border border-amber-500/30 rounded-2xl p-4 sm:p-6 flex flex-col">
+          <button id="availability-chat-open" type="button" onclick="openAvailabilityChat()" aria-label="Tanya ketersediaan ruangan" class="mb-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-amber-400 bg-amber-400 px-4 py-2 font-bold text-emerald-950 shadow-md transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">
+            <i data-lucide="message-circle" class="h-5 w-5"></i>
+            <span class="text-sm">Tanya Ruangan</span>
+          </button>
           <h3 id="selected-date-title" class="text-lg font-bold text-amber-300 mb-4 border-b border-amber-500/20 pb-2">
             Agenda Terjadwal
           </h3>
@@ -921,12 +940,37 @@
     </div>
   </div>
 
+  <div id="availability-chat-dialog" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/85 p-3 backdrop-blur-sm safe-area-top safe-area-bottom" role="dialog" aria-modal="true" aria-labelledby="availability-chat-title" aria-describedby="availability-chat-description" onclick="handleAvailabilityChatBackdrop(event)">
+    <section class="flex max-h-[90svh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border-2 border-amber-400 bg-white shadow-2xl">
+      <header class="availability-chat-header flex items-start justify-between gap-3 bg-emerald-950 p-4 sm:p-5">
+        <div>
+          <h2 id="availability-chat-title" class="text-lg font-extrabold text-amber-300">Tanya Ketersediaan Ruangan</h2>
+          <p id="availability-chat-description" class="mt-1 text-xs leading-relaxed text-white">Periksa jadwal hari ini sampai 6 bulan ke depan. Jika ada agenda terbit pada tanggal tersebut, ruangan dianggap terpakai (jam tidak dibedakan).</p>
+        </div>
+        <button type="button" onclick="closeAvailabilityChat()" aria-label="Tutup chat ketersediaan ruangan" class="availability-chat-close flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </header>
+      <div id="availability-chat-messages" class="min-h-48 flex-1 space-y-3 overflow-y-auto bg-slate-100 p-4" role="log" aria-live="polite" aria-relevant="additions">
+        <p class="whitespace-pre-line rounded-xl rounded-tl-sm border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 shadow-sm">Halo! Saya dapat membantu mencari tanggal yang kosong. Contoh: “Tanggal kosong untuk Auditorium bulan depan?” atau “Ruangan apa yang tersedia pada 20/02/2027?”</p>
+      </div>
+      <form class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row sm:p-4" onsubmit="handleAvailabilityChatSubmit(event)">
+        <label for="availability-chat-input" class="sr-only">Tulis pertanyaan ketersediaan ruangan</label>
+        <input id="availability-chat-input" type="text" maxlength="300" required autocomplete="off" placeholder="Contoh: Kapan Auditorium kosong bulan depan?" class="min-h-11 flex-1 rounded-lg border border-slate-400 bg-white px-4 py-2.5 text-sm text-slate-950 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
+        <button type="submit" class="availability-chat-submit flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+          <i data-lucide="send" class="h-4 w-4"></i><span>Kirim</span>
+        </button>
+      </form>
+    </section>
+  </div>
+
   <!-- JAVASCRIPT APP LOGIC -->
   <script>
     // URL Web App Endpoint Google Apps Script
     const WEB_APP_URL = "https://script.google.com/a/macros/ar-raniry.ac.id/s/AKfycby8l8YBUZ4PJPWj3KmI4y6cjCPqYyttEVE2WBiyyvgrMVzFNnhBZ-UB0T2M2V7vsUBK/exec";
     const BACKGROUND_IMAGE_STORAGE_KEY = 'agenda-uin-ar-raniry-background';
     const MAX_BACKGROUND_IMAGE_SIZE = 2 * 1024 * 1024;
+    const DATA_REFRESH_INTERVAL_MS = 15000;
 
     // Dynamic Application State
     let currentDate = new Date(`${getTodayDateString()}T12:00:00`);
@@ -941,6 +985,8 @@
     let announcementSeenVersions = null;
     let announcementPopupPending = [];
     let announcementPopupShownThisSession = false;
+    let isLoadingBackendData = false;
+    let backendDataSignature = null;
 
     let appState = {
       ruangan: [
@@ -962,6 +1008,16 @@
       populateYearFilter();
       loadSavedBackgroundImage();
       loadDataFromBackend();
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible' && isHomeTabActive()) {
+          loadDataFromBackend({ silent: true });
+        }
+      }, DATA_REFRESH_INTERVAL_MS);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && isHomeTabActive()) {
+          loadDataFromBackend({ silent: true });
+        }
+      });
       const reportMonthInput = document.getElementById('report-month');
       reportMonthInput.value = getLocalMonthValue();
       renderAll();
@@ -985,18 +1041,23 @@
     }
 
     // Backend HTTP Fetch Data Loading
-    async function loadDataFromBackend() {
+    async function loadDataFromBackend({ silent = false } = {}) {
+      if (isLoadingBackendData) return;
+      isLoadingBackendData = true;
       try {
-        const resp = await fetch(WEB_APP_URL + "?action=getInitialData");
+        const url = new URL(WEB_APP_URL);
+        url.searchParams.set('action', 'getInitialData');
+        url.searchParams.set('_', String(Date.now()));
+        const resp = await fetch(url.toString(), { cache: 'no-store' });
         if (!resp.ok) throw new Error(`Server data mengembalikan HTTP ${resp.status}.`);
         const data = await resp.json();
         if (data && data.success === false) throw new Error(data.message || "Gagal memuat data dari server.");
         if (!data || !Array.isArray(data.agenda)) throw new Error("Format data server tidak sesuai.");
+        const signature = JSON.stringify(data);
+        if (signature === backendDataSignature) return;
         appState = {
           ...appState,
-          agenda: data.agenda.length
-            ? data.agenda.map(normalizeAgendaItem)
-            : appState.agenda,
+          agenda: data.agenda.map(normalizeAgendaItem),
           ruangan: Array.isArray(data.ruangan) && data.ruangan.length ? data.ruangan : appState.ruangan,
           pengumumanItems: Array.isArray(data.pengumumanItems)
             ? data.pengumumanItems.map(normalizeAnnouncementItem).filter(item => item.text)
@@ -1010,11 +1071,18 @@
               : []),
           hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : []
         };
+        backendDataSignature = signature;
         renderAll();
       } catch (err) {
         console.error("Gagal menyinkronkan data dari server:", err);
-        showToast(`Data gagal dimuat dari server: ${err.message}`, "error");
+        if (!silent) showToast(`Data gagal dimuat dari server: ${err.message}`, "error");
+      } finally {
+        isLoadingBackendData = false;
       }
+    }
+
+    function isHomeTabActive() {
+      return !document.getElementById('tab-beranda').classList.contains('hidden');
     }
 
     async function requestBackendAction(action, parameters = {}) {
@@ -1040,6 +1108,7 @@
 
     // Tab Navigation
     function switchTab(tabId) {
+      const wasHomeTabActive = isHomeTabActive();
       ['beranda', 'tahunan', 'arsip', 'admin'].forEach(id => {
         document.getElementById(`tab-${id}`).classList.add('hidden');
         const navBtn = document.getElementById(`nav-${id}`);
@@ -1069,6 +1138,9 @@
         activeMobileNav.classList.remove('text-emerald-100');
         activeMobileNav.setAttribute('aria-current', 'page');
       }
+      if (tabId === 'beranda' && !wasHomeTabActive) {
+        loadDataFromBackend({ silent: true });
+      }
     }
 
     function toggleMobileMenu(forceClose = false) {
@@ -1086,6 +1158,12 @@
 
     window.addEventListener('resize', () => {
       if(window.innerWidth >= 768) toggleMobileMenu(true);
+    });
+
+    window.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !document.getElementById('availability-chat-dialog').classList.contains('hidden')) {
+        closeAvailabilityChat();
+      }
     });
 
     // Sub-Tab Admin Navigation
@@ -1959,6 +2037,331 @@
 
     function getPublishedAgenda() {
       return appState.agenda.filter(isAgendaPublished);
+    }
+
+    const AVAILABILITY_MONTH_NAMES = [
+      ['januari', 'jan'],
+      ['februari', 'feb'],
+      ['maret', 'mar'],
+      ['april', 'apr'],
+      ['mei'],
+      ['juni', 'jun'],
+      ['juli', 'jul'],
+      ['agustus', 'agu', 'ags'],
+      ['september', 'sept', 'sep'],
+      ['oktober', 'okt'],
+      ['november', 'nov'],
+      ['desember', 'des']
+    ];
+
+    function normalizeChatText(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function availabilityDateString(year, month, day) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function shiftAvailabilityDate(dateString, monthOffset) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const shiftedMonth = new Date(Date.UTC(year, month - 1 + monthOffset, 1));
+      const lastDay = new Date(Date.UTC(shiftedMonth.getUTCFullYear(), shiftedMonth.getUTCMonth() + 1, 0)).getUTCDate();
+      return availabilityDateString(
+        shiftedMonth.getUTCFullYear(),
+        shiftedMonth.getUTCMonth() + 1,
+        Math.min(day, lastDay)
+      );
+    }
+
+    function getAvailabilityBounds() {
+      const today = getTodayDateString();
+      return { today, lastDate: shiftAvailabilityDate(today, 6) };
+    }
+
+    function findAvailabilityMonth(text) {
+      for (let monthIndex = 0; monthIndex < AVAILABILITY_MONTH_NAMES.length; monthIndex += 1) {
+        for (const monthName of AVAILABILITY_MONTH_NAMES[monthIndex]) {
+          if (new RegExp(`\\b${monthName}\\b`).test(text)) return monthIndex + 1;
+        }
+      }
+      return null;
+    }
+
+    function parseAvailabilityDate(text, today) {
+      text = String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      let parts;
+      const isoMatch = text.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/);
+      if (isoMatch) {
+        parts = [Number(isoMatch[1]), Number(isoMatch[2]), Number(isoMatch[3])];
+      } else {
+        const numericMatch = text.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](20\d{2}))?\b/);
+        const monthPattern = AVAILABILITY_MONTH_NAMES.flat().join('|');
+        const namedMatch = text.match(new RegExp(`\\b(\\d{1,2})\\s+(${monthPattern})(?:\\s+(20\\d{2}))?\\b`));
+        if (numericMatch) {
+          const month = Number(numericMatch[2]);
+          let year = Number(numericMatch[3] || today.slice(0, 4));
+          const day = Number(numericMatch[1]);
+          if (!numericMatch[3] && availabilityDateString(year, month, day) < today) year += 1;
+          parts = [year, month, day];
+        } else if (namedMatch) {
+          const month = findAvailabilityMonth(namedMatch[2]);
+          let year = Number(namedMatch[3] || today.slice(0, 4));
+          const day = Number(namedMatch[1]);
+          if (!namedMatch[3] && availabilityDateString(year, month, day) < today) year += 1;
+          parts = [year, month, day];
+        }
+      }
+
+      if (!parts) return null;
+      const [year, month, day] = parts;
+      const date = new Date(Date.UTC(year, month - 1, day));
+      if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day
+      ) return { invalid: true };
+      return { date: availabilityDateString(year, month, day) };
+    }
+
+    function getAvailabilityRange(text, today) {
+      const parsedDate = parseAvailabilityDate(text, today);
+      if (parsedDate) {
+        if (parsedDate.invalid) return { invalid: true };
+        return { start: parsedDate.date, end: parsedDate.date };
+      }
+
+      const normalizedText = normalizeChatText(text);
+      const explicitYear = normalizedText.match(/\b(20\d{2})\b/);
+      const year = explicitYear ? Number(explicitYear[1]) : Number(today.slice(0, 4));
+      let start;
+      let end;
+      const namedMonth = findAvailabilityMonth(normalizedText);
+      const asksCurrentAndNextMonth = /\bbulan ini\b/.test(normalizedText) &&
+        (/\bbulan depan\b|\bsebulan\s+(?:ke depan|kedepan)\b|\b1 bulan\s+(?:ke depan|kedepan)\b/.test(normalizedText));
+
+      if (asksCurrentAndNextMonth) {
+        const nextMonth = shiftAvailabilityDate(today, 1).slice(0, 7).split('-').map(Number);
+        start = today;
+        end = availabilityDateString(
+          nextMonth[0],
+          nextMonth[1],
+          new Date(Date.UTC(nextMonth[0], nextMonth[1], 0)).getUTCDate()
+        );
+      } else if (namedMonth) {
+        const monthYear = explicitYear
+          ? year
+          : (namedMonth < Number(today.slice(5, 7)) ? year + 1 : year);
+        start = availabilityDateString(monthYear, namedMonth, 1);
+        const lastDay = new Date(Date.UTC(monthYear, namedMonth, 0)).getUTCDate();
+        end = availabilityDateString(monthYear, namedMonth, lastDay);
+      } else if (/\bbulan ini\b/.test(normalizedText)) {
+        const currentYear = Number(today.slice(0, 4));
+        const currentMonth = Number(today.slice(5, 7));
+        start = availabilityDateString(currentYear, currentMonth, 1);
+        end = availabilityDateString(currentYear, currentMonth, new Date(Date.UTC(currentYear, currentMonth, 0)).getUTCDate());
+      } else if (/\bbulan depan\b/.test(normalizedText)) {
+        const nextMonth = shiftAvailabilityDate(today, 1).slice(0, 7).split('-').map(Number);
+        start = availabilityDateString(nextMonth[0], nextMonth[1], 1);
+        end = availabilityDateString(nextMonth[0], nextMonth[1], new Date(Date.UTC(nextMonth[0], nextMonth[1], 0)).getUTCDate());
+      } else if (/\bsebulan\s+(?:ke depan|kedepan)\b/.test(normalizedText)) {
+        start = today;
+        end = shiftAvailabilityDate(today, 1);
+      } else {
+        const numberWords = { satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6 };
+        const relativeMatch = normalizedText.match(/\b(\d+|satu|dua|tiga|empat|lima|enam)\s+bulan\s+(?:lagi|ke depan|kedepan)\b/);
+        const asksUpcoming = /\b(beberapa bulan|bulan bulan|bulan ke depan|bulan kedepan|beberapa bulan ke depan|beberapa bulan kedepan|beberapa bulan ke depannya|beberapa bulan kedepannya)\b/.test(normalizedText);
+        if (relativeMatch) {
+          const offset = Number(relativeMatch[1]) || numberWords[relativeMatch[1]];
+          if (offset > 6) return { tooFar: true };
+          start = today;
+          end = shiftAvailabilityDate(today, offset);
+        } else if (asksUpcoming || /\bkapan\b|\bke depan\b|\bkedepan(nya)?\b|\bselanjutnya\b|\bkosong\b|\btersedia\b/.test(normalizedText)) {
+          start = today;
+          end = getAvailabilityBounds().lastDate;
+        } else {
+          return null;
+        }
+      }
+
+      const { lastDate } = getAvailabilityBounds();
+      start = start < today ? today : start;
+      end = end > lastDate ? lastDate : end;
+      return start <= end ? { start, end } : { outOfRange: true };
+    }
+
+    function findAvailabilityRoom(question) {
+      const normalizedQuestion = normalizeChatText(question);
+      return appState.ruangan.find(room => {
+        const roomName = normalizeChatText(room.nama);
+        return roomName && normalizedQuestion.includes(roomName);
+      }) || appState.ruangan.find(room => {
+        const nameTokens = normalizeChatText(room.nama).split(' ').filter(token => token.length >= 5);
+        return nameTokens.length > 0 && nameTokens.every(token => normalizedQuestion.includes(token));
+      }) || null;
+    }
+
+    function findAvailabilityRoomCategories(question) {
+      const normalizedQuestion = normalizeChatText(question);
+      const categories = [
+        { name: 'aula', terms: ['aula'] },
+        { name: 'teater', terms: ['teater', 'theater'] },
+        { name: 'gedung', terms: ['gedung'] },
+        { name: 'auditorium', terms: ['auditorium'] },
+        { name: 'lapangan', terms: ['lapangan'] }
+      ];
+      return categories.filter(category =>
+        category.terms.some(term => new RegExp(`\\b${term}\\b`).test(normalizedQuestion))
+      );
+    }
+
+    function isAgendaForRoomOnDate(agenda, room, date) {
+      const agendaRoom = normalizeChatText(agenda.ruangan);
+      const selectedRoom = normalizeChatText(room.nama);
+      const sameRoom = agendaRoom && selectedRoom &&
+        (agendaRoom === selectedRoom || agendaRoom.includes(selectedRoom) || selectedRoom.includes(agendaRoom));
+      return sameRoom &&
+        normalizeDateValue(agenda.tglMulai) <= date &&
+        normalizeDateValue(agenda.tglSelesai || agenda.tglMulai) >= date;
+    }
+
+    function getAvailableDatesForRoom(room, start, end) {
+      const availableDates = [];
+      const cursor = new Date(`${start}T00:00:00Z`);
+      const last = new Date(`${end}T00:00:00Z`);
+      while (cursor <= last) {
+        const date = availabilityDateString(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, cursor.getUTCDate());
+        const isUsed = getPublishedAgenda().some(agenda => isAgendaForRoomOnDate(agenda, room, date));
+        if (!isUsed) availableDates.push(date);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      return availableDates;
+    }
+
+    function getAvailabilityChatReply(question) {
+      const { today, lastDate } = getAvailabilityBounds();
+      const dateResult = parseAvailabilityDate(question, today);
+      if (dateResult && dateResult.invalid) {
+        return 'Tanggal tersebut tidak valid. Coba gunakan format tanggal/bulan/tahun, misalnya 20/02/2027.';
+      }
+
+      const room = findAvailabilityRoom(question);
+      const roomCategories = findAvailabilityRoomCategories(question);
+      const range = getAvailabilityRange(question, today);
+      if (range && range.tooFar) {
+        return `Pemeriksaan dibatasi sampai 6 bulan ke depan (${formatDateIndonesia(lastDate)}). Silakan tanyakan rentang yang lebih dekat.`;
+      }
+      if (range && range.outOfRange) {
+        return `Saya hanya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}.`;
+      }
+      if (range && (range.start < today || range.end > lastDate)) {
+        return `Saya hanya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}.`;
+      }
+
+      if (dateResult && dateResult.date && !range) {
+        if (dateResult.date < today || dateResult.date > lastDate) {
+          return `Saya hanya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}.`;
+        }
+      }
+
+      const matchingRooms = room
+        ? [room]
+        : roomCategories.length
+          ? appState.ruangan.filter(item => {
+            const name = normalizeChatText(item.nama);
+            return roomCategories.some(category => category.terms.some(term => name.includes(term)));
+          })
+          : appState.ruangan;
+
+      if (!range) {
+        if (room || roomCategories.length) {
+          if (!matchingRooms.length) {
+            return `Belum ada lokasi dengan kategori ${roomCategories.map(category => category.name).join(', ')} di sistem. Lokasi yang tersedia: ${appState.ruangan.map(item => item.nama).join(', ')}.`;
+          }
+          return `Lokasi yang cocok di sistem:\n• ${matchingRooms.map(item => item.nama).join('\n• ')}\n\nUntuk mengecek tanggal kosong, tanyakan misalnya “Aula apa yang kosong bulan ini?” atau “Teater yang tersedia bulan depan?”.`;
+        }
+        return `Saya dapat memeriksa tanggal ${formatDateIndonesia(today)} sampai ${formatDateIndonesia(lastDate)}. Tanyakan misalnya “Kapan Auditorium kosong bulan depan?” atau “Ruangan apa yang tersedia pada 20/02/2027?”`;
+      }
+      if (!appState.ruangan.length) return 'Daftar ruangan belum tersedia saat ini. Silakan coba kembali setelah data ruangan dimuat.';
+      if (!matchingRooms.length) {
+        return `Belum ada lokasi dengan kategori ${roomCategories.map(category => category.name).join(', ')} di sistem. Lokasi yang tersedia: ${appState.ruangan.map(item => item.nama).join(', ')}.`;
+      }
+
+      const periodLabel = range.start === range.end
+        ? formatDateIndonesia(range.start)
+        : `${formatDateIndonesia(range.start)} sampai ${formatDateIndonesia(range.end)}`;
+
+      if (room) {
+        const dates = getAvailableDatesForRoom(room, range.start, range.end);
+        if (range.start === range.end) {
+          return dates.length
+            ? `${room.nama} belum memiliki agenda terbit pada ${periodLabel}. Ketersediaan ini berdasarkan jadwal harian; silakan konfirmasi ke admin sebelum memesan.`
+            : `${room.nama} sudah memiliki agenda terbit pada ${periodLabel}.`;
+        }
+        if (!dates.length) return `Tidak ditemukan tanggal kosong untuk ${room.nama} pada ${periodLabel}.`;
+        const shownDates = dates.slice(0, 12).map(formatDateIndonesia);
+        const remainingCount = dates.length - shownDates.length;
+        return `Tanggal kosong untuk ${room.nama} pada ${periodLabel} (${dates.length} hari):\n• ${shownDates.join('\n• ')}${remainingCount ? `\n... dan ${remainingCount} hari lainnya.` : ''}\n\nPemeriksaan harian tidak membedakan jam kegiatan.`;
+      }
+
+      const availabilityByRoom = matchingRooms.map(item => ({
+        room: item,
+        dates: getAvailableDatesForRoom(item, range.start, range.end)
+      })).filter(item => item.dates.length);
+      if (!availabilityByRoom.length) return `Tidak ditemukan ruangan kosong pada ${periodLabel}.`;
+      if (range.start === range.end) {
+        return `Ruangan yang belum memiliki agenda terbit pada ${periodLabel}:\n• ${availabilityByRoom.map(item => item.room.nama).join('\n• ')}\n\nSilakan konfirmasi ke admin sebelum memesan.`;
+      }
+      const suggestions = availabilityByRoom.map(item =>
+        `• ${item.room.nama}: ${item.dates.slice(0, 3).map(formatDateIndonesia).join(', ')}${item.dates.length > 3 ? `, dan ${item.dates.length - 3} hari lainnya` : ''}`
+      );
+      return `Ruangan yang memiliki tanggal kosong pada ${periodLabel}:\n${suggestions.join('\n')}\n\nSebutkan nama ruangan untuk melihat tanggal kosong lebih lengkap.`;
+    }
+
+    function appendAvailabilityChatMessage(message, sender) {
+      const container = document.getElementById('availability-chat-messages');
+      const bubble = document.createElement('p');
+      bubble.className = sender === 'user'
+        ? 'availability-chat-user-message ml-auto max-w-[90%] whitespace-pre-line rounded-xl rounded-tr-sm border border-emerald-950 bg-emerald-800 p-3 text-sm leading-relaxed text-white shadow-sm'
+        : 'max-w-[95%] whitespace-pre-line rounded-xl rounded-tl-sm border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 shadow-sm';
+      bubble.textContent = message;
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function openAvailabilityChat() {
+      const dialog = document.getElementById('availability-chat-dialog');
+      dialog.classList.remove('hidden');
+      dialog.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+      document.getElementById('availability-chat-input').focus();
+    }
+
+    function closeAvailabilityChat() {
+      const dialog = document.getElementById('availability-chat-dialog');
+      dialog.classList.add('hidden');
+      dialog.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+      document.getElementById('availability-chat-open').focus();
+    }
+
+    function handleAvailabilityChatBackdrop(event) {
+      if (event.target === event.currentTarget) closeAvailabilityChat();
+    }
+
+    function handleAvailabilityChatSubmit(event) {
+      event.preventDefault();
+      const input = document.getElementById('availability-chat-input');
+      const question = input.value.trim();
+      if (!question) return;
+      appendAvailabilityChatMessage(question, 'user');
+      appendAvailabilityChatMessage(getAvailabilityChatReply(question), 'assistant');
+      input.value = '';
+      input.focus();
     }
 
     function renderCalendarEventTable() {
