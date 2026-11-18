@@ -985,7 +985,7 @@
         <div id="admin-panel-kendaraan" class="hidden space-y-4">
           <div>
             <h3 class="text-lg font-bold text-amber-300">Data Kendaraan Dinas</h3>
-            <p class="mt-1 text-xs text-slate-400">Kelola unit kendaraan, nomor polisi, jenis, status, dan keterangan.</p>
+            <p class="mt-1 text-xs text-slate-400">Kelola unit kendaraan, nomor polisi, jenis, status, dan keterangan. Data yang disimpan langsung ditampilkan di halaman publik.</p>
           </div>
           <form id="form-kendaraan" onsubmit="handleVehicleSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-2">
             <input id="vehicle-edit-id" type="hidden">
@@ -1414,7 +1414,7 @@
         : [],
       agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
     };
-    appState.kendaraan = mergeVehicleInventory_([], appState.pinjamanKendaraan);
+    appState.kendaraan = deriveFallbackVehicleInventory_(appState.pinjamanKendaraan);
 
     // Initialize App
     window.onload = function() {
@@ -1482,22 +1482,16 @@
       return [...loansByKey.values()];
     }
 
-    function mergeVehicleInventory_(serverVehicles, loans) {
+    function deriveFallbackVehicleInventory_(loans) {
       const vehiclesByName = new Map();
-      const getNameKey = vehicle => String(vehicle.kendaraan ||
-        [vehicle.nama, vehicle.nomorPolisi].filter(Boolean).join(' - ') || '')
-        .trim().toLowerCase().replace(/\s+/g, ' ');
-
-      (Array.isArray(serverVehicles) ? serverVehicles : []).forEach(vehicle => {
-        vehiclesByName.set(getNameKey(vehicle), { ...vehicle });
-      });
       (Array.isArray(loans) ? loans : []).forEach(loan => {
-        const key = getNameKey(loan);
+        const label = String(loan.kendaraan || '').trim();
+        const key = label.toLowerCase().replace(/\s+/g, ' ');
         if (!key || vehiclesByName.has(key)) return;
-        const plateMatch = String(loan.kendaraan || '').match(/-\s*(.+)$/);
+        const plateMatch = label.match(/-\s*(.+)$/);
         vehiclesByName.set(key, {
           id: loan.vehicleId || key,
-          nama: String(loan.kendaraan || '').replace(/\s+-\s+.*$/, '').trim() || loan.kendaraan,
+          nama: label.replace(/\s+-\s+.*$/, '').trim() || label,
           nomorPolisi: plateMatch ? plateMatch[1].trim() : '',
           jenis: 'Kendaraan Dinas',
           status: ['Menunggu', 'Disetujui', 'Dipakai'].includes(String(loan.status || '').trim())
@@ -1540,7 +1534,7 @@
               })]
               : []),
           hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : [],
-          kendaraan: mergeVehicleInventory_(data.kendaraan, vehicleLoans),
+          kendaraan: Array.isArray(data.kendaraan) ? data.kendaraan : [],
           pinjamanKendaraan: vehicleLoans
         };
         backendDataSignature = signature;

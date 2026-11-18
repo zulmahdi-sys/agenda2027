@@ -822,9 +822,9 @@ function getVehicleSheet_() {
   const ss = VEHICLE_SPREADSHEET_ID
     ? SpreadsheetApp.openById(VEHICLE_SPREADSHEET_ID)
     : (SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet());
-  let sheet = ss.getSheetByName("Sheet1") || ss.getSheets()[0];
+  let sheet = ss.getSheetByName("Kendaraan Dinas");
   if (!sheet) {
-    sheet = ss.insertSheet("Kendaraan");
+    sheet = ss.insertSheet("Kendaraan Dinas");
     sheet.appendRow(["ID", "Nama Kendaraan", "Nomor Polisi", "Jenis", "Status", "Keterangan", "Waktu Update"]);
     sheet.getRange("A1:G1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
   }
@@ -840,7 +840,7 @@ function getVehicleLoanSheet_() {
   return sheet;
 }
 
-function getVehicleData_() {
+function getLegacyVehicleData_() {
   const loans = getVehicleLoanData_();
   const vehicles = [];
   const map = {};
@@ -886,6 +886,49 @@ function getVehicleData_() {
     });
   }
   return vehicles;
+}
+
+function getVehicleData_() {
+  const sheet = getVehicleSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (String(sheet.getRange("H1").getValue()) !== "initialized") {
+      const legacyVehicles = getLegacyVehicleData_();
+      if (legacyVehicles.length) {
+        sheet.getRange(2, 1, legacyVehicles.length, 7).setValues(legacyVehicles.map(vehicle => [
+          String(vehicle.id || ""),
+          String(vehicle.nama || ""),
+          String(vehicle.nomorPolisi || ""),
+          String(vehicle.jenis || ""),
+          String(vehicle.status || "Tersedia"),
+          String(vehicle.keterangan || ""),
+          String(vehicle.updatedAt || "")
+        ]));
+      }
+      sheet.getRange("H1").setValue("initialized");
+    }
+  } finally {
+    lock.releaseLock();
+  }
+
+  if (sheet.getLastRow() < 2) return [];
+  const activeVehicleIds = new Set(getVehicleLoanData_()
+    .filter(loan => ["Menunggu", "Disetujui", "Dipakai"].includes(String(loan.status || "").trim()))
+    .map(loan => String(loan.vehicleId || "").trim()));
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues()
+    .filter(row => String(row[0] || "").trim() && String(row[1] || "").trim())
+    .map(row => ({
+      id: String(row[0]),
+      nama: String(row[1]),
+      nomorPolisi: String(row[2] || ""),
+      jenis: String(row[3] || ""),
+      status: activeVehicleIds.has(String(row[0] || "").trim())
+        ? "Dipakai"
+        : String(row[4] || "Tersedia"),
+      keterangan: String(row[5] || ""),
+      updatedAt: row[6] instanceof Date ? row[6].toISOString() : String(row[6] || "")
+    }));
 }
 
 function getVehicleLoanData_() {
@@ -970,48 +1013,48 @@ function getVehicleLoanData_() {
 }
 
 function saveVehicle_(data) {
+  getVehicleData_();
   const sheet = getVehicleSheet_();
   const nama = String(data.nama || "").trim();
   const nomorPolisi = String(data.nomorPolisi || "").trim();
   if (!nama || !nomorPolisi) throw new Error("Nama kendaraan dan nomor polisi wajib diisi.");
-  const lastColumn = Math.max(sheet.getLastColumn(), 11);
-  const rows = sheet.getRange(1, 1, sheet.getLastRow() || 1, lastColumn).getValues();
-  let rowNumber = -1;
-  for (let i = 1; i < rows.length; i++) {
-    if (data.id && (String(rows[i][1] || "") === String(data.id) ||
-        String(rows[i][2] || "").toLowerCase().indexOf(nama.toLowerCase()) >= 0)) {
-      if (String(rows[i][3] || "").trim()) continue;
-      rowNumber = i + 1;
-      break;
-    }
-  }
-  const id = data.id ? String(data.id) : "KND-" + Date.now();
-  const vehicleLabel = nama + (nomorPolisi ? " - " + nomorPolisi : "");
-  const masterRow = [id, id, vehicleLabel, "", "", "", "0", "", "", "", "Tersedia"];
-  if (rowNumber > 0) {
-    sheet.getRange(rowNumber, 1, 1, 11).setValues([masterRow]);
+  const id = String(data.id || "").trim() || "KND-" + Date.now();
+  const lastRow = sheet.getLastRow();
+  const rows = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 7).getValues() : [];
+  const existingIndex = rows.findIndex(row => String(row[0] || "") === id);
+  if (data.id && existingIndex < 0) throw new Error("Kendaraan tidak ditemukan.");
+  const masterRow = [
+    id,
+    nama,
+    nomorPolisi,
+    String(data.jenis || "Mobil").trim(),
+    String(data.status || "Tersedia").trim(),
+    String(data.keterangan || "").trim(),
+    new Date()
+  ];
+  if (existingIndex >= 0) {
+    sheet.getRange(existingIndex + 2, 1, 1, 7).setValues([masterRow]);
   } else {
     sheet.appendRow(masterRow);
   }
-  return { success: true, id: id, message: "Data kendaraan berhasil disimpan." };
+  return {
+    success: true,
+    id: id,
+    message: existingIndex >= 0
+      ? "Data kendaraan berhasil diperbarui dan diterbitkan kembali."
+      : "Data kendaraan berhasil disimpan dan ditampilkan di halaman publik."
+  };
 }
 
 function deleteVehicle_(id) {
+  getVehicleData_();
   const sheet = getVehicleSheet_();
-  const lastColumn = Math.max(sheet.getLastColumn(), 1);
-  const rows = sheet.getRange(1, 1, sheet.getLastRow(), lastColumn).getValues();
-  const headers = rows[0].map(header => String(header || "").trim().toLowerCase());
-  const idIndex = ["id", "id kendaraan", "kode kendaraan"].map(name => headers.indexOf(name)).find(index => index >= 0);
-  const nameIndex = ["nama kendaraan", "kendaraan", "nama", "unit kendaraan", "merek kendaraan"].map(name => headers.indexOf(name)).find(index => index >= 0);
-  const rowIdIndex = idIndex >= 0 ? idIndex : 0;
-  const rowNameIndex = nameIndex >= 0 ? nameIndex : 1;
-  for (let i = 1; i < rows.length; i++) {
-    const matchesId = String(rows[i][rowIdIndex] || "") === String(id);
-    const syntheticIndex = /^KND-SHEET1-(\d+)$/.exec(String(id));
-    const matchesSyntheticRow = syntheticIndex && Number(syntheticIndex[1]) === i &&
-      String(rows[i][rowNameIndex] || "").trim();
-    if (matchesId || matchesSyntheticRow) {
-      sheet.deleteRow(i + 1);
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const rows = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    const rowIndex = rows.findIndex(row => String(row[0] || "") === String(id));
+    if (rowIndex >= 0) {
+      sheet.deleteRow(rowIndex + 2);
       return { success: true, message: "Kendaraan berhasil dihapus." };
     }
   }
