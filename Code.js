@@ -4,6 +4,7 @@
  */
 
 const SPREADSHEET_ID = "1gDH6zcX02eaMZwp8O_-MXZvQSqG6MF_GIPTSXU-jrFU";
+const VEHICLE_SPREADSHEET_ID = "1nr1WvQRoUhlT-DzqPxLJJia3OTXMqwUnYqgcSufv5Mo";
 const DRIVE_FOLDER_ID = "1tdT0Tlq60Z0qzWyM38vNSrJQQ2ImQk8G";
 
 function doGet(e) {
@@ -46,6 +47,23 @@ function doPost(e) {
     }
 
     verifyAdminPassword_(params.adminPassword);
+    if (params.action === "saveVehicle") {
+      if (!params.data) throw new Error("Data kendaraan tidak ditemukan.");
+      return jsonResponse_(saveVehicle_(JSON.parse(params.data)));
+    }
+    if (params.action === "deleteVehicle") {
+      return jsonResponse_(deleteVehicle_(params.id));
+    }
+    if (params.action === "saveVehicleLoan") {
+      if (!params.data) throw new Error("Data peminjaman kendaraan tidak ditemukan.");
+      return jsonResponse_(saveVehicleLoanAdmin_(JSON.parse(params.data)));
+    }
+    if (params.action === "setVehicleLoanStatus") {
+      return jsonResponse_(setVehicleLoanStatus_(params.id, params.status, params.note || ""));
+    }
+    if (params.action === "deleteVehicleLoan") {
+      return jsonResponse_(deleteVehicleLoan_(params.id));
+    }
     if (params.action === "simpanAgendaAdmin") {
       if (!params.data) throw new Error("Data agenda tidak ditemukan.");
       return jsonResponse_(simpanAgendaAdmin(JSON.parse(params.data)));
@@ -129,7 +147,9 @@ function getInitialData() {
       pengumuman: pengumumanUtama ? pengumumanUtama.text : "",
       pengumumanPublished: pengumumanUtama ? pengumumanUtama.isPublished : false,
       hariKhusus: getCalendarEvents_(),
-      ruangan: ruangan
+      ruangan: ruangan,
+      kendaraan: getVehicleData_(),
+      pinjamanKendaraan: getVehicleLoanData_()
     };
   } catch (e) {
     throw new Error("Gagal mengambil data sistem: " + e.message);
@@ -796,6 +816,326 @@ function setAgendaPublishStatus_(id, published) {
 }
 
 /**
+ * Kelola Kendaraan & Peminjaman Kendaraan
+ */
+function getVehicleSheet_() {
+  const ss = VEHICLE_SPREADSHEET_ID
+    ? SpreadsheetApp.openById(VEHICLE_SPREADSHEET_ID)
+    : (SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet());
+  let sheet = ss.getSheetByName("Sheet1") || ss.getSheets()[0];
+  if (!sheet) {
+    sheet = ss.insertSheet("Kendaraan");
+    sheet.appendRow(["ID", "Nama Kendaraan", "Nomor Polisi", "Jenis", "Status", "Keterangan", "Waktu Update"]);
+    sheet.getRange("A1:G1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
+  }
+  return sheet;
+}
+
+function getVehicleLoanSheet_() {
+  const ss = VEHICLE_SPREADSHEET_ID
+    ? SpreadsheetApp.openById(VEHICLE_SPREADSHEET_ID)
+    : (SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet());
+  let sheet = ss.getSheetByName("Sheet1") || ss.getSheets()[0];
+  if (!sheet) sheet = ss.insertSheet("Sheet1");
+  return sheet;
+}
+
+function getVehicleData_() {
+  const loans = getVehicleLoanData_();
+  const vehicles = [];
+  const map = {};
+  loans.forEach(loan => {
+    const vehicleId = String(loan.vehicleId || "").trim();
+    const vehicleName = String(loan.kendaraan || "").trim();
+    if (!vehicleId && !vehicleName) return;
+    const key = vehicleId || vehicleName;
+    if (map[key]) return;
+    const plateMatch = vehicleName.match(/-\s*(.+)$/);
+    const isActive = ["Menunggu", "Disetujui", "Dipakai"].includes(loan.status);
+    map[key] = true;
+    vehicles.push({
+      id: vehicleId || vehicleName,
+      nama: vehicleName.replace(/\s+-\s+.*$/, "").trim() || vehicleName,
+      nomorPolisi: plateMatch ? plateMatch[1].trim() : "",
+      jenis: "Kendaraan Dinas",
+      status: isActive ? "Dipakai" : "Tersedia",
+      keterangan: "",
+      updatedAt: ""
+    });
+  });
+  const sheet = getVehicleLoanSheet_();
+  if (sheet.getLastRow() >= 1) {
+    const rows = sheet.getRange(1, 1, sheet.getLastRow(), 11).getValues();
+    rows.forEach(row => {
+      if (String(row[3] || "").trim() || String(row[7] || "").trim()) return;
+      const vehicleId = String(row[1] || "").trim();
+      const vehicleName = String(row[2] || "").trim();
+      if (!vehicleId || !vehicleName) return;
+      if (map[vehicleId]) return;
+      const plateMatch = vehicleName.match(/-\s*(.+)$/);
+      map[vehicleId] = true;
+      vehicles.push({
+        id: vehicleId,
+        nama: vehicleName.replace(/\s+-\s+.*$/, "").trim() || vehicleName,
+        nomorPolisi: plateMatch ? plateMatch[1].trim() : "",
+        jenis: "Kendaraan Dinas",
+        status: "Tersedia",
+        keterangan: "",
+        updatedAt: ""
+      });
+    });
+  }
+  return vehicles;
+}
+
+function getVehicleLoanData_() {
+  const sheet = getVehicleLoanSheet_();
+  if (sheet.getLastRow() < 1) return [];
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const values = sheet.getRange(1, 1, sheet.getLastRow(), lastColumn).getValues();
+  const firstRow = values[0].map(value => String(value || "").trim().toLowerCase());
+  const headerDetected = firstRow.some(value =>
+    ["id", "id log", "id kendaraan", "nama peminjam", "nama pemohon", "nama kendaraan", "plat nomor", "tanggal pinjam", "tanggal mulai", "status"].includes(value));
+  if (headerDetected) {
+    const column = names => {
+      for (let i = 0; i < names.length; i++) {
+        const index = firstRow.indexOf(names[i]);
+        if (index >= 0) return index;
+      }
+      return -1;
+    };
+    const idIndex = column(["id kendaraan", "id peminjaman", "id log", "id"]);
+    const vehicleIndex = column(["kendaraan", "nama kendaraan", "nama/model", "plat nomor"]);
+    const applicantIndex = column(["nama peminjam", "nama pemohon", "pemohon", "penanggung jawab"]);
+    const unitIndex = column(["unit/fakultas", "fakultas/unit", "fakultas", "unit"]);
+    const phoneIndex = column(["no. hp", "no hp", "nomor telepon", "no telepon"]);
+    const purposeIndex = column(["keperluan", "tujuan", "tujuan penggunaan"]);
+    const startIndex = column(["tanggal pinjam", "tanggal mulai", "tgl mulai", "tanggal penggunaan"]);
+    const endIndex = column(["tanggal kembali", "tanggal selesai", "tgl selesai", "tanggal akhir"]);
+    const statusIndex = column(["status", "status peminjaman"]);
+    const passengerIndex = column(["jumlah penumpang", "penumpang"]);
+    const dataRows = values.slice(1);
+    return dataRows
+      .filter(row => vehicleIndex >= 0 && String(row[vehicleIndex] || "").trim() &&
+        ((startIndex >= 0 && row[startIndex]) || (applicantIndex >= 0 && row[applicantIndex])))
+      .map((row, index) => {
+        const startValue = startIndex >= 0 ? row[startIndex] : "";
+        const endValue = endIndex >= 0 && row[endIndex] ? row[endIndex] : startValue;
+        const start = parseSheetDateTime_(startValue);
+        const end = parseSheetDateTime_(endValue);
+        return {
+          id: String(idIndex >= 0 && row[idIndex] || "SHEET1-" + (index + 2)),
+          vehicleId: String(idIndex >= 0 && row[idIndex] || ""),
+          kendaraan: String(row[vehicleIndex] || "").trim(),
+          pemohon: applicantIndex >= 0 ? String(row[applicantIndex] || "").trim() : "",
+          unit: unitIndex >= 0 ? String(row[unitIndex] || "").trim() : "",
+          noHp: phoneIndex >= 0 ? String(row[phoneIndex] || "").trim() : "",
+          tujuan: purposeIndex >= 0 ? String(row[purposeIndex] || "").trim() : "",
+          tglMulai: start.date,
+          tglSelesai: end.date || start.date,
+          jamMulai: start.time || "",
+          jamSelesai: end.time || "",
+          supir: "",
+          status: statusIndex >= 0 ? String(row[statusIndex] || "Selesai").trim() : "Selesai",
+          catatan: passengerIndex >= 0 ? String(row[passengerIndex] || "").trim() : "",
+          createdAt: start.date || "",
+          readOnly: true
+        };
+      });
+  }
+  const dataRows = headerDetected ? values.slice(1) : values;
+  return dataRows
+    .filter(row => (row[0] || row[2]) && (row[8] || row[9] || row[3] || row[7]))
+    .map(row => {
+      const start = parseSheetDateTime_(row[8]);
+      const end = parseSheetDateTime_(row[9]);
+      return {
+        id: String(row[0] || ""),
+        vehicleId: String(row[1] || ""),
+        kendaraan: String(row[2] || ""),
+        pemohon: String(row[3] || ""),
+        unit: String(row[4] || ""),
+        noHp: String(row[5] || ""),
+        tujuan: String(row[7] || ""),
+        tglMulai: start.date,
+        tglSelesai: end.date || start.date,
+        jamMulai: start.time || "07:00",
+        jamSelesai: end.time || "16:00",
+        supir: "",
+        status: String(row[10] || "Selesai").trim() || "Selesai",
+        catatan: String(row[6] || ""),
+        createdAt: start.date || ""
+      };
+    });
+}
+
+function saveVehicle_(data) {
+  const sheet = getVehicleSheet_();
+  const nama = String(data.nama || "").trim();
+  const nomorPolisi = String(data.nomorPolisi || "").trim();
+  if (!nama || !nomorPolisi) throw new Error("Nama kendaraan dan nomor polisi wajib diisi.");
+  const lastColumn = Math.max(sheet.getLastColumn(), 11);
+  const rows = sheet.getRange(1, 1, sheet.getLastRow() || 1, lastColumn).getValues();
+  let rowNumber = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (data.id && (String(rows[i][1] || "") === String(data.id) ||
+        String(rows[i][2] || "").toLowerCase().indexOf(nama.toLowerCase()) >= 0)) {
+      if (String(rows[i][3] || "").trim()) continue;
+      rowNumber = i + 1;
+      break;
+    }
+  }
+  const id = data.id ? String(data.id) : "KND-" + Date.now();
+  const vehicleLabel = nama + (nomorPolisi ? " - " + nomorPolisi : "");
+  const masterRow = [id, id, vehicleLabel, "", "", "", "0", "", "", "", "Tersedia"];
+  if (rowNumber > 0) {
+    sheet.getRange(rowNumber, 1, 1, 11).setValues([masterRow]);
+  } else {
+    sheet.appendRow(masterRow);
+  }
+  return { success: true, id: id, message: "Data kendaraan berhasil disimpan." };
+}
+
+function deleteVehicle_(id) {
+  const sheet = getVehicleSheet_();
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const rows = sheet.getRange(1, 1, sheet.getLastRow(), lastColumn).getValues();
+  const headers = rows[0].map(header => String(header || "").trim().toLowerCase());
+  const idIndex = ["id", "id kendaraan", "kode kendaraan"].map(name => headers.indexOf(name)).find(index => index >= 0);
+  const nameIndex = ["nama kendaraan", "kendaraan", "nama", "unit kendaraan", "merek kendaraan"].map(name => headers.indexOf(name)).find(index => index >= 0);
+  const rowIdIndex = idIndex >= 0 ? idIndex : 0;
+  const rowNameIndex = nameIndex >= 0 ? nameIndex : 1;
+  for (let i = 1; i < rows.length; i++) {
+    const matchesId = String(rows[i][rowIdIndex] || "") === String(id);
+    const syntheticIndex = /^KND-SHEET1-(\d+)$/.exec(String(id));
+    const matchesSyntheticRow = syntheticIndex && Number(syntheticIndex[1]) === i &&
+      String(rows[i][rowNameIndex] || "").trim();
+    if (matchesId || matchesSyntheticRow) {
+      sheet.deleteRow(i + 1);
+      return { success: true, message: "Kendaraan berhasil dihapus." };
+    }
+  }
+  throw new Error("Kendaraan tidak ditemukan.");
+}
+
+function vehicleLoanConflict_(sheet, data, excludedId) {
+  if (sheet.getLastRow() < 2) return;
+  const targetStart = String(data.tglMulai || "");
+  const targetEnd = String(data.tglSelesai || targetStart);
+  const targetStartTime = agendaTimeMinutes_(data.jamMulai);
+  const targetEndTime = agendaTimeMinutes_(data.jamSelesai);
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (excludedId && String(row[0]) === String(excludedId)) continue;
+    if (!["Menunggu", "Disetujui", "Dipakai"].includes(String(row[10] || ""))) continue;
+    if (String(row[1]) !== String(data.vehicleId)) continue;
+    const startParsed = parseSheetDateTime_(row[8]);
+    const endParsed = parseSheetDateTime_(row[9]);
+    const start = startParsed.date;
+    const end = endParsed.date || start;
+    const existingStartTime = agendaTimeMinutes_(startParsed.time || "07:00");
+    const existingEndTime = agendaTimeMinutes_(endParsed.time || "16:00");
+    if (targetStart <= end && targetEnd >= start &&
+        existingStartTime !== null && existingEndTime !== null &&
+        targetStartTime < existingEndTime && targetEndTime > existingStartTime) {
+      throw new Error("Kendaraan tersebut sudah memiliki peminjaman pada jadwal yang bentrok.");
+    }
+  }
+}
+
+function submitVehicleLoan_(data) {
+  const vehicleSheet = getVehicleSheet_();
+  const vehicleId = String(data.vehicleId || "");
+  const vehicles = getVehicleData_();
+  const vehicle = vehicles.find(item => String(item.id) === vehicleId);
+  if (!vehicle) throw new Error("Pilih kendaraan yang tersedia.");
+  if (String(vehicle.status).toLowerCase() !== "tersedia") throw new Error("Kendaraan sedang tidak tersedia.");
+  const required = ["pemohon", "unit", "noHp", "tujuan", "tglMulai", "tglSelesai", "jamMulai", "jamSelesai"];
+  if (required.some(key => !String(data[key] || "").trim())) throw new Error("Lengkapi semua data peminjaman kendaraan.");
+  if (String(data.tglMulai) > String(data.tglSelesai)) throw new Error("Tanggal selesai tidak boleh sebelum tanggal mulai.");
+  if (agendaTimeMinutes_(data.jamMulai) === null || agendaTimeMinutes_(data.jamSelesai) === null ||
+      agendaTimeMinutes_(data.jamMulai) >= agendaTimeMinutes_(data.jamSelesai)) throw new Error("Rentang waktu peminjaman tidak valid.");
+  const sheet = getVehicleLoanSheet_();
+  vehicleLoanConflict_(sheet, data, "");
+  const id = "PJK-" + Date.now();
+  sheet.appendRow([id, vehicleId, vehicle.nama, data.pemohon, data.unit, data.noHp, data.tujuan,
+    data.tglMulai, data.tglSelesai, data.jamMulai, data.jamSelesai, data.supir || "", "Menunggu", data.catatan || "", new Date()]);
+  return { success: true, id: id, message: "Pengajuan pinjam pakai kendaraan berhasil dikirim. Tunggu persetujuan admin." };
+}
+
+function saveVehicleLoanAdmin_(data) {
+  const vehicle = getVehicleData_().find(item => String(item.id) === String(data.vehicleId));
+  if (!vehicle) throw new Error("Pilih kendaraan.");
+  const required = ["pemohon", "unit", "noHp", "tujuan", "tglMulai", "tglSelesai", "jamMulai", "jamSelesai"];
+  if (required.some(key => !String(data[key] || "").trim())) throw new Error("Lengkapi semua data peminjaman kendaraan.");
+  if (String(data.tglMulai) > String(data.tglSelesai)) throw new Error("Tanggal selesai tidak boleh sebelum tanggal mulai.");
+  if (agendaTimeMinutes_(data.jamMulai) >= agendaTimeMinutes_(data.jamSelesai)) throw new Error("Rentang waktu peminjaman tidak valid.");
+
+  const sheet = getVehicleLoanSheet_();
+  const id = String(data.id || "");
+  const rows = sheet.getDataRange().getValues();
+  let rowNumber = -1;
+  if (id) {
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) === id) { rowNumber = i + 1; break; }
+    }
+  }
+  vehicleLoanConflict_(sheet, data, id);
+  const status = String(data.status || "Menunggu");
+  const allowed = ["Menunggu", "Disetujui", "Ditolak", "Dipakai", "Selesai"];
+  if (!allowed.includes(status)) throw new Error("Status peminjaman tidak valid.");
+  const vehicleLabel = vehicle.nomorPolisi
+    ? vehicle.nama + " - " + vehicle.nomorPolisi
+    : vehicle.nama;
+  const startDateTime = data.tglMulai + " " + (data.jamMulai || "07:00");
+  const endDateTime = data.tglSelesai + " " + (data.jamSelesai || "16:00");
+  const values = [id || "PJK-" + Date.now(), vehicle.id, vehicleLabel, data.pemohon, data.unit, data.noHp,
+    "0", data.tujuan || "", startDateTime, endDateTime, status];
+  if (rowNumber > 0) sheet.getRange(rowNumber, 1, 1, 11).setValues([values]);
+  else sheet.appendRow(values);
+  return { success: true, id: values[0], message: "Data pinjaman kendaraan berhasil disimpan." };
+}
+
+function setVehicleLoanStatus_(id, status, note) {
+  const allowed = ["Menunggu", "Disetujui", "Ditolak", "Dipakai", "Selesai"];
+  if (!allowed.includes(status)) throw new Error("Status peminjaman tidak valid.");
+  const sheet = getVehicleLoanSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(id)) {
+      sheet.getRange(i + 1, 11).setValue(status);
+      return { success: true, message: "Status peminjaman berhasil diperbarui." };
+    }
+  }
+  throw new Error("Peminjaman tidak ditemukan.");
+}
+
+function updateVehicleStatus_(vehicleId, status) {
+  const sheet = getVehicleSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(vehicleId)) {
+      sheet.getRange(i + 1, 5).setValue(status);
+      sheet.getRange(i + 1, 7).setValue(new Date());
+      break;
+    }
+  }
+}
+
+function deleteVehicleLoan_(id) {
+  const sheet = getVehicleLoanSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true, message: "Pengajuan peminjaman berhasil dihapus." };
+    }
+  }
+  throw new Error("Peminjaman tidak ditemukan.");
+}
+
+/**
  * Kelola Data Ruangan / Aula (Two-Way Synchronization Support)
  */
 function getRuanganData() {
@@ -884,4 +1224,57 @@ function formatDate(date) {
   if (month.length < 2) month = '0' + month;
   if (day.length < 2) day = '0' + day;
   return [year, month, day].join('-');
+}
+
+function parseSheetDateTime_(value) {
+  if (!value) return { date: "", time: "" };
+  if (typeof value === "number" && isFinite(value)) {
+    const serialDate = new Date(Date.UTC(1899, 11, 30) + Math.floor(value) * 86400000);
+    const fraction = value - Math.floor(value);
+    const totalMinutes = Math.round(fraction * 1440);
+    return {
+      date: Utilities.formatDate(serialDate, Session.getScriptTimeZone(), "yyyy-MM-dd"),
+      time: fraction > 0
+        ? String(Math.floor(totalMinutes / 60) % 24).padStart(2, "0") + ":" + String(totalMinutes % 60).padStart(2, "0")
+        : ""
+    };
+  }
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return { date: "", time: "" };
+    return {
+      date: formatDate(value),
+      time: String(value.getHours()).padStart(2, "0") + ":" + String(value.getMinutes()).padStart(2, "0")
+    };
+  }
+  const text = String(value).trim();
+  const dateTimeMatch = text.match(/^(\d{1,4})[\/.-](\d{1,2})[\/.-](\d{1,4})(?:\s+(\d{1,2}):(\d{2})(?::\d{2})?)?/);
+  if (dateTimeMatch) {
+    let year;
+    let month;
+    let day;
+    const first = Number(dateTimeMatch[1]);
+    const second = Number(dateTimeMatch[2]);
+    const third = Number(dateTimeMatch[3]);
+    if (dateTimeMatch[1].length === 4) {
+      year = first;
+      month = second;
+      day = third;
+    } else {
+      year = third < 100 ? third + 2000 : third;
+      if (first > 12) {
+        day = first;
+        month = second;
+      } else {
+        month = first;
+        day = second;
+      }
+    }
+    const date = String(year).padStart(4, "0") + "-" +
+      String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+    const time = dateTimeMatch[4] && dateTimeMatch[5]
+      ? String(dateTimeMatch[4]).padStart(2, "0") + ":" + dateTimeMatch[5]
+      : "";
+    return { date: date, time: time };
+  }
+  return { date: "", time: "" };
 }

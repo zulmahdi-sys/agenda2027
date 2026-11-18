@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <title>Sistem Booking Aula & Agenda - UIN Ar-Raniry Banda Aceh</title>
+  <title>Agenda, Aula & Pinjam Kendaraan - UIN Ar-Raniry Banda Aceh</title>
   
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +15,7 @@
   <!-- SheetJS untuk Parsing Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./agenda-data.js"></script>
+  <script src="./vehicle-usage-data.js"></script>
   <!-- html2pdf untuk Cetak Laporan PDF Resmi -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
@@ -610,6 +611,7 @@
           <button type="button" onclick="switchTab('beranda')" id="nav-beranda" aria-current="page" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-amber-400 bg-emerald-900/60 border border-amber-500/30">Beranda</button>
           <button type="button" onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Kalender Setahun</button>
           <button type="button" onclick="switchTab('arsip')" id="nav-arsip" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Arsip Kegiatan</button>
+          <button type="button" onclick="switchTab('kendaraan')" id="nav-kendaraan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Pinjam Kendaraan</button>
           <button onclick="bukaModalLoginAdmin()" id="nav-admin" class="px-4 py-2 rounded-lg text-sm font-medium gold-btn flex items-center gap-2">
             <i data-lucide="shield-check" class="w-4 h-4"></i> Dashboard Admin
           </button>
@@ -630,6 +632,7 @@
         <button id="mobile-nav-beranda" type="button" aria-current="page" onclick="switchTab('beranda'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-amber-300 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Beranda</button>
         <button id="mobile-nav-tahunan" type="button" onclick="switchTab('tahunan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kalender Setahun</button>
         <button id="mobile-nav-arsip" type="button" onclick="switchTab('arsip'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Arsip Kegiatan</button>
+        <button id="mobile-nav-kendaraan" type="button" onclick="switchTab('kendaraan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pinjam Kendaraan</button>
         <button id="mobile-nav-admin" type="button" onclick="bukaModalLoginAdmin(); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left font-bold text-amber-400 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Dashboard Admin</button>
       </div>
     </div>
@@ -769,7 +772,39 @@
       </div>
     </section>
 
-    <!-- 4. DASHBOARD ADMIN (Protected Panel) -->
+    <!-- 4. PINJAM PAKAI KENDARAAN -->
+    <section id="tab-kendaraan" class="hidden space-y-6">
+      <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-emerald-700">Layanan Operasional</p>
+            <h2 class="mt-1 text-xl font-extrabold text-slate-950 sm:text-2xl">Pinjam Pakai Kendaraan</h2>
+            <p class="mt-1 text-sm text-slate-600">Informasi ketersediaan dan penggunaan kendaraan dinas UIN Ar-Raniry.</p>
+          </div>
+          <span id="vehicle-available-count" class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Memuat kendaraan…</span>
+        </div>
+        <div class="mt-5 space-y-5">
+          <div>
+            <h3 class="text-lg font-bold text-slate-950">Daftar Kendaraan Dinas</h3>
+            <div id="public-vehicle-list" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite"></div>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-950">Jadwal Penggunaan Kendaraan</h3>
+            <p class="mt-1 text-xs text-slate-500">Data dikelompokkan per bulan, dengan bulan terbaru ditampilkan lebih dahulu.</p>
+            <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full min-w-[760px] text-left text-xs">
+                <thead class="bg-slate-100 font-bold text-slate-700">
+                  <tr><th class="p-3">Kendaraan</th><th class="p-3">Pemohon / Unit</th><th class="p-3">Tanggal & Waktu</th><th class="p-3">Tujuan</th><th class="p-3">Status</th></tr>
+                </thead>
+                <tbody id="public-vehicle-loan-list" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. DASHBOARD ADMIN (Protected Panel) -->
     <section id="tab-admin" class="hidden space-y-6">
       <div class="bg-emerald-950/80 border border-amber-500/40 rounded-2xl p-4 sm:p-6 shadow-xl">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-amber-500/30 pb-4 mb-6">
@@ -790,6 +825,8 @@
           <button onclick="switchAdminTab('kelola-booking')" id="admin-sub-kelola-booking" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Booking</button>
           <button onclick="switchAdminTab('import-excel')" id="admin-sub-import-excel" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Import Excel</button>
           <button onclick="switchAdminTab('kelola-ruangan')" id="admin-sub-kelola-ruangan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Ruangan</button>
+          <button onclick="switchAdminTab('kendaraan')" id="admin-sub-kendaraan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kelola Kendaraan</button>
+          <button onclick="switchAdminTab('pinjaman-kendaraan')" id="admin-sub-pinjaman-kendaraan" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pinjaman Kendaraan</button>
           <button onclick="switchAdminTab('kalender-nasional')" id="admin-sub-kalender-nasional" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kalender Nasional</button>
           <button onclick="switchAdminTab('pengumuman')" id="admin-sub-pengumuman" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pengumuman</button>
           <button onclick="switchAdminTab('latar-belakang')" id="admin-sub-latar-belakang" class="min-h-11 shrink-0 rounded-lg border border-transparent px-4 py-2 text-xs font-bold text-emerald-200 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Latar Belakang</button>
@@ -942,6 +979,154 @@
               <tbody id="ruangan-table-body" class="divide-y divide-emerald-900/40"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- SUB-TAB: KELOLA KENDARAAN -->
+        <div id="admin-panel-kendaraan" class="hidden space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Data Kendaraan Dinas</h3>
+            <p class="mt-1 text-xs text-slate-400">Kelola unit kendaraan, nomor polisi, jenis, status, dan keterangan.</p>
+          </div>
+          <form id="form-kendaraan" onsubmit="handleVehicleSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-2">
+            <input id="vehicle-edit-id" type="hidden">
+            <div>
+              <label for="vehicle-name" class="mb-1 block text-xs font-bold text-amber-300">NAMA KENDARAAN *</label>
+              <input id="vehicle-name" required maxlength="150" placeholder="Contoh: Toyota Innova" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="vehicle-plate" class="mb-1 block text-xs font-bold text-amber-300">NOMOR POLISI *</label>
+              <input id="vehicle-plate" required maxlength="30" placeholder="Contoh: BL 1234 AA" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="vehicle-type" class="mb-1 block text-xs font-bold text-amber-300">JENIS KENDARAAN</label>
+              <select id="vehicle-type" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200">
+                <option value="Mobil">Mobil</option>
+                <option value="Sepeda Motor">Sepeda Motor</option>
+                <option value="Bus">Bus</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div>
+              <label for="vehicle-status" class="mb-1 block text-xs font-bold text-amber-300">STATUS</label>
+              <select id="vehicle-status" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200">
+                <option value="Tersedia">Tersedia</option>
+                <option value="Dipakai">Dipakai</option>
+                <option value="Perbaikan">Perbaikan</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label for="vehicle-description" class="mb-1 block text-xs font-bold text-amber-300">KETERANGAN / FASILITAS</label>
+              <textarea id="vehicle-description" maxlength="500" rows="2" placeholder="Kapastitas penumpang, AC, atau kondisi kendaraan" class="w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100"></textarea>
+            </div>
+            <div class="md:col-span-2 flex flex-wrap gap-2">
+              <button type="submit" class="min-h-11 rounded-lg px-4 py-2 gold-btn text-xs font-bold">Simpan Kendaraan</button>
+              <button type="button" onclick="resetVehicleForm()" class="min-h-11 rounded-lg border border-slate-500 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">Batal</button>
+            </div>
+          </form>
+          <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
+            <table class="w-full min-w-[720px] text-left text-xs">
+              <thead class="bg-emerald-900/80 font-bold text-amber-300">
+                <tr><th class="p-3">Kendaraan</th><th class="p-3">Nomor Polisi</th><th class="p-3">Jenis</th><th class="p-3">Status</th><th class="p-3">Keterangan</th><th class="p-3 text-right">Aksi</th></tr>
+              </thead>
+              <tbody id="vehicle-table-body" class="divide-y divide-emerald-900/40"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB: DASHBOARD PINJAMAN KENDARAAN -->
+        <div id="admin-panel-pinjaman-kendaraan" class="hidden space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-300">Dashboard Pinjaman Kendaraan</h3>
+            <p class="mt-1 text-xs text-slate-400">Pantau pengajuan, setujui jadwal, catat penggunaan, dan tandai pengembalian.</p>
+          </div>
+          <form id="form-pinjaman-kendaraan-admin" onsubmit="handleAdminVehicleLoanSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-3">
+            <input id="vehicle-loan-edit-id" type="hidden">
+            <div>
+              <label for="admin-loan-vehicle" class="mb-1 block text-xs font-bold text-amber-300">KENDARAAN *</label>
+              <select id="admin-loan-vehicle" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200"></select>
+            </div>
+            <div>
+              <label for="admin-loan-pemohon" class="mb-1 block text-xs font-bold text-amber-300">PEMOHON *</label>
+              <input id="admin-loan-pemohon" required maxlength="150" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-unit" class="mb-1 block text-xs font-bold text-amber-300">UNIT / FAKULTAS *</label>
+              <input id="admin-loan-unit" required maxlength="150" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-phone" class="mb-1 block text-xs font-bold text-amber-300">NO. TELEPON *</label>
+              <input id="admin-loan-phone" type="tel" required maxlength="20" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-supir" class="mb-1 block text-xs font-bold text-amber-300">SUPIR / PETUGAS</label>
+              <input id="admin-loan-supir" maxlength="150" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-status" class="mb-1 block text-xs font-bold text-amber-300">STATUS</label>
+              <select id="admin-loan-status" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200">
+                <option value="Menunggu">Menunggu</option><option value="Disetujui">Disetujui</option><option value="Dipakai">Dipakai</option><option value="Selesai">Selesai</option><option value="Ditolak">Ditolak</option>
+              </select>
+            </div>
+            <div>
+              <label for="admin-loan-start-date" class="mb-1 block text-xs font-bold text-amber-300">TANGGAL MULAI *</label>
+              <input id="admin-loan-start-date" type="date" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-end-date" class="mb-1 block text-xs font-bold text-amber-300">TANGGAL SELESAI *</label>
+              <input id="admin-loan-end-date" type="date" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-start-time" class="mb-1 block text-xs font-bold text-amber-300">JAM MULAI *</label>
+              <input id="admin-loan-start-time" type="time" value="08:00" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div>
+              <label for="admin-loan-end-time" class="mb-1 block text-xs font-bold text-amber-300">JAM SELESAI *</label>
+              <input id="admin-loan-end-time" type="time" value="16:00" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+            </div>
+            <div class="md:col-span-2">
+              <label for="admin-loan-purpose" class="mb-1 block text-xs font-bold text-amber-300">TUJUAN / KEGUNAAN *</label>
+              <textarea id="admin-loan-purpose" required maxlength="500" rows="2" class="w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100"></textarea>
+            </div>
+            <div class="md:col-span-3 flex flex-wrap gap-2">
+              <button type="submit" class="min-h-11 rounded-lg px-4 py-2 gold-btn text-xs font-bold">Simpan Pinjaman Kendaraan</button>
+              <button type="button" onclick="resetAdminVehicleLoanForm()" class="min-h-11 rounded-lg border border-slate-500 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">Batal</button>
+            </div>
+          </form>
+          <div id="vehicle-loan-stats" class="grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
+          <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
+            <table class="w-full min-w-[1100px] text-left text-xs">
+              <thead class="bg-emerald-900/80 font-bold text-amber-300">
+                <tr><th class="p-3">Pemohon / Unit</th><th class="p-3">Kendaraan</th><th class="p-3">Jadwal</th><th class="p-3">Tujuan</th><th class="p-3">Status</th><th class="p-3 text-right">Aksi</th></tr>
+              </thead>
+              <tbody id="vehicle-loan-table-body" class="divide-y divide-emerald-900/40"></tbody>
+            </table>
+          </div>
+          <section id="vehicle-loan-archive" class="space-y-3 rounded-xl border border-slate-300 bg-white p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-slate-950">Arsip Pinjaman Kendaraan</h3>
+                <p class="mt-1 text-xs text-slate-500">Penggunaan berstatus Selesai diambil dari Sheet1 dan disusun menurut tanggal.</p>
+              </div>
+              <div class="flex flex-wrap items-end gap-2">
+                <div>
+                  <label for="vehicle-loan-archive-month" class="mb-1 block text-xs font-bold text-slate-700">PERIODE</label>
+                  <input id="vehicle-loan-archive-month" type="month" onchange="renderVehicleLoanArchive()" class="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900">
+                </div>
+                <button type="button" onclick="printVehicleLoanArchive()" class="min-h-11 rounded-lg bg-red-800 px-4 py-2 text-xs font-bold text-white hover:bg-red-700">Cetak Arsip PDF</button>
+              </div>
+            </div>
+            <div id="vehicle-loan-archive-print">
+              <p id="vehicle-loan-archive-period" class="mb-2 text-xs font-semibold text-slate-600"></p>
+              <div class="overflow-x-auto rounded-lg border border-slate-300">
+                <table class="w-full min-w-[900px] text-left text-xs">
+                  <thead class="bg-slate-100 text-slate-800">
+                    <tr><th class="border border-slate-300 p-2">ID</th><th class="border border-slate-300 p-2">Tanggal</th><th class="border border-slate-300 p-2">Kendaraan</th><th class="border border-slate-300 p-2">Pemohon / Unit</th><th class="border border-slate-300 p-2">Tujuan</th><th class="border border-slate-300 p-2">Status</th></tr>
+                  </thead>
+                  <tbody id="vehicle-loan-archive-body" class="text-slate-700"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- SUB-TAB: KALENDER NASIONAL -->
@@ -1223,8 +1408,13 @@
       pengumumanItems: [],
       hariKhusus: [],
       hariKhususOtomatis: [],
+      kendaraan: [],
+      pinjamanKendaraan: Array.isArray(window.WORKBOOK_VEHICLE_DATA)
+        ? window.WORKBOOK_VEHICLE_DATA.map(item => ({ ...item }))
+        : [],
       agenda: Array.isArray(window.WORKBOOK_AGENDA_DATA) ? window.WORKBOOK_AGENDA_DATA : []
     };
+    appState.kendaraan = mergeVehicleInventory_([], appState.pinjamanKendaraan);
 
     // Initialize App
     window.onload = function() {
@@ -1239,10 +1429,14 @@
           loadDataFromBackend({ silent: true });
         }
       }, DATA_REFRESH_INTERVAL_MS);
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible') renderVehicleFeatures();
+      }, 60000);
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && isHomeTabActive()) {
           loadDataFromBackend({ silent: true });
         }
+        if (document.visibilityState === 'visible') renderVehicleFeatures();
       });
       const reportMonthInput = document.getElementById('report-month');
       reportMonthInput.value = getLocalMonthValue();
@@ -1264,6 +1458,55 @@
       renderRuanganTable();
       renderCalendarEventTable();
       renderAnnouncementAdminState();
+      renderVehicleFeatures();
+    }
+
+    function mergeVehicleLoanData_(serverLoans) {
+      const loansByKey = new Map();
+      const workbookLoans = Array.isArray(window.WORKBOOK_VEHICLE_DATA)
+        ? window.WORKBOOK_VEHICLE_DATA
+        : [];
+      const getKey = item => [
+        item.kendaraan,
+        item.pemohon,
+        item.unit,
+        item.tujuan,
+        normalizeDateValue(item.tglMulai),
+        normalizeDateValue(item.tglSelesai || item.tglMulai)
+      ].map(value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')).join('|');
+
+      workbookLoans.forEach(item => loansByKey.set(getKey(item), { ...item }));
+      (Array.isArray(serverLoans) ? serverLoans : []).forEach(item => {
+        loansByKey.set(getKey(item), { ...item });
+      });
+      return [...loansByKey.values()];
+    }
+
+    function mergeVehicleInventory_(serverVehicles, loans) {
+      const vehiclesByName = new Map();
+      const getNameKey = vehicle => String(vehicle.kendaraan ||
+        [vehicle.nama, vehicle.nomorPolisi].filter(Boolean).join(' - ') || '')
+        .trim().toLowerCase().replace(/\s+/g, ' ');
+
+      (Array.isArray(serverVehicles) ? serverVehicles : []).forEach(vehicle => {
+        vehiclesByName.set(getNameKey(vehicle), { ...vehicle });
+      });
+      (Array.isArray(loans) ? loans : []).forEach(loan => {
+        const key = getNameKey(loan);
+        if (!key || vehiclesByName.has(key)) return;
+        const plateMatch = String(loan.kendaraan || '').match(/-\s*(.+)$/);
+        vehiclesByName.set(key, {
+          id: loan.vehicleId || key,
+          nama: String(loan.kendaraan || '').replace(/\s+-\s+.*$/, '').trim() || loan.kendaraan,
+          nomorPolisi: plateMatch ? plateMatch[1].trim() : '',
+          jenis: 'Kendaraan Dinas',
+          status: ['Menunggu', 'Disetujui', 'Dipakai'].includes(String(loan.status || '').trim())
+            ? 'Dipakai'
+            : 'Tersedia',
+          keterangan: ''
+        });
+      });
+      return [...vehiclesByName.values()];
     }
 
     // Backend HTTP Fetch Data Loading
@@ -1281,6 +1524,7 @@
         if (!data || !Array.isArray(data.agenda)) throw new Error("Format data server tidak sesuai.");
         const signature = JSON.stringify(data);
         if (signature === backendDataSignature) return;
+        const vehicleLoans = mergeVehicleLoanData_(data.pinjamanKendaraan);
         appState = {
           ...appState,
           agenda: data.agenda.map(normalizeAgendaItem),
@@ -1295,7 +1539,9 @@
                 updatedAt: ''
               })]
               : []),
-          hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : []
+          hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : [],
+          kendaraan: mergeVehicleInventory_(data.kendaraan, vehicleLoans),
+          pinjamanKendaraan: vehicleLoans
         };
         backendDataSignature = signature;
         renderAll();
@@ -1335,7 +1581,7 @@
     // Tab Navigation
     function switchTab(tabId) {
       const wasHomeTabActive = isHomeTabActive();
-      ['beranda', 'tahunan', 'arsip', 'admin'].forEach(id => {
+      ['beranda', 'tahunan', 'arsip', 'kendaraan', 'admin'].forEach(id => {
         document.getElementById(`tab-${id}`).classList.add('hidden');
         const navBtn = document.getElementById(`nav-${id}`);
         if(navBtn && id !== 'admin') {
@@ -1394,7 +1640,7 @@
 
     // Sub-Tab Admin Navigation
     function switchAdminTab(subTabId) {
-      const subTabs = ['input-booking', 'kelola-booking', 'import-excel', 'kelola-ruangan', 'kalender-nasional', 'pengumuman', 'latar-belakang', 'laporan'];
+      const subTabs = ['input-booking', 'kelola-booking', 'import-excel', 'kelola-ruangan', 'kendaraan', 'pinjaman-kendaraan', 'kalender-nasional', 'pengumuman', 'latar-belakang', 'laporan'];
       subTabs.forEach(id => {
         const panel = document.getElementById(`admin-panel-${id}`);
         const btn = document.getElementById(`admin-sub-${id}`);
@@ -2195,6 +2441,335 @@
         document.getElementById('excel-status-text').innerText = `Impor Berhasil: ${count} baris diproses.`;
       };
       reader.readAsArrayBuffer(file);
+    }
+
+    // Pinjam Pakai Kendaraan
+    function getEffectiveVehicleLoanStatus_(item, today = getTodayDateString()) {
+      const status = String(item.status || '').trim();
+      if (status === 'Ditolak') return status;
+
+      const start = normalizeDateValue(item.tglMulai);
+      const end = normalizeDateValue(item.tglSelesai || item.tglMulai) || start;
+      if (!start) return status || 'Menunggu';
+      if (end < today) return 'Selesai';
+      if (start <= today && today <= end) return 'Digunakan';
+      return status === 'Dipakai' || status === 'Digunakan' ? 'Disetujui' : (status || 'Menunggu');
+    }
+
+    function renderVehicleFeatures() {
+      const available = appState.kendaraan.filter(item => String(item.status || 'Tersedia').toLowerCase() === 'tersedia');
+      const count = document.getElementById('vehicle-available-count');
+      if (count) count.textContent = `${available.length} kendaraan tersedia`;
+
+      const adminSelect = document.getElementById('admin-loan-vehicle');
+      if (adminSelect) {
+        const previous = adminSelect.value;
+        adminSelect.innerHTML = '<option value="">Pilih kendaraan</option>' + appState.kendaraan.map(vehicle =>
+          `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(vehicle.nama)} — ${escapeHtml(vehicle.nomorPolisi)}</option>`
+        ).join('');
+        if (appState.kendaraan.some(vehicle => String(vehicle.id) === previous)) adminSelect.value = previous;
+      }
+
+      const publicList = document.getElementById('public-vehicle-list');
+      if (publicList) {
+        publicList.innerHTML = appState.kendaraan.length ? appState.kendaraan.map(vehicle => {
+          const isAvailable = String(vehicle.status || 'Tersedia').toLowerCase() === 'tersedia';
+          return `<article class="rounded-xl border ${isAvailable ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'} p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div><h4 class="font-bold text-slate-950">${escapeHtml(vehicle.nama)}</h4><p class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(vehicle.nomorPolisi)} · ${escapeHtml(vehicle.jenis || 'Mobil')}</p></div>
+              <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${isAvailable ? 'bg-emerald-700 text-white' : 'bg-slate-300 text-slate-700'}">${escapeHtml(vehicle.status || 'Tersedia')}</span>
+            </div>
+            ${vehicle.keterangan ? `<p class="mt-2 text-xs leading-relaxed text-slate-600">${escapeHtml(vehicle.keterangan)}</p>` : ''}
+          </article>`;
+        }).join('') : '<p class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Belum ada data kendaraan.</p>';
+      }
+      const publicLoanBody = document.getElementById('public-vehicle-loan-list');
+      if (publicLoanBody) {
+        const scheduledLoans = [...appState.pinjamanKendaraan].sort((a, b) =>
+          normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
+          normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
+          String(a.kendaraan || '').localeCompare(String(b.kendaraan || ''), 'id')
+        );
+        const monthGroups = new Map();
+        scheduledLoans.forEach(item => {
+          const date = normalizeDateValue(item.tglMulai);
+          const month = /^\d{4}-\d{2}/.test(date) ? date.slice(0, 7) : 'unknown';
+          if (!monthGroups.has(month)) monthGroups.set(month, []);
+          monthGroups.get(month).push(item);
+        });
+        const groupedRows = [...monthGroups.entries()]
+          .sort(([a], [b]) => a === 'unknown' ? 1 : b === 'unknown' ? -1 : b.localeCompare(a))
+          .map(([month, items]) => {
+            const [year, monthNumber] = month.split('-').map(Number);
+            const monthLabel = month === 'unknown'
+              ? 'Tanggal tidak tersedia'
+              : new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, monthNumber - 1, 1));
+            const rows = items.map(item => {
+              const status = getEffectiveVehicleLoanStatus_(item);
+              const statusClass = status === 'Digunakan'
+                ? 'bg-cyan-100 text-cyan-800'
+                : status === 'Selesai'
+                  ? 'bg-slate-100 text-slate-700'
+                  : status === 'Ditolak'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-amber-100 text-amber-800';
+              return `<tr>
+                <td class="p-3 font-semibold text-slate-900">${escapeHtml(item.kendaraan)}</td>
+                <td class="p-3 text-slate-700">${escapeHtml(item.pemohon)}<br><span class="text-slate-500">${escapeHtml(item.unit)}</span></td>
+                <td class="p-3 text-slate-700">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? `–${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}${item.jamMulai || item.jamSelesai ? `<br>${item.jamMulai && item.jamSelesai ? `${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))}` : escapeHtml(formatTimeIndonesia(item.jamMulai || item.jamSelesai))}` : ''}</td>
+                <td class="p-3 text-slate-700">${escapeHtml(item.tujuan)}</td>
+                <td class="p-3"><span class="rounded-full px-2 py-1 text-[10px] font-bold ${statusClass}">${escapeHtml(status)}</span></td>
+              </tr>`;
+            }).join('');
+            return `<tr class="bg-slate-100"><th colspan="5" scope="rowgroup" class="border-y border-slate-200 px-3 py-2 text-left text-xs font-extrabold uppercase tracking-wide text-slate-700">${escapeHtml(monthLabel)} <span class="ml-1 font-semibold normal-case tracking-normal text-slate-500">(${items.length} penggunaan)</span></th></tr>${rows}`;
+          }).join('');
+        publicLoanBody.innerHTML = groupedRows || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Belum ada data penggunaan kendaraan.</td></tr>';
+      }
+      renderVehicleTable();
+      renderVehicleLoanTable();
+    }
+
+    async function handleAdminVehicleLoanSubmit(event) {
+      event.preventDefault();
+      const data = {
+        id: document.getElementById('vehicle-loan-edit-id').value,
+        vehicleId: document.getElementById('admin-loan-vehicle').value,
+        pemohon: document.getElementById('admin-loan-pemohon').value,
+        unit: document.getElementById('admin-loan-unit').value,
+        noHp: document.getElementById('admin-loan-phone').value,
+        supir: document.getElementById('admin-loan-supir').value,
+        status: document.getElementById('admin-loan-status').value,
+        tglMulai: document.getElementById('admin-loan-start-date').value,
+        tglSelesai: document.getElementById('admin-loan-end-date').value,
+        jamMulai: document.getElementById('admin-loan-start-time').value,
+        jamSelesai: document.getElementById('admin-loan-end-time').value,
+        tujuan: document.getElementById('admin-loan-purpose').value
+      };
+      if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
+      try {
+        const result = await requestBackendAction('saveVehicleLoan', { adminPassword, data: JSON.stringify(data) });
+        resetAdminVehicleLoanForm();
+        await loadDataFromBackend({ silent: true });
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    function resetAdminVehicleLoanForm() {
+      document.getElementById('form-pinjaman-kendaraan-admin').reset();
+      document.getElementById('vehicle-loan-edit-id').value = '';
+      document.getElementById('admin-loan-start-time').value = '08:00';
+      document.getElementById('admin-loan-end-time').value = '16:00';
+    }
+
+    async function handleVehicleSubmit(event) {
+      event.preventDefault();
+      if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
+      const data = {
+        id: document.getElementById('vehicle-edit-id').value,
+        nama: document.getElementById('vehicle-name').value,
+        nomorPolisi: document.getElementById('vehicle-plate').value,
+        jenis: document.getElementById('vehicle-type').value,
+        status: document.getElementById('vehicle-status').value,
+        keterangan: document.getElementById('vehicle-description').value
+      };
+      try {
+        const result = await requestBackendAction('saveVehicle', { adminPassword, data: JSON.stringify(data) });
+        await loadDataFromBackend({ silent: true });
+        resetVehicleForm();
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    function renderVehicleTable() {
+      const body = document.getElementById('vehicle-table-body');
+      if (!body) return;
+      body.innerHTML = appState.kendaraan.length ? appState.kendaraan.map(vehicle => `
+        <tr>
+          <td class="p-3 font-semibold text-slate-100">${escapeHtml(vehicle.nama)}</td>
+          <td class="p-3 text-slate-300">${escapeHtml(vehicle.nomorPolisi)}</td>
+          <td class="p-3 text-slate-300">${escapeHtml(vehicle.jenis || '-')}</td>
+          <td class="p-3 text-amber-300">${escapeHtml(vehicle.status || 'Tersedia')}</td>
+          <td class="p-3 text-slate-300">${escapeHtml(vehicle.keterangan || '-')}</td>
+          <td class="p-3 text-right">
+            <button type="button" onclick="editVehicle('${escapeHtml(vehicle.id)}')" class="mr-1 rounded bg-amber-500/20 px-2 py-1 text-amber-200">Edit</button>
+            <button type="button" onclick="deleteVehicleConfirm('${escapeHtml(vehicle.id)}')" class="rounded bg-red-900/50 px-2 py-1 text-red-200">Hapus</button>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada kendaraan.</td></tr>';
+    }
+
+    function editVehicle(id) {
+      const vehicle = appState.kendaraan.find(item => String(item.id) === String(id));
+      if (!vehicle) return;
+      document.getElementById('vehicle-edit-id').value = vehicle.id;
+      document.getElementById('vehicle-name').value = vehicle.nama || '';
+      document.getElementById('vehicle-plate').value = vehicle.nomorPolisi || '';
+      document.getElementById('vehicle-type').value = vehicle.jenis || 'Mobil';
+      document.getElementById('vehicle-status').value = vehicle.status || 'Tersedia';
+      document.getElementById('vehicle-description').value = vehicle.keterangan || '';
+      switchAdminTab('kendaraan');
+    }
+
+    function resetVehicleForm() {
+      document.getElementById('form-kendaraan').reset();
+      document.getElementById('vehicle-edit-id').value = '';
+    }
+
+    async function deleteVehicleConfirm(id) {
+      if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
+      if (!window.confirm('Hapus data kendaraan ini?')) return;
+      try {
+        const result = await requestBackendAction('deleteVehicle', { adminPassword, id });
+        await loadDataFromBackend({ silent: true });
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    function renderVehicleLoanTable() {
+      const loans = [...appState.pinjamanKendaraan].sort((a, b) =>
+        normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
+        normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
+        String(a.kendaraan || '').localeCompare(String(b.kendaraan || ''), 'id')
+      );
+      const counts = { Menunggu: 0, Disetujui: 0, Digunakan: 0, Selesai: 0, Ditolak: 0 };
+      loans.forEach(item => {
+        const status = getEffectiveVehicleLoanStatus_(item);
+        counts[status] = (counts[status] || 0) + 1;
+      });
+      const stats = document.getElementById('vehicle-loan-stats');
+      if (stats) {
+        stats.innerHTML = [
+          ['Menunggu', counts.Menunggu, 'amber'],
+          ['Disetujui', counts.Disetujui, 'emerald'],
+          ['Digunakan', counts.Digunakan, 'cyan'],
+          ['Selesai', counts.Selesai, 'blue'],
+          ['Ditolak', counts.Ditolak, 'red']
+        ].map(([label, value, color]) => `<div class="rounded-xl border border-slate-600 bg-slate-900 p-3"><p class="text-[10px] font-bold text-slate-400">${label}</p><p class="mt-1 text-xl font-bold text-${color}-300">${value}</p></div>`).join('');
+      }
+      const body = document.getElementById('vehicle-loan-table-body');
+      if (!body) return;
+      body.innerHTML = loans.length ? loans.map(item => {
+        const status = getEffectiveVehicleLoanStatus_(item);
+        return `<tr>
+          <td class="p-3"><strong class="text-slate-100">${escapeHtml(item.pemohon)}</strong><br><span class="text-slate-400">${escapeHtml(item.unit)} · ${escapeHtml(item.noHp)}</span></td>
+          <td class="p-3 text-slate-300">${escapeHtml(item.kendaraan)}<br><span class="text-[10px] text-slate-400">Sopir: ${escapeHtml(item.supir || '-')}</span></td>
+          <td class="p-3 text-slate-300">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? `–${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}${item.jamMulai || item.jamSelesai ? `<br>${item.jamMulai && item.jamSelesai ? `${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))}` : escapeHtml(formatTimeIndonesia(item.jamMulai || item.jamSelesai))}` : ''}</td>
+          <td class="p-3 text-slate-300">${escapeHtml(item.tujuan)}</td>
+          <td class="p-3 text-amber-300">${escapeHtml(status)}${item.catatan ? `<br><span class="text-[10px] text-slate-400">${escapeHtml(item.catatan)}</span>` : ''}</td>
+          <td class="p-3">
+            <div class="flex flex-wrap justify-end gap-1">
+              ${item.readOnly || item.source === 'workbook'
+                ? '<span class="text-[10px] text-slate-400">Data arsip Sheet1</span>'
+                : `<button type="button" onclick="editVehicleLoan('${escapeHtml(item.id)}')" class="rounded bg-amber-500/20 px-2 py-1 text-amber-200">Edit</button>
+                  ${status === 'Menunggu' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Disetujui')" class="rounded bg-emerald-900/60 px-2 py-1 text-emerald-200">Setujui</button><button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Ditolak')" class="rounded bg-red-900/50 px-2 py-1 text-red-200">Tolak</button>` : ''}
+                  ${status === 'Disetujui' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Dipakai')" class="rounded bg-cyan-900/50 px-2 py-1 text-cyan-200">Mulai Pakai</button>` : ''}
+                  ${status === 'Digunakan' && item.status === 'Dipakai' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Selesai')" class="rounded bg-blue-900/50 px-2 py-1 text-blue-200">Selesai</button>` : ''}
+                  <button type="button" onclick="deleteVehicleLoanConfirm('${escapeHtml(item.id)}')" class="rounded bg-slate-700 px-2 py-1 text-slate-200">Hapus</button>`}
+            </div>
+          </td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada pengajuan pinjaman kendaraan.</td></tr>';
+      renderVehicleLoanArchive();
+    }
+
+    function renderVehicleLoanArchive() {
+      const monthInput = document.getElementById('vehicle-loan-archive-month');
+      if (monthInput && !monthInput.value) monthInput.value = getLocalMonthValue();
+      const monthValue = monthInput ? monthInput.value : getLocalMonthValue();
+      const filtered = appState.pinjamanKendaraan
+        .filter(item => getEffectiveVehicleLoanStatus_(item) === 'Selesai')
+        .filter(item => normalizeDateValue(item.tglMulai).startsWith(monthValue))
+        .sort((a, b) =>
+          normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
+          normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
+          String(a.kendaraan || '').localeCompare(String(b.kendaraan || ''), 'id')
+        );
+      const body = document.getElementById('vehicle-loan-archive-body');
+      const period = document.getElementById('vehicle-loan-archive-period');
+      if (period) {
+        const [year, month] = monthValue.split('-').map(Number);
+        period.textContent = monthValue
+          ? `Periode ${new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1))} — ${filtered.length} arsip`
+          : `${filtered.length} arsip`;
+      }
+      if (body) {
+        body.innerHTML = filtered.length ? filtered.map(item => `
+          <tr>
+            <td class="border border-slate-300 p-2">${escapeHtml(item.id)}</td>
+            <td class="border border-slate-300 p-2">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? `–${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}${item.jamMulai || item.jamSelesai ? `<br>${item.jamMulai && item.jamSelesai ? `${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))}` : escapeHtml(formatTimeIndonesia(item.jamMulai || item.jamSelesai))}` : ''}</td>
+            <td class="border border-slate-300 p-2">${escapeHtml(item.kendaraan)}</td>
+            <td class="border border-slate-300 p-2">${escapeHtml(item.pemohon)}<br>${escapeHtml(item.unit)}</td>
+            <td class="border border-slate-300 p-2">${escapeHtml(item.tujuan)}</td>
+            <td class="border border-slate-300 p-2">${escapeHtml(getEffectiveVehicleLoanStatus_(item))}</td>
+          </tr>`).join('') : '<tr><td colspan="6" class="border border-slate-300 p-4 text-center text-slate-500">Tidak ada arsip pada periode ini.</td></tr>';
+      }
+    }
+
+    function printVehicleLoanArchive() {
+      const element = document.getElementById('vehicle-loan-archive-print');
+      const monthValue = document.getElementById('vehicle-loan-archive-month').value || getLocalMonthValue();
+      if (typeof html2pdf !== 'function') {
+        showToast('Fitur cetak PDF belum tersedia. Periksa koneksi internet lalu coba lagi.', 'error');
+        return;
+      }
+      html2pdf().set({
+        margin: [0.3, 0.3, 0.4, 0.3],
+        filename: `Arsip_Pinjaman_Kendaraan_${monthValue}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
+      }).from(element).save()
+        .then(() => showToast('Arsip pinjaman kendaraan berhasil dicetak.', 'success'))
+        .catch(() => showToast('Arsip kendaraan gagal dicetak.', 'error'));
+    }
+
+    function editVehicleLoan(id) {
+      const item = appState.pinjamanKendaraan.find(loan => String(loan.id) === String(id));
+      if (!item) return;
+      document.getElementById('vehicle-loan-edit-id').value = item.id;
+      document.getElementById('admin-loan-vehicle').value = item.vehicleId;
+      document.getElementById('admin-loan-pemohon').value = item.pemohon || '';
+      document.getElementById('admin-loan-unit').value = item.unit || '';
+      document.getElementById('admin-loan-phone').value = item.noHp || '';
+      document.getElementById('admin-loan-supir').value = item.supir || '';
+      document.getElementById('admin-loan-status').value = item.status || 'Menunggu';
+      document.getElementById('admin-loan-start-date').value = normalizeDateValue(item.tglMulai);
+      document.getElementById('admin-loan-end-date').value = normalizeDateValue(item.tglSelesai || item.tglMulai);
+      document.getElementById('admin-loan-start-time').value = normalizeTimeValue(item.jamMulai);
+      document.getElementById('admin-loan-end-time').value = normalizeTimeValue(item.jamSelesai);
+      document.getElementById('admin-loan-purpose').value = item.tujuan || '';
+      switchAdminTab('pinjaman-kendaraan');
+      document.getElementById('form-pinjaman-kendaraan-admin').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function updateVehicleLoanStatus(id, status) {
+      if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
+      const note = status === 'Ditolak' ? window.prompt('Catatan penolakan (opsional):', '') : '';
+      try {
+        const result = await requestBackendAction('setVehicleLoanStatus', { adminPassword, id, status, note: note || '' });
+        await loadDataFromBackend({ silent: true });
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    async function deleteVehicleLoanConfirm(id) {
+      if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
+      if (!window.confirm('Hapus pengajuan peminjaman ini?')) return;
+      try {
+        const result = await requestBackendAction('deleteVehicleLoan', { adminPassword, id });
+        await loadDataFromBackend({ silent: true });
+        showToast(result.message, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
     }
 
     // Manage Ruangan Functions
