@@ -599,12 +599,14 @@ function getAgendaData() {
         "Status", 
         "URL Berkas / Lampiran", 
         "Keterangan", 
-        "Waktu Input"
+        "Waktu Input",
+        "Jadwal Gladi"
       ]);
-      sheet.getRange("A1:N1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
+      sheet.getRange("A1:O1").setFontWeight("bold").setBackground("#064E3B").setFontColor("#F59E0B");
     }
 
     const operatorColumn = getAgendaOperatorColumn_(sheet);
+    const gladiColumn = getAgendaGladiColumn_(sheet);
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return [];
 
@@ -626,7 +628,8 @@ function getAgendaData() {
         urlBerkas: row[11],
         keterangan: row[12],
         created: row[13],
-        operatorAula: row[operatorColumn - 1] || ""
+        operatorAula: row[operatorColumn - 1] || "",
+        jadwalGladi: row[gladiColumn - 1] || ""
       };
     });
   } catch (error) {
@@ -676,6 +679,8 @@ function simpanAgendaAdmin(formObject, fileData) {
     ]);
     sheet.getRange(sheet.getLastRow(), getAgendaOperatorColumn_(sheet))
       .setValue(String(formObject.operatorAula || "").trim());
+    sheet.getRange(sheet.getLastRow(), getAgendaGladiColumn_(sheet))
+      .setValue(String(formObject.jadwalGladi || "").trim());
 
     return { success: true, id: newId, message: "Agenda berhasil ditambahkan & disetujui!" };
   } catch (error) {
@@ -692,6 +697,7 @@ function validateAgendaForm_(formObject) {
   const endDate = String(formObject.tglSelesai || startDate);
   const startTime = String(formObject.waktuMulai || formObject.jamMulai || "");
   const endTime = String(formObject.waktuSelesai || formObject.jamSelesai || "");
+  const jadwalGladi = String(formObject.jadwalGladi || "").trim();
   if (!name || !organizer || !room || !faculty) throw new Error("Nama kegiatan, penyelenggara, fakultas/unit, dan ruangan wajib diisi.");
   if (!isValidAgendaDate_(startDate) || !isValidAgendaDate_(endDate) || startDate > endDate) {
     throw new Error("Rentang tanggal kegiatan tidak valid.");
@@ -700,6 +706,15 @@ function validateAgendaForm_(formObject) {
       agendaTimeMinutes_(startTime) >= agendaTimeMinutes_(endTime)) {
     throw new Error("Rentang waktu kegiatan tidak valid.");
   }
+  if (jadwalGladi && !isValidAgendaDateTime_(jadwalGladi)) {
+    throw new Error("Jadwal gladi tidak valid.");
+  }
+}
+
+function isValidAgendaDateTime_(value) {
+  const match = String(value || "").match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/);
+  return Boolean(match && isValidAgendaDate_(match[1]) &&
+    Number(match[2]) <= 23 && Number(match[3]) <= 59);
 }
 
 function isValidAgendaDate_(value) {
@@ -754,9 +769,16 @@ function findAgendaRow_(sheet, id) {
 }
 
 function getAgendaOperatorColumn_(sheet) {
+  return getAgendaColumn_(sheet, "Petugas / Operator Aula/Gedung");
+}
+
+function getAgendaGladiColumn_(sheet) {
+  return getAgendaColumn_(sheet, "Jadwal Gladi");
+}
+
+function getAgendaColumn_(sheet, headerName) {
   const lastColumn = Math.max(sheet.getLastColumn(), 14);
   const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
-  const headerName = "Petugas / Operator Aula/Gedung";
   let column = headers.indexOf(headerName) + 1;
   if (!column) {
     column = lastColumn + 1;
@@ -784,6 +806,8 @@ function updateAgendaAdmin_(id, formObject) {
   ]]);
   sheet.getRange(existing.rowNumber, getAgendaOperatorColumn_(sheet))
     .setValue(String(formObject.operatorAula || "").trim());
+  sheet.getRange(existing.rowNumber, getAgendaGladiColumn_(sheet))
+    .setValue(String(formObject.jadwalGladi || "").trim());
   return { success: true, message: "Booking berhasil diperbarui." };
 }
 

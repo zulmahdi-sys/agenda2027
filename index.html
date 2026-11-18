@@ -661,10 +661,11 @@
     [class*="text-emerald-200"] { color: #475569 !important; }
     [class*="text-emerald-300"],
     [class*="text-emerald-400"] { color: var(--brand) !important; }
-    [class*="text-amber-100"],
-    [class*="text-amber-200"],
-    [class*="text-amber-300"],
-    [class*="text-amber-400"] { color: var(--accent) !important; }
+    [class*="text-amber-"],
+    [class*="text-yellow-"] {
+      color: #111827 !important;
+      -webkit-text-fill-color: #111827 !important;
+    }
     [class*="border-amber-"],
     [class*="border-emerald-"],
     [class*="border-slate-"] { border-color: var(--border) !important; }
@@ -760,7 +761,7 @@
       border-left: 4px solid #d97706 !important;
       background-color: #fffbeb !important;
     }
-    .vehicle-group-in-use h4 { color: #92400e !important; }
+    .vehicle-group-in-use h4 { color: #111827 !important; }
     .vehicle-card-in-use {
       border-color: #fbbf24 !important;
       border-left: 5px solid #d97706 !important;
@@ -779,7 +780,7 @@
       border-radius: 9999px;
       background-color: #fef3c7;
       padding: 0.3rem 0.65rem;
-      color: #92400e;
+      color: #111827;
       font-size: 0.625rem;
       font-weight: 800;
       letter-spacing: 0.025em;
@@ -1091,6 +1092,10 @@
             <div>
               <label class="block text-xs font-bold text-amber-300 mb-1">WAKTU SELESAI *</label>
               <input type="time" id="booking-jam-selesai" value="16:00" required class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
+            </div>
+            <div>
+              <label for="booking-jadwal-gladi" class="block text-xs font-bold text-amber-300 mb-1">JADWAL GLADI</label>
+              <input type="datetime-local" id="booking-jadwal-gladi" class="w-full bg-slate-900 border border-amber-500/40 text-slate-100 text-xs rounded-lg p-3">
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-bold text-amber-300 mb-1">LAMPIRAN BERKAS PROPOSAL (PDF/DOCX - Tersimpan ke Google Drive)</label>
@@ -2354,6 +2359,7 @@
         tglSelesai: document.getElementById('booking-tgl-selesai').value,
         jamMulai: document.getElementById('booking-jam-mulai').value,
         jamSelesai: document.getElementById('booking-jam-selesai').value,
+        jadwalGladi: document.getElementById('booking-jadwal-gladi').value,
         status: "Approved"
       };
 
@@ -2455,6 +2461,7 @@
       document.getElementById('booking-tgl-selesai').value = normalizeDateValue(booking.tglSelesai || booking.tglMulai);
       document.getElementById('booking-jam-mulai').value = normalizeTimeValue(booking.jamMulai || booking.waktuMulai);
       document.getElementById('booking-jam-selesai').value = normalizeTimeValue(booking.jamSelesai || booking.waktuSelesai);
+      document.getElementById('booking-jadwal-gladi').value = normalizeDateTimeLocalValue(booking.jadwalGladi);
       updateBookingSubmitButton();
       switchAdminTab('input-booking');
       document.getElementById('form-booking-admin').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2516,7 +2523,7 @@
             <td class="p-3 text-slate-300">${escapeHtml(booking.penyelenggara || '-')}<br><span class="text-[10px] text-slate-500">${escapeHtml(booking.fakultas || 'Umum')}</span></td>
             <td class="p-3 text-slate-300">${escapeHtml(booking.operatorAula || '-')}</td>
             <td class="p-3 text-slate-300">${escapeHtml(booking.ruangan || '-')}</td>
-            <td class="p-3 text-slate-300">${escapeHtml(formatDateIndonesia(booking.tglMulai))} – ${escapeHtml(formatDateIndonesia(booking.tglSelesai || booking.tglMulai))}<br><span class="text-[10px] text-amber-300">${escapeHtml(formatTimeIndonesia(booking.jamMulai || booking.waktuMulai))}–${escapeHtml(formatTimeIndonesia(booking.jamSelesai || booking.waktuSelesai))} WIB</span></td>
+            <td class="p-3 text-slate-300">${escapeHtml(formatDateIndonesia(booking.tglMulai))} – ${escapeHtml(formatDateIndonesia(booking.tglSelesai || booking.tglMulai))}<br><span class="text-[10px] text-amber-300">${escapeHtml(formatTimeIndonesia(booking.jamMulai || booking.waktuMulai))}–${escapeHtml(formatTimeIndonesia(booking.jamSelesai || booking.waktuSelesai))} WIB</span>${booking.jadwalGladi ? `<br><span class="text-[10px]">Gladi: ${escapeHtml(formatDateTimeIndonesia(booking.jadwalGladi))}</span>` : ''}</td>
             <td class="p-3 ${published ? 'text-emerald-300' : 'text-amber-300'}">${published ? 'Terbit' : 'Draf'}</td>
             <td class="p-3 text-right">
               <div class="flex flex-wrap justify-end gap-1">
@@ -4287,6 +4294,7 @@
         ...item,
         nama: item.nama || item.namaKegiatan || '',
         operatorAula: item.operatorAula || item.petugasAula || item.operator || '',
+        jadwalGladi: item.jadwalGladi || '',
         backendRecord: Boolean(item.rowId || item.backendRecord),
         tglMulai: normalizeDateValue(item.tglMulai),
         tglSelesai: normalizeDateValue(item.tglSelesai || item.tglMulai),
@@ -4294,6 +4302,32 @@
         jamSelesai: normalizeTimeValue(item.jamSelesai || item.waktuSelesai),
         driveLink: item.driveLink || item.urlBerkas || ''
       };
+    }
+
+    function normalizeDateTimeLocalValue(value) {
+      if (!value) return '';
+      if (value instanceof Date) {
+        return formatDateTimeForWib(value);
+      }
+
+      const text = String(value);
+      const localMatch = text.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
+      if (localMatch) return `${localMatch[1]}T${localMatch[2]}`;
+
+      const date = new Date(text);
+      return Number.isNaN(date.getTime()) ? '' : formatDateTimeForWib(date);
+    }
+
+    function formatDateTimeForWib(date) {
+      const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+      return `${wibDate.getUTCFullYear()}-${String(wibDate.getUTCMonth() + 1).padStart(2, '0')}-${String(wibDate.getUTCDate()).padStart(2, '0')}T${String(wibDate.getUTCHours()).padStart(2, '0')}:${String(wibDate.getUTCMinutes()).padStart(2, '0')}`;
+    }
+
+    function formatDateTimeIndonesia(value) {
+      const localValue = normalizeDateTimeLocalValue(value);
+      const match = localValue.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+      if (!match) return String(value || '');
+      return `${formatDateIndonesia(`${match[1]}-${match[2]}-${match[3]}`)}, ${match[4]}:${match[5]} WIB`;
     }
 
     function normalizeDateValue(value) {
