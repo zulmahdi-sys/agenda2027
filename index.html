@@ -1536,7 +1536,9 @@
               })]
               : []),
           hariKhusus: Array.isArray(data.hariKhusus) ? data.hariKhusus.map(normalizeCalendarEvent) : [],
-          kendaraan: Array.isArray(data.kendaraan) ? data.kendaraan : [],
+          kendaraan: Array.isArray(data.kendaraan) && data.kendaraan.length
+            ? data.kendaraan
+            : deriveFallbackVehicleInventory_(vehicleLoans),
           pinjamanKendaraan: vehicleLoans
         };
         backendDataSignature = signature;
@@ -2593,8 +2595,8 @@
           <td class="p-3 text-amber-300">${escapeHtml(vehicle.status || 'Tersedia')}</td>
           <td class="p-3 text-slate-300">${escapeHtml(vehicle.keterangan || '-')}</td>
           <td class="p-3 text-right">
-            <button type="button" onclick="editVehicle('${escapeHtml(vehicle.id)}')" class="mr-1 rounded bg-amber-500/20 px-2 py-1 text-amber-200">Edit</button>
-            <button type="button" onclick="deleteVehicleConfirm('${escapeHtml(vehicle.id)}')" class="rounded bg-red-900/50 px-2 py-1 text-red-200">Hapus</button>
+            <button type="button" onclick="editVehicle(decodeURIComponent('${encodeURIComponent(String(vehicle.id))}'))" class="mr-1 rounded bg-amber-500/20 px-2 py-1 text-amber-200">Edit</button>
+            <button type="button" onclick="deleteVehicleConfirm(decodeURIComponent('${encodeURIComponent(String(vehicle.id))}'))" class="rounded bg-red-900/50 px-2 py-1 text-red-200">Hapus</button>
           </td>
         </tr>`).join('') : '<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada kendaraan.</td></tr>';
     }
