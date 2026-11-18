@@ -989,6 +989,8 @@
           </div>
           <form id="form-kendaraan" onsubmit="handleVehicleSubmit(event)" class="grid grid-cols-1 gap-3 rounded-xl border border-amber-500/30 bg-emerald-900/40 p-4 md:grid-cols-2">
             <input id="vehicle-edit-id" type="hidden">
+            <input id="vehicle-edit-original-name" type="hidden">
+            <input id="vehicle-edit-original-plate" type="hidden">
             <div>
               <label for="vehicle-name" class="mb-1 block text-xs font-bold text-amber-300">NAMA KENDARAAN *</label>
               <input id="vehicle-name" required maxlength="150" placeholder="Contoh: Toyota Innova" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
@@ -2562,6 +2564,8 @@
       if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
       const data = {
         id: document.getElementById('vehicle-edit-id').value,
+        lookupNama: document.getElementById('vehicle-edit-original-name').value,
+        lookupNomorPolisi: document.getElementById('vehicle-edit-original-plate').value,
         nama: document.getElementById('vehicle-name').value,
         nomorPolisi: document.getElementById('vehicle-plate').value,
         jenis: document.getElementById('vehicle-type').value,
@@ -2599,6 +2603,8 @@
       const vehicle = appState.kendaraan.find(item => String(item.id) === String(id));
       if (!vehicle) return;
       document.getElementById('vehicle-edit-id').value = vehicle.id;
+      document.getElementById('vehicle-edit-original-name').value = vehicle.nama || '';
+      document.getElementById('vehicle-edit-original-plate').value = vehicle.nomorPolisi || '';
       document.getElementById('vehicle-name').value = vehicle.nama || '';
       document.getElementById('vehicle-plate').value = vehicle.nomorPolisi || '';
       document.getElementById('vehicle-type').value = vehicle.jenis || 'Mobil';
@@ -2610,13 +2616,21 @@
     function resetVehicleForm() {
       document.getElementById('form-kendaraan').reset();
       document.getElementById('vehicle-edit-id').value = '';
+      document.getElementById('vehicle-edit-original-name').value = '';
+      document.getElementById('vehicle-edit-original-plate').value = '';
     }
 
     async function deleteVehicleConfirm(id) {
       if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
       if (!window.confirm('Hapus data kendaraan ini?')) return;
       try {
-        const result = await requestBackendAction('deleteVehicle', { adminPassword, id });
+        const vehicle = appState.kendaraan.find(item => String(item.id) === String(id));
+        const result = await requestBackendAction('deleteVehicle', {
+          adminPassword,
+          id,
+          nama: vehicle ? vehicle.nama || '' : '',
+          nomorPolisi: vehicle ? vehicle.nomorPolisi || '' : ''
+        });
         await loadDataFromBackend({ silent: true });
         showToast(result.message, 'success');
       } catch (error) {
