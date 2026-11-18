@@ -8,6 +8,9 @@ const VEHICLE_SPREADSHEET_ID = SPREADSHEET_ID;
 const VEHICLE_SHEET_GID = 1214400219;
 const VEHICLE_SHEET_NAME = "Data Kendaraan Dinas";
 const VEHICLE_LOAN_SHEET_NAME = "Pemakaian Kendaraan";
+const ACTIVE_VEHICLE_LOAN_STATUSES = [
+  "sedang digunakan", "menunggu", "disetujui", "dipakai", "digunakan", "approved"
+];
 const DRIVE_FOLDER_ID = "1tdT0Tlq60Z0qzWyM38vNSrJQQ2ImQk8G";
 
 function doGet(e) {
@@ -930,12 +933,60 @@ function getVehicleLoanSheet_() {
 function setupVehicleSheets() {
   const vehicleSheet = getVehicleSheet_();
   const loanSheet = getVehicleLoanSheet_();
+  completeExpiredVehicleLoans();
+  setupVehicleLoanCompletionTrigger();
   return {
     success: true,
-    message: "Tab master kendaraan dan pemakaian kendaraan siap digunakan.",
+    message: "Tab kendaraan siap digunakan dan otomatisasi status selesai aktif setiap 5 menit.",
     vehicleSheet: vehicleSheet.getName(),
     vehicleLoanSheet: loanSheet.getName()
   };
+}
+
+function setupVehicleLoanCompletionTrigger() {
+  const handler = "completeExpiredVehicleLoans";
+  ScriptApp.getProjectTriggers()
+    .filter(trigger => trigger.getHandlerFunction() === handler)
+    .forEach(trigger => ScriptApp.deleteTrigger(trigger));
+  ScriptApp.newTrigger(handler).timeBased().everyMinutes(5).create();
+  return { success: true, message: "Pemeriksaan status peminjaman terjadwal setiap 5 menit." };
+}
+
+function isActiveVehicleLoanStatus_(status) {
+  return ACTIVE_VEHICLE_LOAN_STATUSES.includes(String(status || "").trim().toLowerCase());
+}
+
+function completeExpiredVehicleLoans() {
+  const sheet = getVehicleLoanSheet_();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const columns = getVehicleLoanColumns_(sheet);
+  const rows = sheet.getRange(2, 1, lastRow - 1, columns.lastColumn).getValues();
+  const statusValues = rows.map(row => [String(row[columns.status] || "").trim()]);
+  const now = new Date();
+  const timeZone = Session.getScriptTimeZone();
+  const today = Utilities.formatDate(now, timeZone, "yyyy-MM-dd");
+  const currentMinutes = agendaTimeMinutes_(Utilities.formatDate(now, timeZone, "HH:mm"));
+  let updatedCount = 0;
+
+  rows.forEach((row, index) => {
+    if (!isActiveVehicleLoanStatus_(statusValues[index][0])) return;
+    const end = parseSheetDateTime_(row[columns.endDate] || row[columns.startDate]);
+    if (!end.date) return;
+    const endTime = row[columns.endTime] || end.time || "16:00";
+    const endMinutes = agendaTimeMinutes_(endTime);
+    if (endMinutes === null) return;
+    if (end.date < today || (end.date === today && endMinutes <= currentMinutes)) {
+      statusValues[index][0] = "Selesai";
+      updatedCount++;
+    }
+  });
+
+  if (updatedCount) {
+    sheet.getRange(2, columns.status + 1, statusValues.length, 1).setValues(statusValues);
+  }
+  return updatedCount;
 }
 
 function getVehicleLoanColumns_(sheet) {
@@ -992,6 +1043,7 @@ function getVehicleData_() {
 
 function getVehicleLoanData_() {
   const sheet = getVehicleLoanSheet_();
+  completeExpiredVehicleLoans();
   if (sheet.getLastRow() < 1) return [];
   const columns = getVehicleLoanColumns_(sheet);
   const values = sheet.getRange(1, 1, sheet.getLastRow(), columns.lastColumn).getValues();
@@ -1142,6 +1194,7 @@ function deleteVehicle_(id, nama, nomorPolisi) {
 }
 
 function vehicleLoanConflict_(sheet, data, excludedId) {
+  completeExpiredVehicleLoans();
   if (sheet.getLastRow() < 2) return;
   const targetStart = String(data.tglMulai || "");
   const targetEnd = String(data.tglSelesai || targetStart);
@@ -1152,7 +1205,7 @@ function vehicleLoanConflict_(sheet, data, excludedId) {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (excludedId && String(row[columns.id]) === String(excludedId)) continue;
-    if (!["Menunggu", "Disetujui", "Dipakai"].includes(String(row[columns.status] || ""))) continue;
+    if (!isActiveVehicleLoanStatus_(row[columns.status])) continue;
     if (String(row[columns.vehicleId]) !== String(data.vehicleId)) continue;
     const startParsed = parseSheetDateTime_(row[columns.startDate]);
     const endParsed = parseSheetDateTime_(row[columns.endDate] || row[columns.startDate]);
@@ -1198,11 +1251,11 @@ function submitVehicleLoan_(data) {
   values[columns.startTime] = data.jamMulai;
   values[columns.endTime] = data.jamSelesai;
   values[columns.driver] = data.supir || "";
-  values[columns.status] = "Menunggu";
+  values[columns.status] = "Sedang Digunakan";
   values[columns.note] = data.catatan || "";
   values[columns.createdAt] = new Date();
   sheet.appendRow(values);
-  return { success: true, id: id, message: "Pengajuan pinjam pakai kendaraan berhasil dikirim. Tunggu persetujuan admin." };
+  return { success: true, id: id, message: "Peminjaman kendaraan berhasil dicatat." };
 }
 
 function saveVehicleLoanAdmin_(data) {
@@ -1223,10 +1276,10 @@ function saveVehicleLoanAdmin_(data) {
       if (String(rows[i][columns.id]) === id) { rowNumber = i + 1; break; }
     }
   }
-  vehicleLoanConflict_(sheet, data, id);
-  const status = String(data.status || "Menunggu");
-  const allowed = ["Menunggu", "Disetujui", "Ditolak", "Dipakai", "Selesai"];
+  const status = String(data.status || "Sedang Digunakan");
+  const allowed = ["Sedang Digunakan", "Batal Digunakan", "Selesai"];
   if (!allowed.includes(status)) throw new Error("Status peminjaman tidak valid.");
+  if (isActiveVehicleLoanStatus_(status)) vehicleLoanConflict_(sheet, data, id);
   const vehicleLabel = vehicle.nomorPolisi
     ? vehicle.nama + " - " + vehicle.nomorPolisi
     : vehicle.nama;
@@ -1255,7 +1308,7 @@ function saveVehicleLoanAdmin_(data) {
 }
 
 function setVehicleLoanStatus_(id, status, note) {
-  const allowed = ["Menunggu", "Disetujui", "Ditolak", "Dipakai", "Selesai"];
+  const allowed = ["Sedang Digunakan", "Batal Digunakan", "Selesai"];
   if (!allowed.includes(status)) throw new Error("Status peminjaman tidak valid.");
   const sheet = getVehicleLoanSheet_();
   const columns = getVehicleLoanColumns_(sheet);
@@ -1263,6 +1316,9 @@ function setVehicleLoanStatus_(id, status, note) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][columns.id]) === String(id)) {
       sheet.getRange(i + 1, columns.status + 1).setValue(status);
+      if (String(note || "").trim()) {
+        sheet.getRange(i + 1, columns.note + 1).setValue(String(note).trim());
+      }
       return { success: true, message: "Status peminjaman berhasil diperbarui." };
     }
   }

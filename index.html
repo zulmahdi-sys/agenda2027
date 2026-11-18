@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#e2e8f0">
+  <meta name="theme-color" content="#f8fafc">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -587,13 +587,223 @@
         transition-duration: 0.01ms !important;
       }
     }
+    :root {
+      color-scheme: light;
+      --surface: #ffffff;
+      --surface-muted: #f8fafc;
+      --page: #f4f7f6;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --brand: #047857;
+      --brand-dark: #065f46;
+      --accent: #a16207;
+    }
+    body:not(.has-custom-background) {
+      background-color: var(--page) !important;
+      color: var(--text) !important;
+    }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 400 !important;
+      line-height: 1.5;
+    }
+    nav {
+      background-color: rgb(255 255 255 / 96%) !important;
+      border-color: var(--border) !important;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 5%), 0 8px 20px rgb(15 23 42 / 3%) !important;
+      backdrop-filter: blur(12px);
+    }
+    nav h1 { color: var(--brand-dark) !important; }
+    nav p { color: var(--text-muted) !important; }
+    nav button:not(.gold-btn):not([aria-current="page"]) {
+      color: #475569 !important;
+      background-color: transparent !important;
+      border-color: transparent !important;
+    }
+    nav button:not(.gold-btn):not([aria-current="page"]):hover {
+      color: var(--brand-dark) !important;
+      background-color: #f1f5f9 !important;
+    }
+    nav button[aria-current="page"] {
+      color: var(--brand-dark) !important;
+      background-color: #ecfdf5 !important;
+      border-color: #bbf7d0 !important;
+      font-weight: 700;
+    }
+    #mobile-menu {
+      background-color: #ffffff !important;
+      border-color: var(--border) !important;
+    }
+    #mobile-menu button:hover { background-color: #f1f5f9 !important; }
+    #mobile-nav-admin {
+      border: 1px solid #d1fae5;
+      background-color: #ecfdf5 !important;
+      color: var(--brand-dark) !important;
+      font-weight: 700;
+    }
+    main { padding-bottom: 3rem; }
+    main > section { animation: section-enter 220ms ease-out both; }
+    @keyframes section-enter {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--text) !important;
+      text-wrap: balance;
+    }
+    [class*="text-slate-100"],
+    [class*="text-slate-200"],
+    [class*="text-slate-300"] { color: #334155 !important; }
+    [class*="text-slate-400"],
+    [class*="text-slate-500"] { color: var(--text-muted) !important; }
+    [class*="text-emerald-100"],
+    [class*="text-emerald-200"] { color: #475569 !important; }
+    [class*="text-emerald-300"],
+    [class*="text-emerald-400"] { color: var(--brand) !important; }
+    [class*="text-amber-100"],
+    [class*="text-amber-200"],
+    [class*="text-amber-300"],
+    [class*="text-amber-400"] { color: var(--accent) !important; }
+    [class*="border-amber-"],
+    [class*="border-emerald-"],
+    [class*="border-slate-"] { border-color: var(--border) !important; }
+    input, select, textarea {
+      border-color: #cbd5e1 !important;
+      background-color: #ffffff !important;
+      color: var(--text) !important;
+    }
+    input::placeholder, textarea::placeholder { color: #94a3b8 !important; }
+    input:focus, select:focus, textarea:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 3px rgb(16 185 129 / 15%);
+    }
+    button, a, input, select, textarea {
+      transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+    button:disabled { cursor: not-allowed; }
+    button:focus-visible, a:focus-visible, select:focus-visible,
+    input:focus-visible, textarea:focus-visible {
+      outline-color: #059669 !important;
+    }
+    button[class~="bg-emerald-900/60"],
+    button[class~="bg-emerald-900"],
+    button[class~="bg-emerald-800"] {
+      border-color: #047857 !important;
+      background-color: #047857 !important;
+      color: #ffffff !important;
+    }
+    button[class~="bg-emerald-900/60"]:hover,
+    button[class~="bg-emerald-900"]:hover,
+    button[class~="bg-emerald-800"]:hover { background-color: #065f46 !important; }
+    .gold-btn {
+      border: 1px solid #047857 !important;
+      border-radius: 0.75rem;
+      background: #047857 !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
+    }
+    .gold-btn:hover {
+      background: #065f46 !important;
+      box-shadow: 0 4px 10px rgb(6 95 70 / 18%);
+      transform: translateY(-1px);
+    }
+    #tab-beranda > section[aria-labelledby="home-agenda-search-title"],
+    #tab-beranda > .grid > div,
+    #tab-admin > div:first-child {
+      border-color: var(--border) !important;
+      background-color: var(--surface) !important;
+      box-shadow: 0 4px 16px rgb(15 23 42 / 4%);
+    }
+    #tab-beranda > section[aria-labelledby="home-agenda-search-title"] p,
+    #tab-beranda > .grid h3 { color: #475569 !important; }
+    #tab-beranda > section[aria-labelledby="home-agenda-search-title"] h2,
+    #tab-beranda > .grid h3[id] { color: var(--brand-dark) !important; }
+    #tab-beranda > section[aria-labelledby="upcoming-agenda-title"],
+    #tab-beranda > section[aria-labelledby="home-rooms-title"] {
+      border: 1px solid var(--border) !important;
+      border-radius: 1rem;
+      background: var(--surface) !important;
+      box-shadow: 0 4px 16px rgb(15 23 42 / 4%) !important;
+    }
+    #tab-beranda > section[aria-labelledby="upcoming-agenda-title"] h2,
+    #tab-beranda > section[aria-labelledby="home-rooms-title"] h3 { color: var(--brand-dark) !important; }
+    #tab-beranda > section[aria-labelledby="upcoming-agenda-title"] p,
+    #tab-beranda > section[aria-labelledby="home-rooms-title"] p { color: var(--text-muted) !important; }
+    #availability-chat-open {
+      border-color: var(--brand) !important;
+      background-color: var(--brand) !important;
+      color: #ffffff !important;
+    }
+    #availability-chat-open:hover { background-color: var(--brand-dark) !important; }
+    #selected-date-title.bg-amber-400 {
+      background-color: #ecfdf5 !important;
+      color: var(--brand-dark) !important;
+    }
+    #tab-admin > div:first-child > div:first-child { border-color: var(--border) !important; }
+    .archive-table-shell,
+    #tab-kendaraan > div {
+      border-color: var(--border);
+      box-shadow: 0 4px 16px rgb(15 23 42 / 4%);
+    }
+    table thead th {
+      background-color: #f1f5f9 !important;
+      color: #334155 !important;
+    }
+    table tbody tr:hover { background-color: #f8fafc; }
+    [class*="rounded-2xl"][class*="bg-white"],
+    [class*="rounded-xl"][class*="bg-white"] {
+      box-shadow: 0 4px 16px rgb(15 23 42 / 4%);
+    }
+    .vehicle-group-in-use {
+      border-color: #f59e0b !important;
+      border-left: 4px solid #d97706 !important;
+      background-color: #fffbeb !important;
+    }
+    .vehicle-group-in-use h4 { color: #92400e !important; }
+    .vehicle-card-in-use {
+      border-color: #fbbf24 !important;
+      border-left: 5px solid #d97706 !important;
+      background-color: #fffaf0 !important;
+      box-shadow: 0 2px 8px rgb(180 83 9 / 10%);
+    }
+    .vehicle-card-in-use:hover {
+      border-color: #d97706 !important;
+      box-shadow: 0 5px 14px rgb(180 83 9 / 16%);
+    }
+    .vehicle-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid #fcd34d;
+      border-radius: 9999px;
+      background-color: #fef3c7;
+      padding: 0.3rem 0.65rem;
+      color: #92400e;
+      font-size: 0.625rem;
+      font-weight: 800;
+      letter-spacing: 0.025em;
+      white-space: nowrap;
+    }
+    .vehicle-status-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      flex: none;
+      border-radius: 9999px;
+      background-color: #d97706;
+      box-shadow: 0 0 0 2px #fde68a;
+    }
+    @media (max-width: 640px) {
+      nav .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+      main { padding-top: 1rem; }
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col">
 
   <!-- NAVBAR RESPONSIF -->
   <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-amber-400 focus:px-4 focus:py-3 focus:font-bold focus:text-slate-950">Lewati ke konten utama</a>
-  <nav class="safe-area-top bg-emerald-950 border-b border-amber-500/30 sticky top-0 z-50 shadow-lg">
+  <nav class="safe-area-top bg-white/95 border-b border-slate-200 sticky top-0 z-50 shadow-sm backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 sm:h-20">
         <button type="button" class="flex min-w-0 items-center space-x-2 sm:space-x-3 text-left" onclick="switchTab('beranda')" aria-label="Buka kalender kegiatan">
@@ -601,17 +811,17 @@
             <img src="./uin-ar-raniry-logo.png" alt="" width="44" height="44" class="h-9 w-9 sm:h-11 sm:w-11 object-contain">
           </div>
           <div class="min-w-0">
-            <h1 class="font-bold text-base sm:text-lg text-amber-300 tracking-wide">UIN AR-RANIRY</h1>
-            <p class="hidden min-[360px]:block text-[10px] sm:text-xs text-emerald-200">Subbagian Tata Usaha dan Rumah Tangga</p>
+            <h1 class="font-bold text-base sm:text-lg text-emerald-900 tracking-wide">UIN AR-RANIRY</h1>
+            <p class="hidden min-[360px]:block text-[10px] sm:text-xs text-slate-500">Subbagian Tata Usaha dan Rumah Tangga</p>
           </div>
         </button>
 
         <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-2">
-          <button type="button" onclick="switchTab('beranda')" id="nav-beranda" aria-current="page" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-amber-400 bg-emerald-900/60 border border-amber-500/30">Beranda</button>
-          <button type="button" onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Kalender Setahun</button>
-          <button type="button" onclick="switchTab('arsip')" id="nav-arsip" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Arsip Kegiatan</button>
-          <button type="button" onclick="switchTab('kendaraan')" id="nav-kendaraan" class="px-4 py-2 rounded-lg text-sm font-medium text-emerald-100 hover:text-amber-300 hover:bg-emerald-900/40 transition-colors">Pinjam Kendaraan</button>
+        <div class="hidden md:flex items-center space-x-1">
+          <button type="button" onclick="switchTab('beranda')" id="nav-beranda" aria-current="page" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-emerald-900 bg-emerald-50 border border-emerald-100">Beranda</button>
+          <button type="button" onclick="switchTab('tahunan')" id="nav-tahunan" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-emerald-900 hover:bg-slate-100 transition-colors">Kalender Setahun</button>
+          <button type="button" onclick="switchTab('arsip')" id="nav-arsip" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-emerald-900 hover:bg-slate-100 transition-colors">Arsip Kegiatan</button>
+          <button type="button" onclick="switchTab('kendaraan')" id="nav-kendaraan" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-emerald-900 hover:bg-slate-100 transition-colors">Pinjam Kendaraan</button>
           <button onclick="bukaModalLoginAdmin()" id="nav-admin" class="px-4 py-2 rounded-lg text-sm font-medium gold-btn flex items-center gap-2">
             <i data-lucide="shield-check" class="w-4 h-4"></i> Dashboard Admin
           </button>
@@ -619,7 +829,7 @@
 
         <!-- Mobile Menu Button -->
         <div class="md:hidden">
-          <button id="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="Buka menu navigasi" aria-controls="mobile-menu" aria-expanded="false" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-amber-400 hover:bg-emerald-900 focus-visible:ring-2 focus-visible:ring-amber-400">
+          <button id="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="Buka menu navigasi" aria-controls="mobile-menu" aria-expanded="false" class="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-emerald-800 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">
             <i id="mobile-menu-icon" data-lucide="menu" class="w-6 h-6"></i>
           </button>
         </div>
@@ -627,13 +837,13 @@
     </div>
     
     <!-- Mobile Dropdown -->
-    <div id="mobile-menu" class="hidden md:hidden bg-emerald-950 border-t border-amber-500/30 px-4 pt-2 pb-4 safe-area-bottom">
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200 px-4 pt-2 pb-4 safe-area-bottom">
       <div class="mx-auto max-w-7xl space-y-1">
-        <button id="mobile-nav-beranda" type="button" aria-current="page" onclick="switchTab('beranda'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-amber-300 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Beranda</button>
-        <button id="mobile-nav-tahunan" type="button" onclick="switchTab('tahunan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Kalender Setahun</button>
-        <button id="mobile-nav-arsip" type="button" onclick="switchTab('arsip'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Arsip Kegiatan</button>
-        <button id="mobile-nav-kendaraan" type="button" onclick="switchTab('kendaraan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Pinjam Kendaraan</button>
-        <button id="mobile-nav-admin" type="button" onclick="bukaModalLoginAdmin(); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left font-bold text-amber-400 hover:bg-emerald-900/60 focus-visible:ring-2 focus-visible:ring-amber-400">Dashboard Admin</button>
+        <button id="mobile-nav-beranda" type="button" aria-current="page" onclick="switchTab('beranda'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-emerald-800 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Beranda</button>
+        <button id="mobile-nav-tahunan" type="button" onclick="switchTab('tahunan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-slate-600 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Kalender Setahun</button>
+        <button id="mobile-nav-arsip" type="button" onclick="switchTab('arsip'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-slate-600 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Arsip Kegiatan</button>
+        <button id="mobile-nav-kendaraan" type="button" onclick="switchTab('kendaraan'); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left text-slate-600 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Pinjam Kendaraan</button>
+        <button id="mobile-nav-admin" type="button" onclick="bukaModalLoginAdmin(); toggleMobileMenu(true);" class="min-h-11 block w-full rounded-lg px-3 py-2 text-left font-bold text-emerald-800 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-emerald-600">Dashboard Admin</button>
       </div>
     </div>
   </nav>
@@ -786,19 +996,12 @@
         <div class="mt-5 space-y-5">
           <div>
             <h3 class="text-lg font-bold text-slate-950">Daftar Kendaraan Dinas</h3>
-            <div id="public-vehicle-list" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite"></div>
+            <div id="public-vehicle-list" class="mt-3 space-y-4" aria-live="polite"></div>
           </div>
           <div>
             <h3 class="text-lg font-bold text-slate-950">Jadwal Penggunaan Kendaraan</h3>
-            <p class="mt-1 text-xs text-slate-500">Data dikelompokkan per bulan, dengan bulan terbaru ditampilkan lebih dahulu.</p>
-            <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200">
-              <table class="w-full min-w-[760px] text-left text-xs">
-                <thead class="bg-slate-100 font-bold text-slate-700">
-                  <tr><th class="p-3">Kendaraan</th><th class="p-3">Pemohon / Unit</th><th class="p-3">Tanggal & Waktu</th><th class="p-3">Tujuan</th><th class="p-3">Status</th></tr>
-                </thead>
-                <tbody id="public-vehicle-loan-list" class="divide-y divide-slate-100"></tbody>
-              </table>
-            </div>
+            <p class="mt-1 text-xs text-slate-500">Dikelompokkan per bulan. Bulan berjalan terbuka otomatis; pilih bulan lain untuk melihat jadwalnya.</p>
+            <div id="public-vehicle-loan-list" class="mt-3 space-y-3" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -1049,7 +1252,9 @@
             </div>
             <div>
               <label for="admin-loan-pemohon" class="mb-1 block text-xs font-bold text-amber-300">PEMOHON *</label>
-              <input id="admin-loan-pemohon" required maxlength="150" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+              <input id="admin-loan-pemohon" list="admin-loan-pemohon-options" required maxlength="150" autocomplete="off" oninput="syncAdminLoanUnitFromApplicant()" placeholder="Pilih fakultas/unit atau ketik nama pemohon" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-slate-100">
+              <datalist id="admin-loan-pemohon-options"></datalist>
+              <p class="mt-1 text-[10px] text-slate-500">Memilih fakultas/unit dari daftar akan mengisi kolom UNIT / FAKULTAS.</p>
             </div>
             <div>
               <label for="admin-loan-unit" class="mb-1 block text-xs font-bold text-amber-300">UNIT / FAKULTAS *</label>
@@ -1065,8 +1270,10 @@
             </div>
             <div>
               <label for="admin-loan-status" class="mb-1 block text-xs font-bold text-amber-300">STATUS</label>
-              <select id="admin-loan-status" class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200">
-                <option value="Menunggu">Menunggu</option><option value="Disetujui">Disetujui</option><option value="Dipakai">Dipakai</option><option value="Selesai">Selesai</option><option value="Ditolak">Ditolak</option>
+              <select id="admin-loan-status" required class="min-h-11 w-full rounded-lg border border-amber-500/40 bg-slate-900 px-3 py-2 text-xs text-amber-200">
+                <option value="Sedang Digunakan">Sedang Digunakan</option>
+                <option value="Batal Digunakan">Batal Digunakan</option>
+                <option value="Selesai">Selesai</option>
               </select>
             </div>
             <div>
@@ -1094,7 +1301,7 @@
               <button type="button" onclick="resetAdminVehicleLoanForm()" class="min-h-11 rounded-lg border border-slate-500 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800">Batal</button>
             </div>
           </form>
-          <div id="vehicle-loan-stats" class="grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
+          <div id="vehicle-loan-stats" class="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
           <div class="overflow-x-auto rounded-xl border border-emerald-800 bg-slate-900">
             <table class="w-full min-w-[1100px] text-left text-xs">
               <thead class="bg-emerald-900/80 font-bold text-amber-300">
@@ -1107,13 +1314,14 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 class="text-lg font-bold text-slate-950">Arsip Pinjaman Kendaraan</h3>
-                <p class="mt-1 text-xs text-slate-500">Penggunaan berstatus Selesai diambil dari Sheet1 dan disusun menurut tanggal.</p>
+                <p class="mt-1 text-xs text-slate-500">Data pemakaian disusun menurut tanggal. Laporan resmi mencakup semua status pada periode yang dipilih.</p>
               </div>
               <div class="flex flex-wrap items-end gap-2">
                 <div>
                   <label for="vehicle-loan-archive-month" class="mb-1 block text-xs font-bold text-slate-700">PERIODE</label>
                   <input id="vehicle-loan-archive-month" type="month" onchange="renderVehicleLoanArchive()" class="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900">
                 </div>
+                <button type="button" onclick="printVehicleLoanReport()" class="min-h-11 rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Cetak Laporan Resmi</button>
                 <button type="button" onclick="printVehicleLoanArchive()" class="min-h-11 rounded-lg bg-red-800 px-4 py-2 text-xs font-bold text-white hover:bg-red-700">Cetak Arsip PDF</button>
               </div>
             </div>
@@ -1432,13 +1640,19 @@
         }
       }, DATA_REFRESH_INTERVAL_MS);
       window.setInterval(() => {
-        if (document.visibilityState === 'visible') renderVehicleFeatures();
+        if (document.visibilityState === 'visible') {
+          renderVehicleFeatures();
+          renderVehicleLoanTable();
+        }
       }, 60000);
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && isHomeTabActive()) {
           loadDataFromBackend({ silent: true });
         }
-        if (document.visibilityState === 'visible') renderVehicleFeatures();
+        if (document.visibilityState === 'visible') {
+          renderVehicleFeatures();
+          renderVehicleLoanTable();
+        }
       });
       const reportMonthInput = document.getElementById('report-month');
       reportMonthInput.value = getLocalMonthValue();
@@ -1496,8 +1710,8 @@
           nama: label.replace(/\s+-\s+.*$/, '').trim() || label,
           nomorPolisi: plateMatch ? plateMatch[1].trim() : '',
           jenis: 'Kendaraan Dinas',
-          status: ['Menunggu', 'Disetujui', 'Dipakai'].includes(String(loan.status || '').trim())
-            ? 'Dipakai'
+          status: ['Menunggu', 'Disetujui', 'Dipakai', 'Digunakan', 'Sedang Digunakan'].includes(String(loan.status || '').trim())
+            ? 'Sedang Digunakan'
             : 'Tersedia',
           keterangan: ''
         });
@@ -2442,22 +2656,97 @@
     }
 
     // Pinjam Pakai Kendaraan
-    function getEffectiveVehicleLoanStatus_(item, today = getTodayDateString()) {
-      const status = String(item.status || '').trim();
-      if (status === 'Ditolak') return status;
+    function getEffectiveVehicleLoanStatus_(item, now = new Date()) {
+      const savedStatus = String(item.status || '').trim().toLocaleLowerCase('id-ID');
+      if (['batal digunakan', 'ditolak', 'dibatalkan', 'batal'].includes(savedStatus)) return 'Batal Digunakan';
+      if (['selesai', 'completed'].includes(savedStatus)) return 'Selesai';
 
-      const start = normalizeDateValue(item.tglMulai);
-      const end = normalizeDateValue(item.tglSelesai || item.tglMulai) || start;
-      if (!start) return status || 'Menunggu';
-      if (end < today) return 'Selesai';
-      if (start <= today && today <= end) return 'Digunakan';
-      return status === 'Dipakai' || status === 'Digunakan' ? 'Disetujui' : (status || 'Menunggu');
+      const endDate = normalizeDateValue(item.tglSelesai || item.tglMulai);
+      const endTime = normalizeTimeValue(item.jamSelesai || item.waktuSelesai) || '16:00';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(endDate) && /^\d{2}:\d{2}$/.test(endTime)) {
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Jakarta',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        }).formatToParts(now).map(part => [part.type, part.value]));
+        const currentDateTime = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+        if (`${endDate}T${endTime}` <= currentDateTime) return 'Selesai';
+      }
+      return 'Sedang Digunakan';
+    }
+
+    function getCurrentVehicleLoans_(vehicle, today = getTodayDateString()) {
+      const normalize = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const vehicleId = normalize(vehicle.id);
+      const vehicleName = normalize(vehicle.nama);
+      const vehiclePlate = normalize(vehicle.nomorPolisi).replace(/[^a-z0-9]/g, '');
+      return appState.pinjamanKendaraan.filter(loan => {
+        if (getEffectiveVehicleLoanStatus_(loan) !== 'Sedang Digunakan') return false;
+        const start = normalizeDateValue(loan.tglMulai);
+        const end = normalizeDateValue(loan.tglSelesai || loan.tglMulai) || start;
+        if (!start || start > today || end < today) return false;
+
+        const loanVehicleId = normalize(loan.vehicleId);
+        const loanLabel = normalize(loan.kendaraan);
+        const plateMatches = vehiclePlate &&
+          loanLabel.replace(/[^a-z0-9]/g, '').includes(vehiclePlate);
+        return (vehicleId && loanVehicleId === vehicleId) ||
+          (vehicleName && loanVehicleId === vehicleName) ||
+          (vehicleName && (loanLabel === vehicleName || loanLabel.startsWith(`${vehicleName} -`))) ||
+          plateMatches;
+      }).sort((a, b) =>
+        normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai))
+      );
+    }
+
+    function renderAdminLoanApplicantOptions() {
+      const datalist = document.getElementById('admin-loan-pemohon-options');
+      if (!datalist) return;
+      const units = new Map();
+      const addUnit = value => {
+        const unit = String(value || '').trim();
+        const key = unit.toLocaleLowerCase('id-ID');
+        if (unit && unit !== '__custom__' && !units.has(key)) units.set(key, unit);
+      };
+      document.querySelectorAll('#booking-fakultas option').forEach(option => addUnit(option.value));
+      (appState.agenda || []).forEach(item => addUnit(item.fakultas));
+      (appState.pinjamanKendaraan || []).forEach(item => addUnit(item.unit));
+      datalist.innerHTML = [...units.values()]
+        .map(unit => `<option value="${escapeHtml(unit)}"></option>`)
+        .join('');
+    }
+
+    function syncAdminLoanUnitFromApplicant() {
+      const pemohon = document.getElementById('admin-loan-pemohon');
+      const unit = document.getElementById('admin-loan-unit');
+      if (!pemohon || !unit) return;
+      const selected = pemohon.value.trim().toLocaleLowerCase('id-ID');
+      const option = [...document.querySelectorAll('#admin-loan-pemohon-options option')]
+        .find(item => item.value.toLocaleLowerCase('id-ID') === selected);
+      if (option) unit.value = option.value;
     }
 
     function renderVehicleFeatures() {
-      const available = appState.kendaraan.filter(item => String(item.status || 'Tersedia').toLowerCase() === 'tersedia');
+      renderAdminLoanApplicantOptions();
+      const currentVehicleLoans = new Map();
+      const inUse = [];
+      const available = [];
+      const maintenance = [];
+      const today = getTodayDateString();
+      appState.kendaraan.forEach(vehicle => {
+        const activeLoans = getCurrentVehicleLoans_(vehicle, today);
+        currentVehicleLoans.set(String(vehicle.id), activeLoans);
+        const status = String(vehicle.status || 'Tersedia').trim().toLowerCase();
+        if (status === 'perbaikan') maintenance.push(vehicle);
+        else if (activeLoans.length || status === 'dipakai') inUse.push(vehicle);
+        else available.push(vehicle);
+      });
       const count = document.getElementById('vehicle-available-count');
-      if (count) count.textContent = `${available.length} kendaraan tersedia`;
+      if (count) count.textContent = `${available.length} tersedia · ${inUse.length} digunakan`;
 
       const adminSelect = document.getElementById('admin-loan-vehicle');
       if (adminSelect) {
@@ -2470,19 +2759,66 @@
 
       const publicList = document.getElementById('public-vehicle-list');
       if (publicList) {
-        publicList.innerHTML = appState.kendaraan.length ? appState.kendaraan.map(vehicle => {
-          const isAvailable = String(vehicle.status || 'Tersedia').toLowerCase() === 'tersedia';
-          return `<article class="rounded-xl border ${isAvailable ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'} p-4">
+        const renderVehicleCard = (vehicle, category) => {
+          const activeLoans = currentVehicleLoans.get(String(vehicle.id)) || [];
+          const activeLoan = activeLoans[0];
+          const cardDetails = category === 'in-use'
+            ? activeLoan
+              ? `<p class="mt-2 text-xs font-medium text-slate-700">Digunakan oleh ${escapeHtml(activeLoan.pemohon || 'Pemohon tidak dicantumkan')}${activeLoan.unit ? ` · ${escapeHtml(activeLoan.unit)}` : ''}</p>
+                 ${activeLoan.tglSelesai ? `<p class="mt-1 text-[11px] text-slate-500">Jadwal sampai ${escapeHtml(formatDateIndonesia(activeLoan.tglSelesai))}${activeLoan.jamSelesai ? `, ${escapeHtml(formatTimeIndonesia(activeLoan.jamSelesai))} WIB` : ''}</p>` : ''}`
+              : '<p class="mt-2 text-xs text-slate-600">Status penggunaan diperbarui oleh admin.</p>'
+            : category === 'maintenance'
+              ? `<p class="mt-2 text-xs font-medium text-amber-800">Kendaraan sedang dalam perbaikan${vehicle.keterangan ? ` · ${escapeHtml(vehicle.keterangan)}` : ''}</p>`
+              : `<p class="mt-2 text-xs text-slate-600">${escapeHtml(vehicle.keterangan || 'Kendaraan siap digunakan.')}</p>`;
+          const badge = category === 'in-use'
+            ? '<span class="vehicle-status-badge shrink-0"><span class="vehicle-status-dot" aria-hidden="true"></span>Sedang digunakan</span>'
+            : category === 'maintenance'
+              ? '<span class="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold text-orange-800">Perbaikan</span>'
+              : '<span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">Tersedia</span>';
+          return `<article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-200 hover:shadow-md ${category === 'in-use' ? 'vehicle-card-in-use' : ''}">
             <div class="flex items-start justify-between gap-3">
-              <div><h4 class="font-bold text-slate-950">${escapeHtml(vehicle.nama)}</h4><p class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(vehicle.nomorPolisi)} · ${escapeHtml(vehicle.jenis || 'Mobil')}</p></div>
-              <span class="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${isAvailable ? 'bg-emerald-700 text-white' : 'bg-slate-300 text-slate-700'}">${escapeHtml(vehicle.status || 'Tersedia')}</span>
+              <div class="min-w-0">
+                <h5 class="font-bold text-slate-900">${escapeHtml(vehicle.nama)}</h5>
+                <p class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(vehicle.nomorPolisi || 'Nomor polisi belum dicantumkan')} · ${escapeHtml(vehicle.jenis || 'Mobil')}</p>
+              </div>
+              ${badge}
             </div>
-            ${vehicle.keterangan ? `<p class="mt-2 text-xs leading-relaxed text-slate-600">${escapeHtml(vehicle.keterangan)}</p>` : ''}
+            ${cardDetails}
+            ${category === 'in-use' && activeLoans.length > 1 ? `<p class="mt-1 text-[10px] text-slate-500">+${activeLoans.length - 1} jadwal aktif lainnya</p>` : ''}
           </article>`;
-        }).join('') : '<p class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Belum ada data kendaraan.</p>';
+        };
+        const renderVehicleGroup = (title, items, category, description, colors) => `
+          <section class="vehicle-group vehicle-group-${category} rounded-2xl border ${colors.border} ${colors.background} p-4 sm:p-5">
+            <div class="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h4 class="font-bold ${colors.heading}">${title}</h4>
+                <p class="mt-1 text-[11px] text-slate-500">${description}</p>
+              </div>
+              <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm">${items.length}</span>
+            </div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              ${items.length
+                ? items.map(vehicle => renderVehicleCard(vehicle, category)).join('')
+                : `<p class="rounded-lg border border-dashed border-slate-200 bg-white/70 p-3 text-xs text-slate-500 sm:col-span-2 lg:col-span-3">${category === 'in-use' ? 'Tidak ada kendaraan yang sedang digunakan.' : category === 'maintenance' ? 'Tidak ada kendaraan dalam perbaikan.' : 'Saat ini tidak ada kendaraan kosong.'}</p>`}
+            </div>
+          </section>`;
+        publicList.innerHTML = appState.kendaraan.length ? [
+          renderVehicleGroup('Sedang Digunakan', inUse, 'in-use', 'Kendaraan dengan pemakaian aktif hari ini.', {
+            border: 'border-amber-200', background: 'bg-amber-50/60', heading: 'text-amber-900'
+          }),
+          renderVehicleGroup('Masih Kosong / Tersedia', available, 'available', 'Kendaraan yang belum memiliki pemakaian aktif dan siap digunakan.', {
+            border: 'border-emerald-200', background: 'bg-emerald-50/50', heading: 'text-emerald-900'
+          }),
+          ...(maintenance.length ? [
+            renderVehicleGroup('Tidak Tersedia / Perbaikan', maintenance, 'maintenance', 'Kendaraan yang tidak dapat digunakan untuk sementara.', {
+              border: 'border-orange-200', background: 'bg-orange-50/50', heading: 'text-orange-900'
+            })
+          ] : [])
+        ].join('') : '<p class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Belum ada data kendaraan.</p>';
       }
       const publicLoanBody = document.getElementById('public-vehicle-loan-list');
       if (publicLoanBody) {
+        const currentMonth = getLocalMonthValue();
         const scheduledLoans = [...appState.pinjamanKendaraan].sort((a, b) =>
           normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
           normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
@@ -2496,7 +2832,8 @@
           monthGroups.get(month).push(item);
         });
         const groupedRows = [...monthGroups.entries()]
-          .sort(([a], [b]) => a === 'unknown' ? 1 : b === 'unknown' ? -1 : b.localeCompare(a))
+          .sort(([a], [b]) => a === currentMonth ? -1 : b === currentMonth ? 1 :
+            a === 'unknown' ? 1 : b === 'unknown' ? -1 : b.localeCompare(a))
           .map(([month, items]) => {
             const [year, monthNumber] = month.split('-').map(Number);
             const monthLabel = month === 'unknown'
@@ -2504,27 +2841,54 @@
               : new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, monthNumber - 1, 1));
             const rows = items.map(item => {
               const status = getEffectiveVehicleLoanStatus_(item);
-              const statusClass = status === 'Digunakan'
-                ? 'bg-cyan-100 text-cyan-800'
+              const statusClass = status === 'Sedang Digunakan'
+                ? 'bg-amber-100 text-amber-800'
                 : status === 'Selesai'
                   ? 'bg-slate-100 text-slate-700'
-                  : status === 'Ditolak'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-amber-100 text-amber-800';
-              return `<tr>
-                <td class="p-3 font-semibold text-slate-900">${escapeHtml(item.kendaraan)}</td>
-                <td class="p-3 text-slate-700">${escapeHtml(item.pemohon)}<br><span class="text-slate-500">${escapeHtml(item.unit)}</span></td>
-                <td class="p-3 text-slate-700">${escapeHtml(formatDateIndonesia(item.tglMulai))}${normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai) ? `–${escapeHtml(formatDateIndonesia(item.tglSelesai))}` : ''}${item.jamMulai || item.jamSelesai ? `<br>${item.jamMulai && item.jamSelesai ? `${escapeHtml(formatTimeIndonesia(item.jamMulai))}–${escapeHtml(formatTimeIndonesia(item.jamSelesai))}` : escapeHtml(formatTimeIndonesia(item.jamMulai || item.jamSelesai))}` : ''}</td>
-                <td class="p-3 text-slate-700">${escapeHtml(item.tujuan)}</td>
-                <td class="p-3"><span class="rounded-full px-2 py-1 text-[10px] font-bold ${statusClass}">${escapeHtml(status)}</span></td>
-              </tr>`;
+                  : 'bg-red-100 text-red-800';
+              const startDate = normalizeDateValue(item.tglMulai);
+              const endDate = normalizeDateValue(item.tglSelesai || item.tglMulai);
+              const dateLabel = endDate && endDate !== startDate
+                ? `${formatDateIndonesia(startDate)} – ${formatDateIndonesia(endDate)}`
+                : formatDateIndonesia(startDate);
+              const timeParts = [item.jamMulai, item.jamSelesai].filter(Boolean).map(formatTimeIndonesia);
+              const timeLabel = timeParts.length ? `${timeParts.join('–')} WIB` : '';
+              return `<article class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                      <p class="text-xs font-semibold text-emerald-800">${escapeHtml(dateLabel)}${timeLabel ? ` · ${escapeHtml(timeLabel)}` : ''}</p>
+                      <h4 class="mt-1 text-sm font-bold text-slate-900">${escapeHtml(item.kendaraan || 'Kendaraan')}</h4>
+                      <p class="mt-1 text-xs text-slate-700">${escapeHtml(item.pemohon || '-')} <span class="text-slate-400">·</span> ${escapeHtml(item.unit || '-')}</p>
+                      <p class="mt-2 text-xs leading-relaxed text-slate-600">${escapeHtml(item.tujuan || 'Tujuan belum dicantumkan')}</p>
+                    </div>
+                    <span class="shrink-0 self-start rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass}">${escapeHtml(status)}</span>
+                </div>
+              </article>`;
             }).join('');
-            return `<tr class="bg-slate-100"><th colspan="5" scope="rowgroup" class="border-y border-slate-200 px-3 py-2 text-left text-xs font-extrabold uppercase tracking-wide text-slate-700">${escapeHtml(monthLabel)} <span class="ml-1 font-semibold normal-case tracking-normal text-slate-500">(${items.length} penggunaan)</span></th></tr>${rows}`;
+            return `<details name="public-vehicle-loan-month" ontoggle="handlePublicVehicleMonthToggle(this)" ${month === currentMonth ? 'open' : ''} class="group overflow-hidden rounded-xl border ${month === currentMonth ? 'border-emerald-200 shadow-sm' : 'border-slate-200'} bg-white">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50 px-4 py-3 transition hover:bg-emerald-50">
+                <span class="min-w-0">
+                    <span class="block text-sm font-bold text-slate-900">${escapeHtml(monthLabel)}${month === currentMonth ? '<span class="ml-2 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-[9px] font-bold uppercase tracking-wide text-emerald-800">Bulan berjalan</span>' : ''}</span>
+                    <span class="mt-1 block text-[11px] text-slate-500">${items.length} penggunaan kendaraan</span>
+                </span>
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" class="h-5 w-5 shrink-0 text-slate-500 transition-transform group-open:rotate-180">
+                    <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </summary>
+              <div class="grid gap-2 border-t border-slate-100 bg-white p-3 sm:gap-3 sm:p-4">${rows}</div>
+            </details>`;
           }).join('');
-        publicLoanBody.innerHTML = groupedRows || '<tr><td colspan="5" class="p-4 text-center text-slate-500">Belum ada data penggunaan kendaraan.</td></tr>';
+        publicLoanBody.innerHTML = groupedRows || '<p class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">Belum ada data penggunaan kendaraan.</p>';
       }
       renderVehicleTable();
       renderVehicleLoanTable();
+    }
+
+    function handlePublicVehicleMonthToggle(openMonth) {
+      if (!openMonth.open) return;
+      document.querySelectorAll('#public-vehicle-loan-list details[open]').forEach(month => {
+        if (month !== openMonth) month.open = false;
+      });
     }
 
     async function handleAdminVehicleLoanSubmit(event) {
@@ -2646,7 +3010,7 @@
         normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
         String(a.kendaraan || '').localeCompare(String(b.kendaraan || ''), 'id')
       );
-      const counts = { Menunggu: 0, Disetujui: 0, Digunakan: 0, Selesai: 0, Ditolak: 0 };
+      const counts = { 'Sedang Digunakan': 0, 'Batal Digunakan': 0, Selesai: 0 };
       loans.forEach(item => {
         const status = getEffectiveVehicleLoanStatus_(item);
         counts[status] = (counts[status] || 0) + 1;
@@ -2654,11 +3018,9 @@
       const stats = document.getElementById('vehicle-loan-stats');
       if (stats) {
         stats.innerHTML = [
-          ['Menunggu', counts.Menunggu, 'amber'],
-          ['Disetujui', counts.Disetujui, 'emerald'],
-          ['Digunakan', counts.Digunakan, 'cyan'],
-          ['Selesai', counts.Selesai, 'blue'],
-          ['Ditolak', counts.Ditolak, 'red']
+          ['Sedang Digunakan', counts['Sedang Digunakan'], 'amber'],
+          ['Batal Digunakan', counts['Batal Digunakan'], 'red'],
+          ['Selesai', counts.Selesai, 'emerald']
         ].map(([label, value, color]) => `<div class="rounded-xl border border-slate-600 bg-slate-900 p-3"><p class="text-[10px] font-bold text-slate-400">${label}</p><p class="mt-1 text-xl font-bold text-${color}-300">${value}</p></div>`).join('');
       }
       const body = document.getElementById('vehicle-loan-table-body');
@@ -2676,9 +3038,7 @@
               ${item.readOnly || item.source === 'workbook'
                 ? '<span class="text-[10px] text-slate-400">Data arsip Sheet1</span>'
                 : `<button type="button" onclick="editVehicleLoan('${escapeHtml(item.id)}')" class="rounded bg-amber-500/20 px-2 py-1 text-amber-200">Edit</button>
-                  ${status === 'Menunggu' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Disetujui')" class="rounded bg-emerald-900/60 px-2 py-1 text-emerald-200">Setujui</button><button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Ditolak')" class="rounded bg-red-900/50 px-2 py-1 text-red-200">Tolak</button>` : ''}
-                  ${status === 'Disetujui' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Dipakai')" class="rounded bg-cyan-900/50 px-2 py-1 text-cyan-200">Mulai Pakai</button>` : ''}
-                  ${status === 'Digunakan' && item.status === 'Dipakai' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Selesai')" class="rounded bg-blue-900/50 px-2 py-1 text-blue-200">Selesai</button>` : ''}
+                  ${status === 'Sedang Digunakan' ? `<button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Batal Digunakan')" class="rounded bg-red-100 px-2 py-1 text-red-800">Batal Digunakan</button><button type="button" onclick="updateVehicleLoanStatus('${escapeHtml(item.id)}','Selesai')" class="rounded bg-emerald-100 px-2 py-1 text-emerald-800">Selesai</button>` : ''}
                   <button type="button" onclick="deleteVehicleLoanConfirm('${escapeHtml(item.id)}')" class="rounded bg-slate-700 px-2 py-1 text-slate-200">Hapus</button>`}
             </div>
           </td>
@@ -2739,6 +3099,92 @@
         .catch(() => showToast('Arsip kendaraan gagal dicetak.', 'error'));
     }
 
+    function printVehicleLoanReport() {
+      const monthValue = document.getElementById('vehicle-loan-archive-month').value || getLocalMonthValue();
+      const [year, month] = monthValue.split('-').map(Number);
+      const periodLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' })
+        .format(new Date(year, month - 1, 1));
+      const loans = appState.pinjamanKendaraan
+        .filter(item => normalizeDateValue(item.tglMulai).startsWith(monthValue))
+        .sort((a, b) =>
+          normalizeDateValue(a.tglMulai).localeCompare(normalizeDateValue(b.tglMulai)) ||
+          normalizeTimeValue(a.jamMulai).localeCompare(normalizeTimeValue(b.jamMulai)) ||
+          String(a.kendaraan || '').localeCompare(String(b.kendaraan || ''), 'id')
+        );
+      if (typeof html2pdf !== 'function') {
+        showToast('Fitur cetak PDF belum tersedia. Periksa koneksi internet lalu coba lagi.', 'error');
+        return;
+      }
+
+      const report = document.createElement('div');
+      report.style.cssText = 'position:fixed;left:0;top:0;z-index:9999;width:1100px;padding:32px;background:#fff;color:#111827;font-family:Arial,sans-serif;font-size:11px;';
+      const logoUrl = escapeHtml(new URL('./uin-ar-raniry-logo.png', window.location.href).href);
+      const rows = loans.map((item, index) => {
+        const status = getEffectiveVehicleLoanStatus_(item);
+        const dateRange = normalizeDateValue(item.tglSelesai) !== normalizeDateValue(item.tglMulai)
+          ? `${formatDateIndonesia(item.tglMulai)} – ${formatDateIndonesia(item.tglSelesai)}`
+          : formatDateIndonesia(item.tglMulai);
+        const timeParts = [item.jamMulai, item.jamSelesai].filter(Boolean).map(formatTimeIndonesia);
+        const timeRange = timeParts.length ? `${timeParts.join(' – ')} WIB` : '-';
+        return `<tr>
+          <td style="border:1px solid #9ca3af;padding:6px;text-align:center">${index + 1}</td>
+          <td style="border:1px solid #9ca3af;padding:6px">${escapeHtml(item.id || '-')}</td>
+          <td style="border:1px solid #9ca3af;padding:6px">${escapeHtml(item.kendaraan || '-')}<br><small>Supir: ${escapeHtml(item.supir || '-')}</small></td>
+          <td style="border:1px solid #9ca3af;padding:6px">${escapeHtml(item.pemohon || '-')}<br>${escapeHtml(item.unit || '-')}<br>${escapeHtml(item.noHp || '-')}</td>
+          <td style="border:1px solid #9ca3af;padding:6px">${escapeHtml(dateRange)}<br>${escapeHtml(timeRange)}</td>
+          <td style="border:1px solid #9ca3af;padding:6px">${escapeHtml(item.tujuan || '-')}</td>
+          <td style="border:1px solid #9ca3af;padding:6px;text-align:center">${escapeHtml(status)}</td>
+        </tr>`;
+      }).join('');
+      report.innerHTML = `
+        <div style="display:grid;grid-template-columns:90px 1fr;align-items:center;text-align:center;border-bottom:4px double #111827;padding-bottom:12px">
+          <img src="${logoUrl}" alt="Logo UIN Ar-Raniry" style="width:76px;height:82px;object-fit:contain">
+          <div>
+            <div style="font-size:13px;font-weight:bold;letter-spacing:1px">KEMENTERIAN AGAMA REPUBLIK INDONESIA</div>
+            <div style="font-size:17px;font-weight:bold;margin-top:3px">UNIVERSITAS ISLAM NEGERI AR-RANIRY BANDA ACEH</div>
+            <div style="font-size:10px;margin-top:4px">Jl. Lingkar Kampus, Kopelma Darussalam, Banda Aceh · ar-raniry.ac.id</div>
+          </div>
+        </div>
+        <h1 style="text-align:center;font-size:16px;margin:20px 0 4px">LAPORAN PINJAMAN KENDARAAN DINAS</h1>
+        <p style="text-align:center;margin:0 0 14px">Periode ${escapeHtml(periodLabel)}</p>
+        <p style="margin:0 0 8px">Jumlah data: <strong>${loans.length}</strong> peminjaman</p>
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px">
+          <thead style="display:table-header-group"><tr style="background:#e5e7eb">
+            <th style="border:1px solid #6b7280;padding:6px;width:4%">No.</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:11%">ID</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:17%">Kendaraan / Supir</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:18%">Pemohon / Unit / Kontak</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:16%">Jadwal</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:24%">Tujuan</th>
+            <th style="border:1px solid #6b7280;padding:6px;width:10%">Status</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="7" style="border:1px solid #9ca3af;padding:12px;text-align:center">Tidak ada data pinjaman kendaraan pada periode ini.</td></tr>'}</tbody>
+        </table>
+        <div style="width:280px;margin:32px 0 0 auto;text-align:center;line-height:1.6">
+          <p style="margin:0">Banda Aceh, ${escapeHtml(formatDateIndonesia(getTodayDateString()))}</p>
+          <p style="margin:0;font-weight:bold">Pengelola Kendaraan Dinas</p>
+          <div style="height:68px"></div>
+          <p style="margin:0">................................................</p>
+          <p style="margin:0">NIP. ..........................................</p>
+        </div>`;
+      document.body.appendChild(report);
+
+      html2pdf().set({
+        margin: [0.35, 0.35, 0.45, 0.35],
+        filename: `Laporan_Pinjaman_Kendaraan_${monthValue}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
+      }).from(report).save()
+        .then(() => showToast('Laporan resmi pinjaman kendaraan berhasil dicetak.', 'success'))
+        .catch(error => {
+          console.error('Gagal mencetak laporan pinjaman kendaraan:', error);
+          showToast('Laporan resmi pinjaman kendaraan gagal dicetak.', 'error');
+        })
+        .finally(() => report.remove());
+    }
+
     function editVehicleLoan(id) {
       const item = appState.pinjamanKendaraan.find(loan => String(loan.id) === String(id));
       if (!item) return;
@@ -2748,7 +3194,7 @@
       document.getElementById('admin-loan-unit').value = item.unit || '';
       document.getElementById('admin-loan-phone').value = item.noHp || '';
       document.getElementById('admin-loan-supir').value = item.supir || '';
-      document.getElementById('admin-loan-status').value = item.status || 'Menunggu';
+      document.getElementById('admin-loan-status').value = getEffectiveVehicleLoanStatus_(item);
       document.getElementById('admin-loan-start-date').value = normalizeDateValue(item.tglMulai);
       document.getElementById('admin-loan-end-date').value = normalizeDateValue(item.tglSelesai || item.tglMulai);
       document.getElementById('admin-loan-start-time').value = normalizeTimeValue(item.jamMulai);
@@ -2760,7 +3206,7 @@
 
     async function updateVehicleLoanStatus(id, status) {
       if (!isAdminLoggedIn || !adminPassword) return showToast('Silakan masuk sebagai admin.', 'error');
-      const note = status === 'Ditolak' ? window.prompt('Catatan penolakan (opsional):', '') : '';
+      const note = status === 'Batal Digunakan' ? window.prompt('Catatan pembatalan (opsional):', '') : '';
       try {
         const result = await requestBackendAction('setVehicleLoanStatus', { adminPassword, id, status, note: note || '' });
         await loadDataFromBackend({ silent: true });
